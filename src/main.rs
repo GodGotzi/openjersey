@@ -11,11 +11,13 @@ mod pick3d;
 mod presets;
 mod render;
 mod scene;
+mod splash;
 mod template;
 mod ui;
 mod workspace;
 
 use std::any::Any;
+use std::sync::Mutex;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Instant;
 
@@ -57,6 +59,21 @@ impl Fps {
     }
 }
 
+/// The loading window, until the 3D view is up.
+static SPLASH: Mutex<Option<splash::Splash>> = Mutex::new(None);
+
+fn splash_status(text: &str) {
+    if let Some(s) = SPLASH.lock().ok().as_mut().and_then(|s| s.as_mut()) {
+        s.status(text);
+    }
+}
+
+fn close_splash() {
+    if let Some(s) = SPLASH.lock().ok().and_then(|mut s| s.take()) {
+        std::thread::spawn(move || s.finish());
+    }
+}
+
 struct JerseyApp {
     ui_pass: UiPass,
     studio: Studio,
@@ -83,6 +100,8 @@ struct JerseyApp {
     dragging_3d: bool,
     menu_bottom: f32,
     file: Option<std::path::PathBuf>,
+    /// Frames drawn with the model; the first ones are slow (GPU setup).
+    model_frames: u32,
 }
 
 fn winit_window(window: &dyn Window) -> &winit::window::Window {
@@ -95,6 +114,7 @@ fn empty_document() -> Document {
 
 impl AppHandler for JerseyApp {
     fn init(engine: &mut Engine, window: &dyn Window) -> Self {
+        splash_status("Design wird geladen …");
         let wgpu_ctx = engine.renderer.wgpu_ctx().expect("renderer initialised");
         let ui_pass = UiPass::new(&wgpu_ctx.device, wgpu_ctx.surface_view_format, winit_window(window));
         let pattern = Pattern::load();
@@ -111,6 +131,7 @@ impl AppHandler for JerseyApp {
         let (request_tx, requests) = ai::server::start();
         let mesh = GarmentMesh::load(ws.pattern.size());
         let studio = Studio::new(engine);
+        splash_status("3D-Ansicht wird vorbereitet …");
         Self {
             ui_pass,
             studio,
@@ -132,6 +153,7 @@ impl AppHandler for JerseyApp {
             dragging_3d: false,
             menu_bottom: 0.0,
             file: None,
+            model_frames: 0,
         }
     }
 
@@ -139,7 +161,10 @@ impl AppHandler for JerseyApp {
         let Some(event) = event.downcast_ref::<WindowEvent>() else { return false };
         match event {
             WindowEvent::Resized(size) => self.ui_pass.resize(size.width, size.height, window.scale_factor()),
-            WindowEvent::CloseRequested => ai::server::stop(),
+            WindowEvent::CloseRequested => {
+                close_splash();
+                ai::server::stop();
+            }
             _ => {}
         }
         // panels get their events; only the rest reaches the orbit camera
@@ -215,6 +240,12 @@ impl AppHandler for JerseyApp {
                 GraphBlackboard { surface_out: surface, ..bb }
             })
             .render();
+        if self.studio.loaded {
+            self.model_frames += 1;
+            if self.model_frames == 3 {
+                close_splash();
+            }
+        }
     }
 }
 
@@ -595,6 +626,12 @@ fn main() -> myth::Result<()> {
         }
         return Ok(());
     }
+
+    if args.get(1).map(String::as_str) == Some("--splash") {
+        splash::run();
+        return Ok(());
+    }
+    *SPLASH.lock().expect("not poisoned") = splash::Splash::spawn();
 
     // benchmarking knobs: OJ_VSYNC=1, OJ_PATH=basic, OJ_AA=..., OJ_SHADOWS=0, OJ_LOG_FPS=1.
     // VSync is off by default: with it on, frames that just miss the 60 Hz
