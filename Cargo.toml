@@ -1,0 +1,19 @@
+[package]
+name = "openjersey"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ab_glyph = "0.2"
+base64 = "0.22"
+getrandom = "0.3"
+gltf = "1.4"
+image = "0.25.10"
+myth-engine = { version = "=0.3.0", features = ["egui"] }
+resvg = "0.49"
+rfd = "0.17.2"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+tiny-skia = "0.12"
+ureq = { version = "3", features = ["json"] }
+winit = "0.30.13"
