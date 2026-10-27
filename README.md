@@ -8,6 +8,13 @@ directly on the 3D model.
 
     cargo run --release            # or: openjersey --preset vbc / openjersey design.json
 
+## Install (Linux)
+    ./install/install-linux.sh            # build, add to the app launcher with icon
+    ./install/install-linux.sh --remove   # remove the launcher entry and icons
+
+The launcher runs `target/release/openjersey` in this checkout, so after
+`git pull && cargo build --release` it starts the new version.
+
 ## Editor
 - **Ebenen** (left): every object (text, graphic/logo, shape, line, watermark
   pattern, logo placeholder, group) with visibility, lock, rename
