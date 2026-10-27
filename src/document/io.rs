@@ -8,8 +8,9 @@ use serde::{Deserialize, Serialize};
 use super::legacy::{self, LayerKind};
 use super::{Asset, BaseColors, Document, Object, ObjectKind, StrokeStyle, Xf};
 
-/// 3: the portrait sheet layout.
-const VERSION: u32 = 3;
+/// 3: the portrait sheet layout. 4: raglan seams bowed out (taller front
+/// and back).
+const VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize)]
 struct File {
@@ -29,8 +30,11 @@ pub fn from_json(bytes: &[u8]) -> Result<Document, String> {
             (migrate(old), 1)
         }
     };
-    if version < 3 {
-        super::relayout::from_landscape(&mut doc, &crate::template::pattern::Pattern::load());
+    use super::relayout::{from_layout, LANDSCAPE, PORTRAIT_STRAIGHT_RAGLAN};
+    match version {
+        0..3 => from_layout(&mut doc, &LANDSCAPE, &crate::template::pattern::Pattern::load()),
+        3 => from_layout(&mut doc, &PORTRAIT_STRAIGHT_RAGLAN, &crate::template::pattern::Pattern::load()),
+        _ => {}
     }
     Ok(doc)
 }
@@ -88,10 +92,13 @@ mod tests {
         let doc = from_json(old.as_bytes()).unwrap();
         assert_eq!(doc.objects.len(), 2);
         assert_eq!(doc.base.accent, [1, 2, 3]);
-        // old files are on the landscape sheet; the stroke moves with the front
-        let front = crate::template::pattern::Pattern::load().piece(crate::template::pattern::PieceId::Front).rect;
+        // old files are on the landscape sheet; the stroke keeps its place on the front
+        use crate::template::pattern::{Panel, Pattern};
+        let front = Pattern::load().place(Panel::Front, [0.0, 0.0]);
+        let [ox, oy] = [458.5, 1825.75]; // the landscape front origin
         // shapes are re-centred on their points
-        assert_eq!(doc.objects[1].xf.pos, [5.0 + front[0] - 184.24, 5.0 + front[1] - 120.0]);
+        let pos = doc.objects[1].xf.pos;
+        assert!((pos[0] - (5.0 + front[0] - ox)).abs() < 1e-3 && (pos[1] - (5.0 + front[1] - oy)).abs() < 1e-3);
         let again = from_json(&to_json(&doc).unwrap()).unwrap();
         assert_eq!(again.objects.len(), 2);
         assert_eq!(again.objects[1].xf.pos, doc.objects[1].xf.pos);

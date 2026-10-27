@@ -622,7 +622,7 @@ fn main() -> myth::Result<()> {
         if let Some(j) = args.iter().position(|a| a == "--garment") {
             let display = ws.raster.render(&ws.pattern, &ws.regions, &ws.doc, Mode::Display);
             let mesh = GarmentMesh::load(ws.pattern.size());
-            mesh.preview(&display, 900, &ws.doc.garments).save_png(&args[j + 1]).expect("writing the PNG");
+            mesh.preview(&display, std::env::var("OJ_PREVIEW_HEIGHT").ok().and_then(|h| h.parse().ok()).unwrap_or(900), &ws.doc.garments).save_png(&args[j + 1]).expect("writing the PNG");
         }
         return Ok(());
     }
