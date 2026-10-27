@@ -33,6 +33,12 @@ impl Studio {
         let scene = engine.scene_manager.create_active();
         scene.environment.set_env_map(Some(env));
         scene.environment.set_intensity(1.0);
+        // Myth prefilters the environment light once, with 4096 samples per
+        // texel; at its default 512 px cube faces that keeps an integrated
+        // GPU (and the whole desktop) busy for ~9 s. The background is a
+        // plain colour and the fabric is matte, so small cubes look the same.
+        scene.environment.set_base_cube_size(256);
+        scene.environment.set_pmrem_size(128);
         let [r, g, b] = BACKGROUND;
         scene.background.set_mode(BackgroundMode::color(r, g, b));
         scene.tone_mapping.set_mode(ToneMappingMode::Neutral);

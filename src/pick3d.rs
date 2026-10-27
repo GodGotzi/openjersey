@@ -3,7 +3,7 @@
 //! tools can look at. Myth has no raycasting, so this is our own; it loads the
 //! same `assets/jersey.glb` the 3D view shows.
 
-use myth::math::{Mat4, Vec2, Vec3, Vec4};
+use myth::math::{Mat3, Mat4, Vec2, Vec3, Vec4};
 use tiny_skia::Pixmap;
 
 use crate::document::Garments;
@@ -82,8 +82,10 @@ impl GarmentMesh {
         let w = height * 3 / 4;
         let mut out = Pixmap::new(w * 2, height).expect("non-zero");
         out.fill(tiny_skia::Color::from_rgba8(0xe9, 0xe9, 0xeb, 255));
+        // OJ_PREVIEW_YAW turns the camera around the body, e.g. 90 for both sides
+        let yaw = std::env::var("OJ_PREVIEW_YAW").ok().and_then(|y| y.parse::<f32>().ok()).unwrap_or(0.0).to_radians();
         for (k, back) in [false, true].into_iter().enumerate() {
-            let eye = Vec3::new(0.0, 1.1, if back { -2.4 } else { 2.4 });
+            let eye = Mat3::from_rotation_y(yaw) * Vec3::new(0.0, 1.1, if back { -2.4 } else { 2.4 });
             let view = Mat4::look_at_rh(eye, Vec3::new(0.0, 1.02, 0.0), Vec3::Y);
             let proj = Mat4::perspective_rh(30f32.to_radians(), w as f32 / height as f32, 0.1, 10.0);
             self.raster_view(&mut out, template, proj * view, k as u32 * w, w, height, eye, shown);

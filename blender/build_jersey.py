@@ -70,7 +70,11 @@ BACK_NECK_BOTTOM = 1.45
 SIDE_HALF_WIDTH = 0.03  # side panel width on the front and on the back
 COLLAR_WIDTH = 0.014
 COLLAR_END = 0.016  # where the collar band's end meets the shoulder seam
-RAGLAN_FROM_NECK = 0.05  # raglan seam start on the collar, from its end
+RAGLAN_FROM_NECK = 0.03  # raglan seam start on the collar, from its end
+# the raglan seam bows out towards the shoulder point (0 = straight), so
+# front and back reach far onto the shoulder and the sleeve only runs up to
+# the collar as a narrow strip, as on the ninesquared template
+RAGLAN_BULGE = 0.6
 RAGLAN_JOIN = 0.12  # side panel top, as a fraction up the raglan seam
 
 # half-depth of the starting pillow; must clear the body everywhere
@@ -365,7 +369,7 @@ def panel_grids(panel, collar_lengths):
 
     # shared edges, computed once so neighbouring grids get identical points
     side_inner = resample([h_in, w_in, join], NR_SIDE)
-    raglan = resample([join, r_top], NR_RAGLAN)  # side panel top to collar
+    raglan = raglan_curve(join, r_top, NR_RAGLAN)  # side panel top to collar
     side_top = resample([join, UNDERARM], NC_SIDE)
     underarm = resample([UNDERARM, CUFF_BOTTOM], NR_UNDER)
     mid_in, mid_out = sample_along(inner, outer, 0, k_r, NB)
@@ -426,6 +430,19 @@ def panel_grids(panel, collar_lengths):
     for offset, direction, mirrored in halves:
         add("collar", collar, lambda j, i, p, o=offset, d=direction: (o + d * along[i], j * COLLAR_WIDTH / 2), mirrored)
     return grids
+
+
+def raglan_curve(join, r_top, n):
+    """The raglan seam from the side panel top to the collar: a quadratic
+    curve whose middle lies RAGLAN_BULGE of the way out to the shoulder point."""
+    mid = lerp2(join, r_top, 0.5)
+    control = (mid[0] + 2 * RAGLAN_BULGE * (SHOULDER[0] - mid[0]), mid[1] + 2 * RAGLAN_BULGE * (SHOULDER[1] - mid[1]))
+    dense = []
+    for i in range(201):
+        t = i / 200
+        a, b = lerp2(join, control, t), lerp2(control, r_top, t)
+        dense.append(lerp2(a, b, t))
+    return resample(dense, n)
 
 
 def side_seam_x(z):
