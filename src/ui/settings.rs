@@ -17,6 +17,19 @@ pub struct Changes {
     pub vsync: Option<bool>,
 }
 
+/// Shows a folder in the system's file manager (best effort).
+fn open_folder(folder: &std::path::Path) {
+    const OPENER: &str = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    let _ = std::fs::create_dir_all(folder);
+    let _ = std::process::Command::new(OPENER).arg(folder).spawn();
+}
+
 /// The contents of the Settings menu.
 pub fn menu(ui: &mut egui::Ui, vsync: bool) -> Changes {
     let mut changes = Changes::default();
@@ -49,14 +62,17 @@ pub fn menu(ui: &mut egui::Ui, vsync: bool) -> Changes {
             }
         }
         ui.separator();
-        // where the user's own themes go, and what was wrong with the ones that can't be used
+        // the folder for the user's own themes, one click away
         if let Some(folder) = crate::config::themes_dir() {
-            ui.add(
-                egui::Label::new(egui::RichText::new(tr_args("menu.settings.theme_folder", &[&folder.display()])).small().weak()).wrap(),
-            );
+            let hint = tr_args("menu.settings.theme_folder", &[&folder.display()]);
+            if ui.button(tr("menu.settings.open_themes_folder")).on_hover_text(hint).clicked() {
+                open_folder(&folder);
+                ui.close();
+            }
         }
+        // what was wrong with theme files that can't be used: one line each, the whole message on hover
         for problem in theme::problems() {
-            ui.add(egui::Label::new(egui::RichText::new(problem).small().color(*theme::colors().warn)).wrap());
+            ui.add(egui::Label::new(egui::RichText::new(problem).small().color(*theme::colors().warn)).truncate()).on_hover_text(problem);
         }
     });
     ui.separator();

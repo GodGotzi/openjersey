@@ -1,3 +1,4 @@
+pub mod agent_panel;
 pub mod browser;
 pub mod canvas_panel;
 pub mod color_picker;

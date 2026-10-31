@@ -74,6 +74,7 @@ template = "Vorlage"
 title = "Datei"
 
 [menu.settings]
+open_themes_folder = "Themes-Ordner öffnen"
 your_themes = "Eigene Themes"
 theme_folder = "Eigene Themes gehören in {}"
 theme = "Farbschema"
@@ -266,3 +267,28 @@ name = "Konturform"
 [tool.filled_shape]
 hint = "Eine gefüllte Form aufziehen, auf Wunsch mit Kontur (in der Optionsleiste einschaltbar). Auf den Knopf klicken, um sie zu wählen: Rechteck, Ellipse, Dreieck, Stern, Pfeil und mehr."
 name = "Gefüllte Form"
+
+[menu.agent]
+hint = "Zeigen, was ein KI-Assistent über MCP tut: seine Aufrufe, Ergebnisse und Fehler"
+title = "Agent"
+
+[agent]
+arguments = "Argumente"
+changed = "hat das Design geändert"
+clear = "Leeren"
+client = "Client"
+connected = "Ein Client hat sich verbunden"
+copy = "Kopieren"
+copy_hint = "Das ganze Protokoll als Text kopieren"
+design = "Design"
+disconnected = "Ein Client hat die Verbindung getrennt"
+empty = "Noch nichts. Binde den MCP-Server von OpenJersey in einen KI-Assistenten ein, dann erscheint hier alles, was er tut: jeder Aufruf mit seinen Argumenten, das Ergebnis, wie lange er dauerte und ob er das Design geändert hat."
+error = "Fehler"
+images = "{} Bild(er) zurückgegeben"
+objects = "Objekte"
+rejected = "Abgewiesen: {}"
+result = "Ergebnis"
+status = "Clients: {} · Aufrufe: {} · Fehler: {}"
+title = "Agent"
+took = "Dauer"
+unchanged = "hat das Design nicht geändert"

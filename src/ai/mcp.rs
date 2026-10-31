@@ -18,6 +18,8 @@ pub fn run() {
     let stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
     let mut app: Option<Connection> = None;
+    // who is on the other end of this pipe, as its `initialize` said
+    let mut client = String::new();
     for line in stdin.lock().lines() {
         let Ok(line) = line else { break };
         let Ok(msg) = serde_json::from_str::<Value>(&line) else { continue };
@@ -26,6 +28,7 @@ pub fn run() {
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let result = match method {
             "initialize" => {
+                client = client_name(&params);
                 let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOLS[0]);
                 let version = if PROTOCOLS.contains(&asked) { asked } else { PROTOCOLS[0] };
                 Ok(json!({
@@ -64,7 +67,7 @@ pub fn run() {
             "tools/call" => {
                 let name = params.get("name").and_then(Value::as_str).unwrap_or_default();
                 let args = params.get("arguments").cloned().unwrap_or(json!({}));
-                Ok(call(&mut app, name, &args))
+                Ok(call(&mut app, &client, name, &args))
             }
             other => Err(json!({"code": -32601, "message": format!("unknown method {other}")})),
         };
@@ -78,6 +81,13 @@ pub fn run() {
     }
 }
 
+/// "Claude Code 2.1" from an `initialize` request's `clientInfo`.
+fn client_name(params: &Value) -> String {
+    let info = params.get("clientInfo");
+    let text = |key: &str| info.and_then(|i| i.get(key)).and_then(Value::as_str).unwrap_or_default();
+    format!("{} {}", text("name"), text("version")).trim().to_string()
+}
+
 struct Connection {
     stream: TcpStream,
     reader: BufReader<TcpStream>,
@@ -86,13 +96,13 @@ struct Connection {
 
 /// A tool call as MCP content; failures are reported to the model, not as
 /// protocol errors.
-fn call(app: &mut Option<Connection>, name: &str, args: &Value) -> Value {
+fn call(app: &mut Option<Connection>, client: &str, name: &str, args: &Value) -> Value {
     let reply = (0..2).find_map(|_| {
         if app.is_none() {
             *app = connect();
         }
         let conn = app.as_mut()?;
-        let request = json!({"token": conn.token, "tool": name, "args": args});
+        let request = json!({"token": conn.token, "client": client, "tool": name, "args": args});
         let mut line = String::new();
         let ok = writeln!(conn.stream, "{request}").is_ok() && conn.reader.read_line(&mut line).is_ok_and(|n| n > 0);
         if !ok {
@@ -142,4 +152,16 @@ fn try_connect() -> Option<Connection> {
     let stream = TcpStream::connect(("127.0.0.1", session.port)).ok()?;
     let reader = BufReader::new(stream.try_clone().ok()?);
     Some(Connection { stream, reader, token: session.token })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_client_is_named_by_its_initialize_request() {
+        assert_eq!(client_name(&json!({"clientInfo": {"name": "Claude Code", "version": "2.1"}})), "Claude Code 2.1");
+        assert_eq!(client_name(&json!({"clientInfo": {"name": "codex"}})), "codex");
+        assert_eq!(client_name(&json!({})), "");
+    }
 }

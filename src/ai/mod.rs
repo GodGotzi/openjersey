@@ -3,5 +3,6 @@
 //! (`mcp`).
 
 pub mod commands;
+pub mod log;
 pub mod mcp;
 pub mod server;

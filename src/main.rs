@@ -32,7 +32,8 @@ use myth::math::Mat4;
 use myth::prelude::*;
 use winit::event::WindowEvent;
 
-use ai::server::Request;
+use ai::log::{Call, Event};
+use ai::server::Incoming;
 use document::{BaseColors, Document, Object, io};
 use editor::{CanvasView, Editor, Tool};
 use garments::Kind;
@@ -104,7 +105,11 @@ struct JerseyApp {
     preview: egui::TextureHandle,
     last_render: Option<tiny_skia::Pixmap>,
     /// tool calls from the MCP bridge
-    requests: Receiver<Request>,
+    requests: Receiver<Incoming>,
+    /// What the agent (an AI assistant on MCP) did, for the Agent panel.
+    agent_log: ai::log::Log,
+    /// The Agent panel is shown in the right sidebar.
+    agent_mode: bool,
     clipboard: Vec<Object>,
     fps: Fps,
     vsync: bool,
@@ -157,6 +162,8 @@ impl AppHandler for JerseyApp {
             preview,
             last_render: Some(pm),
             requests,
+            agent_log: ai::log::Log::default(),
+            agent_mode: config::get_bool("agent_mode").unwrap_or(false),
             clipboard: Vec::new(),
             fps: Fps { frames: 0, since: Instant::now(), fps: 0.0 },
             vsync: engine.renderer.settings().vsync,
@@ -189,10 +196,30 @@ impl AppHandler for JerseyApp {
         self.studio.show_garments(engine, &self.ws.doc.garments);
 
         // tool calls from AI assistants
-        while let Ok(req) = self.requests.try_recv() {
-            let result = ai::commands::execute(&mut self.ws, &self.mesh, &req.tool, &req.args);
-            let _ = req.reply.send(result);
-            self.sync_garments(engine);
+        while let Ok(incoming) = self.requests.try_recv() {
+            match incoming {
+                Incoming::Connected => self.agent_log.push(Event::Connected),
+                Incoming::Disconnected => self.agent_log.push(Event::Disconnected),
+                Incoming::Rejected(why) => self.agent_log.push(Event::Rejected(why)),
+                Incoming::Call(req) => {
+                    let (revision, objects) = (self.ws.rev, self.ws.doc.objects.len());
+                    let started = Instant::now();
+                    let result = ai::commands::execute(&mut self.ws, &self.mesh, &req.tool, &req.args);
+                    let call = Call::finished(
+                        &req.client,
+                        &req.tool,
+                        &req.args,
+                        &result,
+                        started.elapsed(),
+                        self.ws.rev != revision,
+                        objects,
+                        self.ws.doc.objects.len(),
+                    );
+                    self.agent_log.push(Event::Call(Box::new(call)));
+                    let _ = req.reply.send(result);
+                    self.sync_garments(engine);
+                }
+            }
         }
 
         self.ui_pass.begin_frame(winit_window(window));
@@ -474,6 +501,11 @@ impl JerseyApp {
                     ui.separator();
                     ui::layers::context_menu(ui, &mut self.ws);
                 });
+                if ui.add(egui::Button::selectable(self.agent_mode, tr("menu.agent.title"))).on_hover_text(tr("menu.agent.hint")).clicked()
+                {
+                    self.agent_mode = !self.agent_mode;
+                    config::set("agent_mode", self.agent_mode);
+                }
                 ui.menu_button(tr("menu.settings.title"), |ui| changes = ui::settings::menu(ui, self.vsync));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // right to left: redo comes first so that undo ends up on its left
@@ -518,6 +550,15 @@ impl JerseyApp {
     }
 
     fn editor_panel(&mut self, ui: &mut egui::Ui) {
+        if self.agent_mode {
+            // Agent mode: the agent's log below the editor
+            let frame =
+                egui::Frame::new().fill(ui.visuals().panel_fill).inner_margin(egui::Margin { top: 8, bottom: 2, left: 0, right: 0 });
+            #[allow(deprecated)]
+            egui::Panel::bottom("agent_log").frame(frame).resizable(true).size_range(260.0..=600.0).show_inside(ui, |ui| {
+                ui::agent_panel::show(ui, &mut self.agent_log);
+            });
+        }
         let view = CanvasView { texture: self.preview.id(), pixels: self.last_render.as_ref() };
         let sel_before = self.ws.selection.clone();
         ui::canvas_panel::show(ui, &mut self.editor, &mut self.ws, view);

@@ -20,6 +20,7 @@ const TEMPLATE: &str = "\
 # language = \"en\"        # \"en\" or \"de\"; without it the system language is used
 # theme = \"graphite\"     # a bundled theme, or the name of a file in the themes/ folder
 # vsync = false
+# agent_mode = false  # show the Agent panel, a log of what an AI assistant does
 ";
 
 /// The app's configuration folder.

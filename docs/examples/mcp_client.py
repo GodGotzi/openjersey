@@ -2,10 +2,10 @@
 import base64, json, os, subprocess, sys
 
 class Mcp:
-    def __init__(self, exe, env=None):
+    def __init__(self, exe, env=None, client_name="examples"):
         self.proc = subprocess.Popen([exe, "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=env, bufsize=1)
         self.next_id = 0
-        self.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "examples", "version": "1"}})
+        self.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": client_name, "version": "1"}})
 
     def request(self, method, params=None):
         self.next_id += 1
