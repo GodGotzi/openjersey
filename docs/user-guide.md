@@ -2,7 +2,7 @@
 
 ![The editor](images/editor.png)
 
-The window has three areas: the **sidebar** on the left (garments, layers, properties), the **3D view** in the middle and the **2D editor** on the right, where the print sheet is drawn. Both views show the same design; you can pick and move objects in either.
+The window has a **title bar** on top (the menus, the design's file name, undo and redo), a **status bar** at the bottom (the last message, the garments in use, the frame rate) and, between them, three areas: the **sidebar** on the left (garments, layers, properties), the **3D view** in the middle and the **2D editor** on the right, where the print sheet is drawn. Both views show the same design; you can pick and move objects in either.
 
 ## Garments
 
@@ -70,7 +70,7 @@ With **Snap** on, a dragged object's edges and centre snap to the centre lines o
 | File → New / Open / Save / Save as | Designs are `.json` files with their graphics embedded |
 | File → Template | Start from a ready-made design |
 | File → Export print template | The sheet as a PNG for the printer; logo placeholders are left out |
-| Settings | Language (English, Deutsch) and VSync |
+| Settings | Language (English, Deutsch), the colour theme (see [Themes](themes.md)) and VSync |
 
 Older save files open too; they are moved onto the current sheet layout.
 
@@ -78,7 +78,7 @@ Older save files open too; they are moved onto the current sheet layout.
 
 | Keys | |
 | --- | --- |
-| Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
+| Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo (also the arrow buttons at the right of the title bar) |
 | Ctrl+C, Ctrl+V | Copy, paste |
 | Ctrl+D | Duplicate |
 | Ctrl+G, Ctrl+Shift+G | Group, ungroup |

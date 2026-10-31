@@ -11,12 +11,12 @@ OpenJersey is one Rust binary. The window is [egui](https://github.com/emilk/egu
 | `src/template/` | The print sheet: `Pattern` (the top's atlas with the bottom's below, from the garments' `pattern.json`) and the colour regions |
 | `src/render/` | The CPU rasteriser that turns a document into the sheet image, hit testing and bounds, text layout |
 | `src/workspace.rs` | A document with its history, selection, snapping and drag logic, independent of any UI. Both the UI and the MCP tools drive this |
-| `src/editor.rs`, `src/ui/` | The 2D canvas and its tools, and the panels: layers, properties, garment browser, tool panel, colour picker, 3D toolbar |
+| `src/editor.rs`, `src/ui/` | The 2D canvas and its tools, and the panels: layers, properties, garment browser, tool panel, colour picker, 3D toolbar, and the shared widgets (segmented control, section titles) |
 | `src/scene.rs` | The 3D scene: lights, camera, the two garment models wearing the sheet as texture |
 | `src/pick3d.rs` | The garment mesh on the CPU: which sheet point is under the pointer in the 3D view, and the software preview renderer |
 | `src/garments.rs`, `build.rs` | The garment library, embedded at compile time; `build.rs` also compiles the translations |
 | `src/shapes.rs`, `src/presets.rs` | The preset shapes and ready-made designs |
-| `src/i18n.rs` | Translations (see [Translations](translations.md)) |
+| `src/i18n.rs`, `src/theme.rs`, `src/config.rs` | Translations (see [Translations](translations.md)), colour themes (see [Themes](themes.md)) and the little the app remembers between runs (`~/.config/openjersey/`) |
 | `src/ai/` | The MCP interface: `commands.rs` (the tools), `server.rs` (the local socket the app serves them on), `mcp.rs` (the stdio bridge) |
 
 ## How a change travels

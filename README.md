@@ -28,9 +28,14 @@ It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code,
 - **A lit 3D view** with front, left, back and right views, in which you can select and drag objects directly on the garment, with snapping to everything else on the design.
 - **Print-ready export**: the sheet as a PNG, logo placeholders left out.
 - **An AI-friendly interface**: 34 tools, `batch` calls that undo as one step, renders the assistant can look at. See [Working with AI assistants](docs/ai-assistants.md).
+- **Six colour themes** (Graphite, Midnight, Nord, Forest, Daylight, Paper) that restyle the whole interface, the 2D editor and the 3D background. See [Themes](docs/themes.md).
 - English and German, with a translation system that makes adding a language a single file.
 
 ![The OpenJersey editor](docs/images/editor.png)
+
+Six themes, from dark to light, change the whole interface:
+
+![The six themes: Graphite, Midnight, Nord, Forest, Daylight and Paper](docs/images/themes.png)
 
 ## Examples
 
@@ -83,6 +88,7 @@ Then ask for what you want: *"Design a navy and gold jersey for my club, number 
 | [Working with AI assistants](docs/ai-assistants.md) | MCP setup and how the examples were made |
 | [MCP tool reference](docs/mcp-tools.md) | All tools and prompts |
 | [Examples](docs/examples/README.md) | The designs and the scripts that built them |
+| [Themes](docs/themes.md) | The colour themes and how they are stored |
 | [Garment library](docs/garments.md) | The garments and how they are built with Blender |
 | [Translations](docs/translations.md) | Adding a language |
 | [Architecture](docs/architecture.md) | How the code fits together |

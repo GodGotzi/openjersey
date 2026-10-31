@@ -49,6 +49,7 @@ openjersey --export-template sheet.png --preset example --top "polo shirt" --bot
 | Variable | Effect |
 | --- | --- |
 | `OJ_LANG=en\|de` | The interface language (otherwise the saved choice, then the system locale) |
+| `OJ_THEME=graphite\|midnight\|nord\|forest\|daylight\|paper` | The colour theme (otherwise the saved choice; see [Themes](themes.md)) |
 | `OJ_VSYNC=1` | Turn VSync on at start (also in Settings) |
 | `OJ_PATH=basic` | Use the basic render path instead of the HDR pipeline |
 | `OJ_AA=none\|fxaa\|msaa\|msaa-fxaa` | Anti-aliasing mode |
