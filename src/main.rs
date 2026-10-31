@@ -110,6 +110,8 @@ struct JerseyApp {
     agent_log: ai::log::Log,
     /// The Agent panel is shown in the right sidebar.
     agent_mode: bool,
+    /// A mouse button is held; see `on_event`.
+    mouse_down: bool,
     clipboard: Vec<Object>,
     fps: Fps,
     vsync: bool,
@@ -164,6 +166,7 @@ impl AppHandler for JerseyApp {
             requests,
             agent_log: ai::log::Log::default(),
             agent_mode: config::get_bool("agent_mode").unwrap_or(false),
+            mouse_down: false,
             clipboard: Vec::new(),
             fps: Fps { frames: 0, since: Instant::now(), fps: 0.0 },
             vsync: engine.renderer.settings().vsync,
@@ -184,6 +187,11 @@ impl AppHandler for JerseyApp {
                 close_splash();
                 ai::server::stop();
             }
+            WindowEvent::MouseInput { state, .. } => self.mouse_down = state.is_pressed(),
+            // egui drops a button release that comes after the pointer has left the
+            // window, so a text selection dragged out of the window would never end.
+            // While a button is held the pointer stays where it last was instead.
+            WindowEvent::CursorLeft { .. } if self.mouse_down => return false,
             _ => {}
         }
         // panels get their events; only the rest reaches the orbit camera
