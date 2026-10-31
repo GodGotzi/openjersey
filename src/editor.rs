@@ -186,7 +186,7 @@ impl Editor {
         Self {
             tool: Tool::Select,
             color: [0x2e, 0xa0, 0x4f],
-            stroke_color: [0xff, 0xff, 0xff],
+            stroke_color: [0x1a, 0x1a, 0x1a],
             fill_shapes: true,
             stroke_shapes: false,
             brush_mm: 8.0,

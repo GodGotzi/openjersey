@@ -383,13 +383,30 @@ pub fn polygon_path(pts: &[Pt], closed: bool) -> Option<tiny_skia::Path> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::{BaseColors, Xf};
+    use crate::document::{BaseColors, StrokeStyle, Xf};
     use crate::template::pattern::Panel;
     use crate::template::regions::regions;
 
     fn pixel(pm: &Pixmap, [x, y]: Pt) -> [u8; 3] {
         let c = pm.pixel(x as u32, y as u32).unwrap();
         [c.red(), c.green(), c.blue()]
+    }
+
+    #[test]
+    fn a_shape_with_a_fill_and_an_outline_shows_both() {
+        let p = Pattern::load();
+        let r = Rasterizer::new();
+        let mut doc = Document::new(BaseColors { primary: [255; 3], accent: [1, 2, 3], trim: [9; 3], overrides: vec![] });
+        let at = p.place(Panel::Front, [0.0, 1.1]);
+        let half = 40.0;
+        let corners =
+            vec![[at[0] - half, at[1] - half], [at[0] + half, at[1] - half], [at[0] + half, at[1] + half], [at[0] - half, at[1] + half]];
+        let outline = StrokeStyle { color: [10, 20, 200], width: 12.0 };
+        doc.add(None, Object::shape("both", corners, true, Some([200, 10, 10]), Some(outline)));
+        let print = r.render(&p, &regions(&p), &doc, Mode::Print);
+        assert_eq!(pixel(&print, at), [200, 10, 10], "the middle is filled");
+        // the outline is centred on the edge: its inner half lies just inside it
+        assert_eq!(pixel(&print, [at[0] + half - 2.0, at[1]]), [10, 20, 200], "the edge is outlined");
     }
 
     #[test]

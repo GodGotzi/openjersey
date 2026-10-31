@@ -384,4 +384,40 @@ mod tests {
             assert!(!tool.hint().starts_with("tool."), "{:?} has no hint text", tool.name());
         }
     }
+
+    /// All text painted by one frame of the options bar for `tool`.
+    #[allow(deprecated)]
+    fn options_bar_texts(tool: Tool, outline_on: bool) -> Vec<String> {
+        let ctx = egui::Context::default();
+        let mut editor = Editor::new();
+        editor.tool = tool;
+        editor.stroke_shapes = outline_on;
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, Vec2::new(900.0, 300.0))),
+            ..Default::default()
+        };
+        let output = ctx.run(raw, |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| options_bar(ui, &mut editor, &[]));
+        });
+        output
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(text) => Some(text.galley.text().to_string()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_filled_shape_tool_offers_an_outline_and_the_outline_tool_does_not() {
+        let outline = tr("options.outline");
+        let has = |texts: &[String], wanted: &str| texts.iter().any(|t| t == wanted);
+        let filled = options_bar_texts(Tool::FilledShape, false);
+        assert!(has(&filled, outline), "no Outline switch for filled shapes in: {filled:?}");
+        assert!(!has(&options_bar_texts(Tool::OutlineShape, false), outline), "the outline tool must not offer an Outline switch");
+        // switched on, the outline's width shows up as well
+        assert!(options_bar_texts(Tool::FilledShape, true).iter().any(|t| t.contains("mm")));
+        assert!(!filled.iter().any(|t| t.contains("mm")));
+    }
 }
