@@ -18,6 +18,7 @@ use tiny_skia::{
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy};
+#[cfg(target_os = "linux")]
 use winit::platform::wayland::WindowAttributesExtWayland;
 use winit::window::{Window, WindowId};
 
@@ -97,14 +98,12 @@ impl ApplicationHandler<Message> for SplashApp {
         }
         let size = winit::dpi::LogicalSize::new(SIZE.0, SIZE.1);
         // a fixed size makes tiling compositors float and centre it
-        let attrs = Window::default_attributes()
-            .with_title("OpenJersey")
-            .with_name("openjersey-splash", "openjersey-splash")
-            .with_inner_size(size)
-            .with_min_inner_size(size)
-            .with_max_inner_size(size)
-            .with_resizable(false)
-            .with_decorations(false);
+        let attrs = Window::default_attributes().with_title("OpenJersey");
+        // the Wayland app id, which compositors match window rules against
+        #[cfg(target_os = "linux")]
+        let attrs = attrs.with_name("openjersey-splash", "openjersey-splash");
+        let attrs =
+            attrs.with_inner_size(size).with_min_inner_size(size).with_max_inner_size(size).with_resizable(false).with_decorations(false);
         let Ok(window) = event_loop.create_window(attrs) else {
             event_loop.exit();
             return;

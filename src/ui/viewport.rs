@@ -29,7 +29,7 @@ pub fn toolbar(ctx: &egui::Context, pane: egui::Rect, ws: &mut Workspace, studio
             let visuals = ui.visuals();
             let frame = egui::Frame::new()
                 .fill(visuals.window_fill.gamma_multiply(0.92))
-                .stroke(Stroke::new(1.0, visuals.widgets.noninteractive.bg_stroke.color))
+                .stroke(Stroke::new(1.0_f32, visuals.widgets.noninteractive.bg_stroke.color))
                 .corner_radius(CornerRadius::same(16))
                 .inner_margin(Margin::symmetric(8, 5))
                 .shadow(Shadow { offset: [0, 2], blur: 10, spread: 0, color: Color32::from_black_alpha(40) });

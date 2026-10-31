@@ -173,14 +173,14 @@ fn card(ui: &mut egui::Ui, g: &Garment, outline: &Outline, selected: bool) -> eg
     } else if response.hovered() {
         (visuals.widgets.hovered.weak_bg_fill, visuals.widgets.hovered.bg_stroke)
     } else {
-        (visuals.faint_bg_color, Stroke::new(1.0, visuals.widgets.noninteractive.bg_stroke.color))
+        (visuals.faint_bg_color, Stroke::new(1.0_f32, visuals.widgets.noninteractive.bg_stroke.color))
     };
     let line = if selected { visuals.selection.stroke.color } else { visuals.text_color().gamma_multiply(0.7) };
     let text = visuals.text_color();
     let painter = ui.painter_at(rect);
     painter.rect(rect, 6.0, fill, stroke, StrokeKind::Inside);
     let thumb = Rect::from_min_max(rect.min + Vec2::splat(THUMB_PAD), Pos2::new(rect.max.x - THUMB_PAD, rect.max.y - 44.0));
-    outline.paint(&painter, thumb, Stroke::new(1.0, line));
+    outline.paint(&painter, thumb, Stroke::new(1.0_f32, line));
     let name = painter.layout(g.name.to_string(), egui::FontId::proportional(13.0), text, CARD.x - 12.0);
     painter.galley(Pos2::new(rect.center().x - name.size().x / 2.0, rect.max.y - 40.0), name, text);
     if g.unisex {

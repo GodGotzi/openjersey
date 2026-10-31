@@ -50,7 +50,7 @@ fn connect_help(ui: &mut egui::Ui) {
 fn command_card(ui: &mut egui::Ui, name: &str, command: &str) {
     let colors = theme::colors();
     ui.label(RichText::new(name).small().color(*colors.text_weak));
-    egui::Frame::new().fill(*colors.input).stroke(egui::Stroke::new(1.0, *colors.border)).corner_radius(6.0).inner_margin(8.0).show(
+    egui::Frame::new().fill(*colors.input).stroke(egui::Stroke::new(1.0_f32, *colors.border)).corner_radius(6.0).inner_margin(8.0).show(
         ui,
         |ui| {
             ui.set_width(ui.available_width());

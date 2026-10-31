@@ -252,7 +252,7 @@ pub fn apply(ctx: &egui::Context) {
         let mut v = if theme.dark { Visuals::dark() } else { Visuals::light() };
         v.panel_fill = *c.panel;
         v.window_fill = *c.window;
-        v.window_stroke = Stroke::new(1.0, *c.border);
+        v.window_stroke = Stroke::new(1.0_f32, *c.border);
         v.window_corner_radius = CornerRadius::same(rounding.nw.saturating_add(3));
         v.menu_corner_radius = rounding;
         v.extreme_bg_color = *c.input;
@@ -264,13 +264,13 @@ pub fn apply(ctx: &egui::Context) {
         v.warn_fg_color = *c.warn;
         v.error_fg_color = *c.error;
         v.selection.bg_fill = *c.accent;
-        v.selection.stroke = Stroke::new(1.0, *c.accent_text);
+        v.selection.stroke = Stroke::new(1.0_f32, *c.accent_text);
         let shadow_alpha = if theme.dark { 90 } else { 40 };
         v.window_shadow = Shadow { offset: [0, 6], blur: 18, spread: 0, color: Color32::from_black_alpha(shadow_alpha) };
         v.popup_shadow = Shadow { offset: [0, 4], blur: 12, spread: 0, color: Color32::from_black_alpha(shadow_alpha) };
 
-        let border = Stroke::new(1.0, *c.border);
-        let text = Stroke::new(1.0, *c.text);
+        let border = Stroke::new(1.0_f32, *c.border);
+        let text = Stroke::new(1.0_f32, *c.text);
         let w = &mut v.widgets;
         w.noninteractive.bg_fill = *c.panel;
         w.noninteractive.weak_bg_fill = *c.panel;
@@ -282,11 +282,11 @@ pub fn apply(ctx: &egui::Context) {
         w.inactive.fg_stroke = text;
         w.hovered.bg_fill = *c.surface_hover;
         w.hovered.weak_bg_fill = *c.surface_hover;
-        w.hovered.bg_stroke = Stroke::new(1.0, mix(*c.border, *c.accent, 0.5));
+        w.hovered.bg_stroke = Stroke::new(1.0_f32, mix(*c.border, *c.accent, 0.5));
         w.hovered.fg_stroke = text;
         w.active.bg_fill = *c.surface_active;
         w.active.weak_bg_fill = *c.surface_active;
-        w.active.bg_stroke = Stroke::new(1.0, *c.accent);
+        w.active.bg_stroke = Stroke::new(1.0_f32, *c.accent);
         w.active.fg_stroke = text;
         w.open.bg_fill = *c.surface_active;
         w.open.weak_bg_fill = *c.surface_active;

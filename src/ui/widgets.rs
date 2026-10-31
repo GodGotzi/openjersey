@@ -30,7 +30,7 @@ pub fn segmented<T: Copy + PartialEq>(ui: &mut egui::Ui, id: impl Hash, value: &
         rect,
         rounding,
         theme::mix(*theme::colors().panel, *theme::colors().input, 0.7),
-        Stroke::new(1.0, *theme::colors().border),
+        Stroke::new(1.0_f32, *theme::colors().border),
         StrokeKind::Inside,
     );
 
