@@ -13,6 +13,7 @@ mod pick3d;
 mod presets;
 mod render;
 mod scene;
+mod shapes;
 mod splash;
 mod template;
 mod ui;

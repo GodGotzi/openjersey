@@ -248,3 +248,19 @@ visibility_hint = "Ein- oder ausblenden (ausgeblendete Teile fehlen auf der Druc
 
 [tooltip]
 shortcut = "Kürzel"
+
+[tool.shape]
+hint = "Die in der Optionsleiste gewählte Form aufziehen: abgerundetes Rechteck, Dreieck, Stern, Pfeil, Sechseck und mehr. Eine Linie folgt dem Ziehen von Ende zu Ende."
+name = "Formen"
+
+[shape]
+arrow = "Pfeil"
+chevron = "Winkel"
+cross = "Kreuz"
+diamond = "Raute"
+hexagon = "Sechseck"
+line = "Linie"
+pentagon = "Fünfeck"
+rounded_rect = "Abgerundetes Rechteck"
+star = "Stern"
+triangle = "Dreieck"

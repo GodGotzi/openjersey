@@ -9,6 +9,7 @@ use myth::egui::egui::{self, Align2, Color32, Key, Pos2, Rect, Sense, Stroke, St
 
 use crate::document::{Asset, Garments, Object, ObjectId, ObjectKind, Rgb, StrokeStyle, Xf, map, unmap};
 use crate::render::geom;
+use crate::shapes::ShapeKind;
 use crate::template::pattern::{Pattern, Pt};
 use crate::template::regions::hit_test;
 use crate::workspace::{Guide, Workspace};
@@ -22,6 +23,7 @@ pub enum Tool {
     Rect,
     Ellipse,
     Polygon,
+    Shape,
     Text,
     Image,
     Placeholder,
@@ -30,7 +32,7 @@ pub enum Tool {
 }
 
 impl Tool {
-    pub const ALL: [Tool; 12] = [
+    pub const ALL: [Tool; 13] = [
         Tool::Select,
         Tool::Hand,
         Tool::Brush,
@@ -38,6 +40,7 @@ impl Tool {
         Tool::Rect,
         Tool::Ellipse,
         Tool::Polygon,
+        Tool::Shape,
         Tool::Text,
         Tool::Image,
         Tool::Placeholder,
@@ -54,6 +57,7 @@ impl Tool {
             Tool::Rect => "⬜",
             Tool::Ellipse => "⭕",
             Tool::Polygon => "⬟",
+            Tool::Shape => "⭐",
             Tool::Text => "T",
             Tool::Image => "🖼",
             Tool::Placeholder => "🔲",
@@ -72,6 +76,7 @@ impl Tool {
             Tool::Rect => tr("tool.rect.name"),
             Tool::Ellipse => tr("tool.ellipse.name"),
             Tool::Polygon => tr("tool.polygon.name"),
+            Tool::Shape => tr("tool.shape.name"),
             Tool::Text => tr("tool.text.name"),
             Tool::Image => tr("tool.image.name"),
             Tool::Placeholder => tr("tool.placeholder.name"),
@@ -90,6 +95,7 @@ impl Tool {
             Tool::Rect => tr("tool.rect.hint"),
             Tool::Ellipse => tr("tool.ellipse.hint"),
             Tool::Polygon => tr("tool.polygon.hint"),
+            Tool::Shape => tr("tool.shape.hint"),
             Tool::Text => tr("tool.text.hint"),
             Tool::Image => tr("tool.image.hint"),
             Tool::Placeholder => tr("tool.placeholder.hint"),
@@ -112,6 +118,7 @@ impl Tool {
             Tool::Rect => Key::R,
             Tool::Ellipse => Key::O,
             Tool::Polygon => Key::P,
+            Tool::Shape => Key::S,
             Tool::Text => Key::T,
             Tool::Image => Key::I,
             Tool::Placeholder => Key::L,
@@ -145,6 +152,8 @@ pub struct Editor {
     pub fill_shapes: bool,
     pub stroke_shapes: bool,
     pub brush_mm: f32,
+    /// The shape the shape tool draws.
+    pub shape: ShapeKind,
     pub text_input: String,
     pub text_mm: f32,
     pub placeholder_label: String,
@@ -185,6 +194,7 @@ impl Editor {
             fill_shapes: true,
             stroke_shapes: false,
             brush_mm: 8.0,
+            shape: ShapeKind::Star,
             text_input: "TEXT".into(),
             text_mm: 40.0,
             placeholder_label: "LOGO".into(),
@@ -327,9 +337,19 @@ impl Editor {
             let r = Rect::from_two_pos(to_s(*start), to_s(self.marquee_end));
             painter.rect(r, 0.0, SELECTION.gamma_multiply(0.15), Stroke::new(1.0_f32, SELECTION), StrokeKind::Inside);
         }
-        if let Some(Drag::Box { start, .. }) = &self.drag {
-            let r = Rect::from_two_pos(to_s(*start), to_s(self.marquee_end));
-            painter.rect_stroke(r, 0.0, Stroke::new(1.0_f32, Color32::WHITE), StrokeKind::Inside);
+        if let Some(Drag::Box { start, tool }) = &self.drag {
+            let outline = Stroke::new(1.0_f32, Color32::WHITE);
+            if *tool == Tool::Shape {
+                // the shape itself follows the drag
+                let points: Vec<Pos2> = self.shape.outline(*start, self.marquee_end).into_iter().map(&to_s).collect();
+                painter.add(if self.shape.closed() {
+                    egui::Shape::closed_line(points, outline)
+                } else {
+                    egui::Shape::line(points, outline)
+                });
+            } else {
+                painter.rect_stroke(Rect::from_two_pos(to_s(*start), to_s(self.marquee_end)), 0.0, outline, StrokeKind::Inside);
+            }
         }
         if !self.polygon.is_empty() {
             let mut pts: Vec<Pos2> = self.polygon.iter().map(|&p| to_s(p)).collect();
@@ -520,7 +540,7 @@ impl Editor {
                     }
                 }
             }
-            Tool::Rect | Tool::Ellipse | Tool::Placeholder => {
+            Tool::Rect | Tool::Ellipse | Tool::Shape | Tool::Placeholder => {
                 if started {
                     self.drag = Some(Drag::Box { start: p, tool: self.tool });
                 }
@@ -616,6 +636,17 @@ impl Editor {
         Object::shape(name, points, true, fill, stroke)
     }
 
+    /// A shape of the shape tool: filled and/or outlined like the other
+    /// shapes, but a line is just a stroke in the paint colour.
+    fn preset_shape_object(&self, points: Vec<Pt>, px_per_mm: f32) -> Object {
+        if self.shape.closed() {
+            self.shape_object(self.shape.name(), points, px_per_mm)
+        } else {
+            let stroke = StrokeStyle { color: self.color, width: self.brush_mm * px_per_mm };
+            Object::shape(self.shape.name(), points, false, None, Some(stroke))
+        }
+    }
+
     fn finish_drag(&mut self, ws: &mut Workspace) {
         match self.drag.take() {
             Some(Drag::Move) => ws.end_drag(),
@@ -655,7 +686,10 @@ impl Editor {
             Some(Drag::Box { start, tool }) => {
                 let end = self.marquee_end;
                 let (x0, y0, x1, y1) = (start[0].min(end[0]), start[1].min(end[1]), start[0].max(end[0]), start[1].max(end[1]));
-                if x1 - x0 < 2.0 || y1 - y0 < 2.0 {
+                // a line may be flat in one direction; the other shapes need a box
+                let is_line = tool == Tool::Shape && self.shape == ShapeKind::Line;
+                let too_small = if is_line { (end[0] - start[0]).hypot(end[1] - start[1]) < 2.0 } else { x1 - x0 < 2.0 || y1 - y0 < 2.0 };
+                if too_small {
                     return;
                 }
                 let centre = [(x0 + x1) / 2.0, (y0 + y1) / 2.0];
@@ -673,6 +707,10 @@ impl Editor {
                             })
                             .collect();
                         ws.add(None, self.shape_object(tr("tool.ellipse.name"), pts, px));
+                    }
+                    Tool::Shape => {
+                        let points = self.shape.outline(start, end);
+                        ws.add(None, self.preset_shape_object(points, px));
                     }
                     _ => {
                         let label = self.placeholder_label.clone();

@@ -31,7 +31,7 @@ The launcher runs `target/release/openjersey` in this checkout, so after
   bar with the cursor position, the selection's size and zoom controls (scroll
   to zoom, middle/right drag or Space to pan). Tools: Select/transform (V; corner handles
   scale, the round handle rotates, Shift = free/15°), Hand (H), Brush (B),
-  Eraser (E), Rectangle (R), Ellipse (O), Polygon (P), Text (T), Image/SVG (I),
+  Eraser (E), Rectangle (R), Ellipse (O), Polygon (P), Shapes (S: a picker in the options bar chooses rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross or line), Text (T), Image/SVG (I),
   Logo placeholder (L), Fill (F, pieces or objects), Eyedropper (Y).
 - 3D view: click an object on the model to select it, drag to move it;
   dragging elsewhere orbits.
@@ -78,7 +78,7 @@ Tools:
 | Area | Tools |
 | --- | --- |
 | Look | `get_overview`, `list_objects`, `get_object`, `list_garments`, `list_presets`, `render_preview` (sheet, garment, or one piece zoomed) |
-| Add | `add_text`, `add_placeholder`, `add_rectangle`, `add_ellipse`, `add_shape`, `add_pattern` (watermark), `import_image` (also fills a logo placeholder) |
+| Add | `add_text`, `add_placeholder`, `add_rectangle`, `add_ellipse`, `add_preset_shape` (rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross, line), `add_shape`, `add_pattern` (watermark), `import_image` (also fills a logo placeholder) |
 | Change | `update_object`, `delete_object`, `duplicate_object`, `reorder_object`, `group_objects`, `ungroup`, `centre_on_piece`, `mirror_to_other_side`, `select` |
 | Colours and garments | `set_piece_color`, `set_garments`, `set_garment`, `load_preset` |
 | Files | `new_design`, `open_design`, `save_design`, `export_print_template` (only `.json` / `.png` paths are written) |

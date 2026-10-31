@@ -7,6 +7,7 @@ use myth::egui::egui::{self, Color32, CornerRadius, Margin, RichText, Stroke, Ve
 use crate::editor::{CanvasView, Editor, Tool};
 use crate::i18n::tr;
 use crate::render::geom;
+use crate::shapes::ShapeKind;
 use crate::ui::color_picker::{self, Swatches};
 use crate::workspace::Workspace;
 
@@ -19,7 +20,7 @@ const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
 const TOOL_GROUPS: [&[Tool]; 5] = [
     &[Tool::Select, Tool::Hand],
     &[Tool::Brush, Tool::Eraser],
-    &[Tool::Rect, Tool::Ellipse, Tool::Polygon],
+    &[Tool::Rect, Tool::Ellipse, Tool::Polygon, Tool::Shape],
     &[Tool::Text, Tool::Image, Tool::Placeholder],
     &[Tool::Fill, Tool::Eyedropper],
 ];
@@ -118,12 +119,16 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
         }
         Tool::Rect | Tool::Ellipse | Tool::Polygon => {
             ui.separator();
-            ui.checkbox(&mut e.fill_shapes, tr("options.fill"));
-            ui.checkbox(&mut e.stroke_shapes, tr("options.outline"));
-            if e.stroke_shapes {
-                if color_picker::button(ui, "stroke-colour", &mut e.stroke_color, swatches).committed {
-                    e.remember(e.stroke_color);
-                }
+            fill_and_outline(ui, e, swatches);
+        }
+        Tool::Shape => {
+            ui.separator();
+            shape_picker(ui, e);
+            ui.separator();
+            if e.shape.closed() {
+                fill_and_outline(ui, e, swatches);
+            } else {
+                ui.label(tr("options.size"));
                 ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
             }
         }
@@ -148,6 +153,45 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
             }
         }
         Tool::Select | Tool::Hand | Tool::Fill | Tool::Eyedropper => {}
+    }
+}
+
+fn fill_and_outline(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
+    ui.checkbox(&mut e.fill_shapes, tr("options.fill"));
+    ui.checkbox(&mut e.stroke_shapes, tr("options.outline"));
+    if e.stroke_shapes {
+        if color_picker::button(ui, "stroke-colour", &mut e.stroke_color, swatches).committed {
+            e.remember(e.stroke_color);
+        }
+        ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
+    }
+}
+
+/// A row of small buttons, each drawing its shape; the chosen one is highlighted.
+fn shape_picker(ui: &mut egui::Ui, e: &mut Editor) {
+    const BUTTON: f32 = 28.0;
+    const PADDING: f32 = 6.0;
+    ui.spacing_mut().item_spacing.x = 3.0;
+    for kind in ShapeKind::ALL {
+        let (rect, response) = ui.allocate_exact_size(Vec2::splat(BUTTON), egui::Sense::click());
+        let selected = e.shape == kind;
+        let visuals = ui.visuals();
+        let fill = if selected {
+            ACCENT.gamma_multiply(0.45)
+        } else if response.hovered() {
+            visuals.widgets.hovered.weak_bg_fill
+        } else {
+            Color32::TRANSPARENT
+        };
+        ui.painter().rect_filled(rect, CornerRadius::same(5), fill);
+        let inner = rect.shrink(PADDING);
+        let points: Vec<egui::Pos2> =
+            kind.outline([inner.min.x, inner.min.y], [inner.max.x, inner.max.y]).into_iter().map(|[x, y]| egui::pos2(x, y)).collect();
+        let stroke = Stroke::new(1.5_f32, if selected { Color32::WHITE } else { visuals.text_color() });
+        ui.painter().add(if kind.closed() { egui::Shape::closed_line(points, stroke) } else { egui::Shape::line(points, stroke) });
+        if response.on_hover_text(kind.name()).clicked() {
+            e.shape = kind;
+        }
     }
 }
 

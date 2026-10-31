@@ -249,3 +249,19 @@ visibility_hint = "Show or hide (hidden garments are left off the print sheet)"
 
 [tooltip]
 shortcut = "Shortcut"
+
+[tool.shape]
+hint = "Drag out the shape picked in the options bar: rounded rectangle, triangle, star, arrow, hexagon and more. A line follows your drag from end to end."
+name = "Shapes"
+
+[shape]
+arrow = "Arrow"
+chevron = "Chevron"
+cross = "Cross"
+diamond = "Diamond"
+hexagon = "Hexagon"
+line = "Line"
+pentagon = "Pentagon"
+rounded_rect = "Rounded rectangle"
+star = "Star"
+triangle = "Triangle"

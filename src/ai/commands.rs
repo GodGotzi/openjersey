@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use crate::document::{Asset, Document, Object, ObjectId, ObjectKind, Rgb, StrokeStyle, Xf, map};
 use crate::pick3d::GarmentMesh;
 use crate::render::{Mode, geom};
+use crate::shapes::ShapeKind;
 use crate::template::pattern::{Panel, Pattern, PieceId, Pt};
 use crate::template::regions::{RegionId, Side};
 use crate::workspace::{Workspace, with_world_pos};
@@ -319,6 +320,22 @@ pub fn specs() -> Vec<ToolSpec> {
             ),
         },
         ToolSpec {
+            name: "add_preset_shape",
+            description: "Add a preset shape centred on the position: rounded_rect, triangle, diamond, pentagon, hexagon, star, arrow (points right), chevron, cross, or line (width_mm is its length, rotation_deg turns it; a line needs a stroke colour). Styled like add_rectangle: fill, stroke, stroke_width_mm, name, clip.",
+            schema: schema(
+                with(
+                    pos_props(),
+                    json!({
+                        "shape": {"type": "string", "enum": ShapeKind::ALL.iter().map(|k| k.id()).collect::<Vec<_>>()},
+                        "width_mm": {"type": "number"}, "height_mm": {"type": "number", "description": "not needed for a line"},
+                        "rotation_deg": {"type": "number"},
+                        "fill": color, "stroke": color, "stroke_width_mm": {"type": "number"}, "name": {"type": "string"}, "clip": clip
+                    }),
+                ),
+                &["shape", "width_mm"],
+            ),
+        },
+        ToolSpec {
             name: "add_pattern",
             description: "Add a watermark: text repeated in staggered rows over the pieces in `clip` (all pieces when omitted).",
             schema: schema(
@@ -451,6 +468,26 @@ fn outline(ws: &Workspace, args: &Value, ellipse: bool) -> Result<Vec<Pt>, Strin
         vec![[-half_w, -half_h], [half_w, -half_h], [half_w, half_h], [-half_w, half_h]]
     };
     Ok(local.into_iter().map(|[x, y]| [centre[0] + x * cos - y * sin, centre[1] + x * sin + y * cos]).collect())
+}
+
+/// The outline of a preset shape centred on the position in `args`, rotated
+/// by `rotation_deg`, in sheet pixels. A line is `width_mm` long.
+fn preset_outline(ws: &Workspace, args: &Value, kind: ShapeKind) -> Result<Vec<Pt>, String> {
+    let mm = ws.px_per_mm();
+    let centre = position(ws, args).ok_or(POSITION_HINT)?;
+    let half_w = num(args, "width_mm").ok_or("missing width_mm")? * mm / 2.0;
+    let half_h = if kind.closed() { num(args, "height_mm").ok_or("missing height_mm")? * mm / 2.0 } else { 0.0 };
+    let (sin, cos) = num(args, "rotation_deg").unwrap_or(0.0).to_radians().sin_cos();
+    let from = [centre[0] - half_w, centre[1] - half_h];
+    let to = [centre[0] + half_w, centre[1] + half_h];
+    Ok(kind
+        .outline(from, to)
+        .into_iter()
+        .map(|[x, y]| {
+            let (dx, dy) = (x - centre[0], y - centre[1]);
+            [centre[0] + dx * cos - dy * sin, centre[1] + dx * sin + dy * cos]
+        })
+        .collect())
 }
 
 /// Adds a polygon or polyline styled by fill / stroke / stroke_width_mm / name / clip.
@@ -882,6 +919,18 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
             let points = outline(ws, args, true)?;
             add_styled_shape(ws, args, points, true)
         }
+        "add_preset_shape" => {
+            let id = args.get("shape").and_then(Value::as_str).ok_or("missing shape")?;
+            let kind = ShapeKind::from_id(id).ok_or_else(|| {
+                let ids: Vec<&str> = ShapeKind::ALL.iter().map(|k| k.id()).collect();
+                format!("unknown shape '{id}'; use one of: {}", ids.join(", "))
+            })?;
+            if !kind.closed() && args.get("stroke").is_none() {
+                return Err("a line needs a stroke colour".into());
+            }
+            let points = preset_outline(ws, args, kind)?;
+            add_styled_shape(ws, args, points, kind.closed())
+        }
         "add_pattern" => {
             let content = args.get("text").and_then(Value::as_str).ok_or("missing text")?.to_string();
             let cap = num(args, "cap_height_mm").unwrap_or(12.0);
@@ -1107,6 +1156,33 @@ mod tests {
         let v: Value = serde_json::from_str(&obj.text).unwrap();
         assert!((v["size_mm"][0].as_f64().unwrap() - 100.0).abs() < 1.0 && (v["size_mm"][1].as_f64().unwrap() - 40.0).abs() < 1.0, "{v}");
         assert!(execute(&mut ws, &mesh, "add_rectangle", &json!({"width_mm": 10, "height_mm": 10})).is_err());
+    }
+
+    #[test]
+    fn preset_shapes_are_added_in_the_right_size() {
+        let (mut ws, mesh) = setup();
+        let out = execute(
+            &mut ws,
+            &mesh,
+            "add_preset_shape",
+            &json!({"shape": "star", "width_mm": 80, "height_mm": 60, "x_mm": 200, "y_mm": 300}),
+        )
+        .unwrap();
+        let id = serde_json::from_str::<Value>(&out.text).unwrap()["id"].as_u64().unwrap();
+        let v: Value = serde_json::from_str(&execute(&mut ws, &mesh, "get_object", &json!({"id": id})).unwrap().text).unwrap();
+        assert!((v["size_mm"][0].as_f64().unwrap() - 80.0).abs() < 1.0 && (v["size_mm"][1].as_f64().unwrap() - 60.0).abs() < 1.0, "{v}");
+        assert_eq!(v["closed"], true);
+        // a line is open, as long as asked, and needs a stroke
+        let line = json!({"shape": "line", "width_mm": 100, "x_mm": 200, "y_mm": 300, "stroke": "#ff0000"});
+        let out = execute(&mut ws, &mesh, "add_preset_shape", &line).unwrap();
+        let id = serde_json::from_str::<Value>(&out.text).unwrap()["id"].as_u64().unwrap();
+        let v: Value = serde_json::from_str(&execute(&mut ws, &mesh, "get_object", &json!({"id": id})).unwrap().text).unwrap();
+        assert_eq!(v["closed"], false);
+        assert!(execute(&mut ws, &mesh, "add_preset_shape", &json!({"shape": "line", "width_mm": 10, "x_mm": 1, "y_mm": 1})).is_err());
+        let err =
+            execute(&mut ws, &mesh, "add_preset_shape", &json!({"shape": "blob", "width_mm": 10, "height_mm": 10, "x_mm": 1, "y_mm": 1}))
+                .unwrap_err();
+        assert!(err.contains("star") && err.contains("hexagon"), "{err}");
     }
 
     #[test]
