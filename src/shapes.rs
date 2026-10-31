@@ -8,6 +8,8 @@ use crate::template::pattern::Pt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShapeKind {
+    Rectangle,
+    Ellipse,
     RoundedRect,
     Triangle,
     Diamond,
@@ -21,7 +23,9 @@ pub enum ShapeKind {
 }
 
 impl ShapeKind {
-    pub const ALL: [ShapeKind; 10] = [
+    pub const ALL: [ShapeKind; 12] = [
+        ShapeKind::Rectangle,
+        ShapeKind::Ellipse,
         ShapeKind::RoundedRect,
         ShapeKind::Triangle,
         ShapeKind::Diamond,
@@ -37,6 +41,8 @@ impl ShapeKind {
     /// The name MCP clients use.
     pub fn id(self) -> &'static str {
         match self {
+            ShapeKind::Rectangle => "rectangle",
+            ShapeKind::Ellipse => "ellipse",
             ShapeKind::RoundedRect => "rounded_rect",
             ShapeKind::Triangle => "triangle",
             ShapeKind::Diamond => "diamond",
@@ -57,6 +63,8 @@ impl ShapeKind {
     /// The name shown in the UI.
     pub fn name(self) -> &'static str {
         match self {
+            ShapeKind::Rectangle => tr("shape.rectangle"),
+            ShapeKind::Ellipse => tr("shape.ellipse"),
             ShapeKind::RoundedRect => tr("shape.rounded_rect"),
             ShapeKind::Triangle => tr("shape.triangle"),
             ShapeKind::Diamond => tr("shape.diamond"),
@@ -83,6 +91,8 @@ impl ShapeKind {
         let fit = |unit: &[Pt]| -> Vec<Pt> { unit.iter().map(|&[u, v]| [x0 + u * (x1 - x0), y0 + v * (y1 - y0)]).collect() };
         match self {
             ShapeKind::Line => vec![from, to],
+            ShapeKind::Rectangle => fit(&[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]),
+            ShapeKind::Ellipse => fit(&ellipse()),
             ShapeKind::RoundedRect => rounded_rect(x0, y0, x1, y1),
             ShapeKind::Triangle => fit(&[[0.5, 0.0], [1.0, 1.0], [0.0, 1.0]]),
             ShapeKind::Diamond => fit(&[[0.5, 0.0], [1.0, 0.5], [0.5, 1.0], [0.0, 0.5]]),
@@ -108,6 +118,67 @@ impl ShapeKind {
             ]),
         }
     }
+}
+
+/// An ellipse inscribed in the unit square.
+fn ellipse() -> Vec<Pt> {
+    const STEPS: usize = 96;
+    (0..STEPS)
+        .map(|i| {
+            let angle = i as f32 / STEPS as f32 * TAU;
+            [0.5 + 0.5 * angle.cos(), 0.5 + 0.5 * angle.sin()]
+        })
+        .collect()
+}
+
+/// Twice the signed area of a triangle (positive when it turns counter-clockwise).
+fn cross(a: Pt, b: Pt, c: Pt) -> f32 {
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+}
+
+/// Splits a simple outline into triangles by ear clipping, so any of the
+/// shapes here can be filled (the icons are drawn as meshes, which have no
+/// fill rule). An outline that cannot be split gives what could be.
+pub fn triangulate(points: &[Pt]) -> Vec<[Pt; 3]> {
+    let doubled_area: f32 = (0..points.len()).map(|i| cross([0.0, 0.0], points[i], points[(i + 1) % points.len()])).sum();
+    let counter_clockwise = doubled_area > 0.0;
+    let strictly_inside = |p: Pt, a: Pt, b: Pt, c: Pt| {
+        let signs = [cross(a, b, p), cross(b, c, p), cross(c, a, p)];
+        signs.iter().all(|&s| s > 1e-6) || signs.iter().all(|&s| s < -1e-6)
+    };
+    let mut remaining: Vec<usize> = (0..points.len()).collect();
+    let mut triangles = Vec::new();
+    while remaining.len() > 3 {
+        let count = remaining.len();
+        // a vertex on a straight line between its neighbours adds no corner
+        let straight = (0..count).find(|&i| {
+            let (a, b, c) = (remaining[(i + count - 1) % count], remaining[i], remaining[(i + 1) % count]);
+            cross(points[a], points[b], points[c]).abs() <= 1e-9
+        });
+        if let Some(i) = straight {
+            remaining.remove(i);
+            continue;
+        }
+        let ear = (0..count).find(|&i| {
+            let (a, b, c) = (remaining[(i + count - 1) % count], remaining[i], remaining[(i + 1) % count]);
+            let turn = cross(points[a], points[b], points[c]);
+            // a corner that turns the wrong way is a notch, not an ear
+            (turn > 1e-9) == counter_clockwise
+                && turn.abs() > 1e-9
+                && !remaining.iter().any(|&j| ![a, b, c].contains(&j) && strictly_inside(points[j], points[a], points[b], points[c]))
+        });
+        let Some(i) = ear else { return triangles };
+        let (a, b, c) = (remaining[(i + count - 1) % count], remaining[i], remaining[(i + 1) % count]);
+        triangles.push([points[a], points[b], points[c]]);
+        remaining.remove(i);
+    }
+    if remaining.len() == 3 {
+        let last = [points[remaining[0]], points[remaining[1]], points[remaining[2]]];
+        if cross(last[0], last[1], last[2]).abs() > 1e-9 {
+            triangles.push(last);
+        }
+    }
+    triangles
 }
 
 /// Scales points so their bounding box is the unit square.
@@ -178,6 +249,8 @@ mod tests {
     #[test]
     fn shapes_have_their_vertices() {
         let count = |kind: ShapeKind| kind.outline([0.0, 0.0], [10.0, 10.0]).len();
+        assert_eq!(count(ShapeKind::Rectangle), 4);
+        assert_eq!(count(ShapeKind::Ellipse), 96);
         assert_eq!(count(ShapeKind::Triangle), 3);
         assert_eq!(count(ShapeKind::Diamond), 4);
         assert_eq!(count(ShapeKind::Pentagon), 5);
@@ -186,6 +259,20 @@ mod tests {
         assert_eq!(count(ShapeKind::Arrow), 7);
         assert_eq!(count(ShapeKind::Chevron), 6);
         assert_eq!(count(ShapeKind::Cross), 12);
+    }
+
+    #[test]
+    fn the_triangles_cover_every_closed_shape_exactly() {
+        for kind in ShapeKind::ALL.into_iter().filter(|k| k.closed()) {
+            let points = kind.outline([0.0, 0.0], [10.0, 10.0]);
+            let doubled_area: f32 = (0..points.len()).map(|i| cross([0.0, 0.0], points[i], points[(i + 1) % points.len()])).sum();
+            let triangles = triangulate(&points);
+            assert!(!triangles.is_empty() && triangles.len() <= points.len() - 2, "{kind:?}");
+            let covered: f32 = triangles.iter().map(|&[a, b, c]| cross(a, b, c)).sum();
+            assert!((covered - doubled_area).abs() < 1e-2, "{kind:?}: triangles cover {covered}, the outline {doubled_area}");
+            // none of them is flipped, so none overlaps another
+            assert!(triangles.iter().all(|&[a, b, c]| cross(a, b, c) * doubled_area > 0.0), "{kind:?} has a flipped triangle");
+        }
     }
 
     #[test]

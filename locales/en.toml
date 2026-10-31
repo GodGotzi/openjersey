@@ -193,10 +193,6 @@ selection = "Selection"
 hint = "Draw freehand strokes in the current colour. The size is in the options bar."
 name = "Brush"
 
-[tool.ellipse]
-hint = "Drag out an ellipse or a circle. Fill and outline are in the options bar."
-name = "Ellipse"
-
 [tool.eraser]
 hint = "Delete brush strokes by dragging over them."
 name = "Eraser"
@@ -225,10 +221,6 @@ name = "Logo placeholder"
 hint = "Click to add points; double-click or Enter closes the shape."
 name = "Polygon"
 
-[tool.rect]
-hint = "Drag out a rectangle. Fill and outline are in the options bar."
-name = "Rectangle"
-
 [tool.select]
 hint = "Select, move, scale and rotate objects. Shift adds to the selection; Ctrl+click picks a member of a group."
 name = "Select"
@@ -250,11 +242,9 @@ visibility_hint = "Show or hide (hidden garments are left off the print sheet)"
 [tooltip]
 shortcut = "Shortcut"
 
-[tool.shape]
-hint = "Drag out the shape picked in the options bar: rounded rectangle, triangle, star, arrow, hexagon and more. A line follows your drag from end to end."
-name = "Shapes"
-
 [shape]
+ellipse = "Ellipse"
+rectangle = "Rectangle"
 arrow = "Arrow"
 chevron = "Chevron"
 cross = "Cross"
@@ -265,3 +255,11 @@ pentagon = "Pentagon"
 rounded_rect = "Rounded rectangle"
 star = "Star"
 triangle = "Triangle"
+
+[tool.outline_shape]
+hint = "Drag out an unfilled shape. Click the button to choose which: rectangle, ellipse, triangle, star, arrow, line and more."
+name = "Outline shape"
+
+[tool.filled_shape]
+hint = "Drag out a filled shape. Click the button to choose which: rectangle, ellipse, triangle, star, arrow and more."
+name = "Filled shape"

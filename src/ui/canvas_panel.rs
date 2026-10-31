@@ -14,13 +14,16 @@ use crate::workspace::Workspace;
 const TOOL_BUTTON: f32 = 34.0;
 const STATUS_HEIGHT: f32 = 24.0;
 const TOOLTIP_WIDTH: f32 = 260.0;
+const SHAPE_ICON_INSET: f32 = 9.0;
+const SHAPE_MENU_WIDTH: f32 = 190.0;
+const SHAPE_ROW_HEIGHT: f32 = 30.0;
 const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
 
 /// Tools in the toolbox, grouped by what they do.
 const TOOL_GROUPS: [&[Tool]; 5] = [
     &[Tool::Select, Tool::Hand],
     &[Tool::Brush, Tool::Eraser],
-    &[Tool::Rect, Tool::Ellipse, Tool::Polygon, Tool::Shape],
+    &[Tool::OutlineShape, Tool::FilledShape, Tool::Polygon],
     &[Tool::Text, Tool::Image, Tool::Placeholder],
     &[Tool::Fill, Tool::Eyedropper],
 ];
@@ -49,7 +52,9 @@ fn toolbox(ui: &mut egui::Ui, editor: &mut Editor) {
                 ui.add_space(2.0);
             }
             for &tool in *group {
-                if tool_button(ui, tool, editor.tool == tool).clicked() {
+                if matches!(tool, Tool::OutlineShape | Tool::FilledShape) {
+                    shape_tool_button(ui, editor, tool);
+                } else if tool_button(ui, tool, editor.tool == tool).clicked() {
                     editor.set_tool(tool);
                 }
             }
@@ -59,23 +64,110 @@ fn toolbox(ui: &mut egui::Ui, editor: &mut Editor) {
 
 fn tool_button(ui: &mut egui::Ui, tool: Tool, selected: bool) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(TOOL_BUTTON), egui::Sense::click());
-    let visuals = ui.visuals();
+    paint_button_background(ui, rect, &response, selected);
+    let color = if selected { Color32::WHITE } else { ui.visuals().text_color() };
+    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, tool.icon(), egui::FontId::proportional(17.0), color);
+    tool_tooltip(response, tool)
+}
+
+fn paint_button_background(ui: &egui::Ui, rect: egui::Rect, response: &egui::Response, selected: bool) {
     let fill = if selected {
         ACCENT
     } else if response.hovered() {
-        visuals.widgets.hovered.weak_bg_fill
+        ui.visuals().widgets.hovered.weak_bg_fill
     } else {
         Color32::TRANSPARENT
     };
     ui.painter().rect_filled(rect, CornerRadius::same(6), fill);
-    let color = if selected { Color32::WHITE } else { visuals.text_color() };
-    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, tool.icon(), egui::FontId::proportional(17.0), color);
+}
+
+/// Name, what the tool does, and its shortcut.
+fn tool_tooltip(response: egui::Response, tool: Tool) -> egui::Response {
     response.on_hover_ui(|ui| {
         ui.set_max_width(TOOLTIP_WIDTH);
         ui.label(RichText::new(tool.name()).strong());
         ui.label(tool.hint());
         ui.weak(format!("{}: {}", tr("tooltip.shortcut"), tool.shortcut()));
     })
+}
+
+/// A shape tool's button: it shows the shape currently chosen for the tool,
+/// and a click opens a flyout beside it to choose another.
+fn shape_tool_button(ui: &mut egui::Ui, editor: &mut Editor, tool: Tool) {
+    let selected = editor.tool == tool;
+    let filled = tool == Tool::FilledShape;
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(TOOL_BUTTON), egui::Sense::click());
+    paint_button_background(ui, rect, &response, selected);
+    let color = if selected { Color32::WHITE } else { ui.visuals().text_color() };
+    paint_shape_icon(ui.painter(), editor.shape_of(tool), rect.shrink(SHAPE_ICON_INSET), filled, color);
+    // a small triangle in the corner says there is more to choose from
+    let corner = rect.right_bottom() - Vec2::splat(4.0);
+    let marker = vec![corner, corner - Vec2::new(5.0, 0.0), corner - Vec2::new(0.0, 5.0)];
+    ui.painter().add(egui::Shape::convex_polygon(marker, color.gamma_multiply(0.7), Stroke::NONE));
+    if response.clicked() {
+        editor.set_tool(tool);
+    }
+    let response = tool_tooltip(response, tool);
+    egui::Popup::from_toggle_button_response(&response)
+        .align(egui::RectAlign::RIGHT_START)
+        .gap(6.0)
+        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        .show(|ui| {
+            ui.set_min_width(SHAPE_MENU_WIDTH);
+            for shape in shape_choices(tool) {
+                if shape_row(ui, shape, filled, editor.shape_of(tool) == shape).clicked() {
+                    editor.set_shape(tool, shape);
+                    editor.set_tool(tool);
+                    ui.close();
+                }
+            }
+        });
+}
+
+/// What a shape tool's flyout offers: a line has no inside to fill.
+fn shape_choices(tool: Tool) -> Vec<ShapeKind> {
+    ShapeKind::ALL.into_iter().filter(|shape| shape.closed() || tool != Tool::FilledShape).collect()
+}
+
+/// One entry of a shape flyout: the shape and its name.
+fn shape_row(ui: &mut egui::Ui, shape: ShapeKind, filled: bool, selected: bool) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(Vec2::new(ui.available_width(), SHAPE_ROW_HEIGHT), egui::Sense::click());
+    paint_button_background(ui, rect, &response, false);
+    if selected {
+        ui.painter().rect_filled(rect, CornerRadius::same(5), ACCENT.gamma_multiply(0.4));
+    }
+    let icon =
+        egui::Rect::from_center_size(rect.left_center() + Vec2::new(SHAPE_ROW_HEIGHT / 2.0, 0.0), Vec2::splat(SHAPE_ROW_HEIGHT - 12.0));
+    paint_shape_icon(ui.painter(), shape, icon, filled, ui.visuals().text_color());
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    ui.painter().text(
+        rect.left_center() + Vec2::new(SHAPE_ROW_HEIGHT + 4.0, 0.0),
+        egui::Align2::LEFT_CENTER,
+        shape.name(),
+        font,
+        ui.visuals().text_color(),
+    );
+    response
+}
+
+/// A shape's outline, or filled, inside `rect`.
+fn paint_shape_icon(painter: &egui::Painter, shape: ShapeKind, rect: egui::Rect, filled: bool, color: Color32) {
+    let outline = shape.outline([rect.min.x, rect.min.y], [rect.max.x, rect.max.y]);
+    if filled && shape.closed() {
+        let mut mesh = egui::Mesh::default();
+        for [a, b, c] in crate::shapes::triangulate(&outline) {
+            for [x, y] in [a, b, c] {
+                mesh.colored_vertex(egui::pos2(x, y), color);
+            }
+            let first = mesh.vertices.len() as u32 - 3;
+            mesh.add_triangle(first, first + 1, first + 2);
+        }
+        painter.add(egui::Shape::mesh(mesh));
+    } else {
+        let points: Vec<egui::Pos2> = outline.into_iter().map(|[x, y]| egui::pos2(x, y)).collect();
+        let stroke = Stroke::new(1.6_f32, color);
+        painter.add(if shape.closed() { egui::Shape::closed_line(points, stroke) } else { egui::Shape::line(points, stroke) });
+    }
 }
 
 /// The colour and the options of the current tool.
@@ -117,17 +209,14 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
             ui.label(tr("options.size"));
             ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=80.0).suffix(" mm"));
         }
-        Tool::Rect | Tool::Ellipse | Tool::Polygon => {
+        Tool::Polygon => {
             ui.separator();
             fill_and_outline(ui, e, swatches);
         }
-        Tool::Shape => {
+        Tool::OutlineShape | Tool::FilledShape => {
             ui.separator();
-            shape_picker(ui, e);
-            ui.separator();
-            if e.shape.closed() {
-                fill_and_outline(ui, e, swatches);
-            } else {
+            ui.label(RichText::new(e.shape_of(e.tool).name()).weak());
+            if e.tool == Tool::OutlineShape {
                 ui.label(tr("options.size"));
                 ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
             }
@@ -164,34 +253,6 @@ fn fill_and_outline(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
             e.remember(e.stroke_color);
         }
         ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
-    }
-}
-
-/// A row of small buttons, each drawing its shape; the chosen one is highlighted.
-fn shape_picker(ui: &mut egui::Ui, e: &mut Editor) {
-    const BUTTON: f32 = 28.0;
-    const PADDING: f32 = 6.0;
-    ui.spacing_mut().item_spacing.x = 3.0;
-    for kind in ShapeKind::ALL {
-        let (rect, response) = ui.allocate_exact_size(Vec2::splat(BUTTON), egui::Sense::click());
-        let selected = e.shape == kind;
-        let visuals = ui.visuals();
-        let fill = if selected {
-            ACCENT.gamma_multiply(0.45)
-        } else if response.hovered() {
-            visuals.widgets.hovered.weak_bg_fill
-        } else {
-            Color32::TRANSPARENT
-        };
-        ui.painter().rect_filled(rect, CornerRadius::same(5), fill);
-        let inner = rect.shrink(PADDING);
-        let points: Vec<egui::Pos2> =
-            kind.outline([inner.min.x, inner.min.y], [inner.max.x, inner.max.y]).into_iter().map(|[x, y]| egui::pos2(x, y)).collect();
-        let stroke = Stroke::new(1.5_f32, if selected { Color32::WHITE } else { visuals.text_color() });
-        ui.painter().add(if kind.closed() { egui::Shape::closed_line(points, stroke) } else { egui::Shape::line(points, stroke) });
-        if response.on_hover_text(kind.name()).clicked() {
-            e.shape = kind;
-        }
     }
 }
 
@@ -261,6 +322,51 @@ mod tests {
         }
         frame(&ctx, 1.3, vec![]);
         assert!(egui::Tooltip::was_tooltip_open_last_frame(&ctx, id), "the pointer rested on the button; its tooltip should be showing");
+    }
+
+    #[test]
+    fn the_filled_flyout_has_no_line_and_the_outline_flyout_has_every_shape() {
+        assert_eq!(shape_choices(Tool::OutlineShape), ShapeKind::ALL.to_vec());
+        let filled = shape_choices(Tool::FilledShape);
+        assert_eq!(filled.len(), ShapeKind::ALL.len() - 1);
+        assert!(!filled.contains(&ShapeKind::Line));
+    }
+
+    #[test]
+    fn clicking_a_shape_button_selects_its_tool_and_opens_the_flyout() {
+        let ctx = egui::Context::default();
+        let mut editor = Editor::new();
+        let mut rect = egui::Rect::NOTHING;
+        #[allow(deprecated)]
+        let run = |events: Vec<egui::Event>, editor: &mut Editor, rect: &mut egui::Rect| {
+            let raw = egui::RawInput {
+                events,
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, Vec2::new(500.0, 400.0))),
+                ..Default::default()
+            };
+            let _ = ctx.run(raw, |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let top = ui.cursor().min;
+                    shape_tool_button(ui, editor, Tool::OutlineShape);
+                    *rect = egui::Rect::from_min_size(top, Vec2::splat(TOOL_BUTTON));
+                });
+            });
+        };
+        run(vec![], &mut editor, &mut rect);
+        let centre = rect.center();
+        let click = |pressed| egui::Event::PointerButton {
+            pos: centre,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        assert_eq!(editor.tool, Tool::Select);
+        run(vec![egui::Event::PointerMoved(centre)], &mut editor, &mut rect);
+        run(vec![click(true)], &mut editor, &mut rect);
+        run(vec![click(false)], &mut editor, &mut rect);
+        run(vec![], &mut editor, &mut rect);
+        assert_eq!(editor.tool, Tool::OutlineShape);
+        assert!(egui::Popup::is_any_open(&ctx), "the flyout should be open beside the button");
     }
 
     #[test]

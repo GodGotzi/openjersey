@@ -192,10 +192,6 @@ selection = "Auswahl"
 hint = "Freihand in der aktuellen Farbe zeichnen. Die Größe steht in der Optionsleiste."
 name = "Pinsel"
 
-[tool.ellipse]
-hint = "Eine Ellipse oder einen Kreis aufziehen. Füllung und Kontur stehen in der Optionsleiste."
-name = "Ellipse"
-
 [tool.eraser]
 hint = "Pinselstriche löschen, indem man darüber zieht."
 name = "Radierer"
@@ -224,10 +220,6 @@ name = "Logo-Platzhalter"
 hint = "Klicken setzt Punkte; Doppelklick oder Enter schließt die Form."
 name = "Polygon"
 
-[tool.rect]
-hint = "Ein Rechteck aufziehen. Füllung und Kontur stehen in der Optionsleiste."
-name = "Rechteck"
-
 [tool.select]
 hint = "Objekte auswählen, verschieben, skalieren und drehen. Umschalt erweitert die Auswahl; Strg+Klick wählt ein Gruppenmitglied."
 name = "Auswahl"
@@ -249,11 +241,9 @@ visibility_hint = "Ein- oder ausblenden (ausgeblendete Teile fehlen auf der Druc
 [tooltip]
 shortcut = "Kürzel"
 
-[tool.shape]
-hint = "Die in der Optionsleiste gewählte Form aufziehen: abgerundetes Rechteck, Dreieck, Stern, Pfeil, Sechseck und mehr. Eine Linie folgt dem Ziehen von Ende zu Ende."
-name = "Formen"
-
 [shape]
+ellipse = "Ellipse"
+rectangle = "Rechteck"
 arrow = "Pfeil"
 chevron = "Winkel"
 cross = "Kreuz"
@@ -264,3 +254,11 @@ pentagon = "Fünfeck"
 rounded_rect = "Abgerundetes Rechteck"
 star = "Stern"
 triangle = "Dreieck"
+
+[tool.outline_shape]
+hint = "Eine ungefüllte Form aufziehen. Auf den Knopf klicken, um sie zu wählen: Rechteck, Ellipse, Dreieck, Stern, Pfeil, Linie und mehr."
+name = "Konturform"
+
+[tool.filled_shape]
+hint = "Eine gefüllte Form aufziehen. Auf den Knopf klicken, um sie zu wählen: Rechteck, Ellipse, Dreieck, Stern, Pfeil und mehr."
+name = "Gefüllte Form"

@@ -20,10 +20,9 @@ pub enum Tool {
     Hand,
     Brush,
     Eraser,
-    Rect,
-    Ellipse,
+    OutlineShape,
+    FilledShape,
     Polygon,
-    Shape,
     Text,
     Image,
     Placeholder,
@@ -32,15 +31,14 @@ pub enum Tool {
 }
 
 impl Tool {
-    pub const ALL: [Tool; 13] = [
+    pub const ALL: [Tool; 12] = [
         Tool::Select,
         Tool::Hand,
         Tool::Brush,
         Tool::Eraser,
-        Tool::Rect,
-        Tool::Ellipse,
+        Tool::OutlineShape,
+        Tool::FilledShape,
         Tool::Polygon,
-        Tool::Shape,
         Tool::Text,
         Tool::Image,
         Tool::Placeholder,
@@ -54,10 +52,10 @@ impl Tool {
             Tool::Hand => "✋",
             Tool::Brush => "✏",
             Tool::Eraser => "🗑",
-            Tool::Rect => "⬜",
-            Tool::Ellipse => "⭕",
+            // the shape tools draw the icon of their current shape instead
+            Tool::OutlineShape => "⬜",
+            Tool::FilledShape => "⬛",
             Tool::Polygon => "⬟",
-            Tool::Shape => "⭐",
             Tool::Text => "T",
             Tool::Image => "🖼",
             Tool::Placeholder => "🔲",
@@ -73,10 +71,9 @@ impl Tool {
             Tool::Hand => tr("tool.hand.name"),
             Tool::Brush => tr("tool.brush.name"),
             Tool::Eraser => tr("tool.eraser.name"),
-            Tool::Rect => tr("tool.rect.name"),
-            Tool::Ellipse => tr("tool.ellipse.name"),
+            Tool::OutlineShape => tr("tool.outline_shape.name"),
+            Tool::FilledShape => tr("tool.filled_shape.name"),
             Tool::Polygon => tr("tool.polygon.name"),
-            Tool::Shape => tr("tool.shape.name"),
             Tool::Text => tr("tool.text.name"),
             Tool::Image => tr("tool.image.name"),
             Tool::Placeholder => tr("tool.placeholder.name"),
@@ -92,10 +89,9 @@ impl Tool {
             Tool::Hand => tr("tool.hand.hint"),
             Tool::Brush => tr("tool.brush.hint"),
             Tool::Eraser => tr("tool.eraser.hint"),
-            Tool::Rect => tr("tool.rect.hint"),
-            Tool::Ellipse => tr("tool.ellipse.hint"),
+            Tool::OutlineShape => tr("tool.outline_shape.hint"),
+            Tool::FilledShape => tr("tool.filled_shape.hint"),
             Tool::Polygon => tr("tool.polygon.hint"),
-            Tool::Shape => tr("tool.shape.hint"),
             Tool::Text => tr("tool.text.hint"),
             Tool::Image => tr("tool.image.hint"),
             Tool::Placeholder => tr("tool.placeholder.hint"),
@@ -115,10 +111,9 @@ impl Tool {
             Tool::Hand => Key::H,
             Tool::Brush => Key::B,
             Tool::Eraser => Key::E,
-            Tool::Rect => Key::R,
-            Tool::Ellipse => Key::O,
+            Tool::OutlineShape => Key::O,
+            Tool::FilledShape => Key::S,
             Tool::Polygon => Key::P,
-            Tool::Shape => Key::S,
             Tool::Text => Key::T,
             Tool::Image => Key::I,
             Tool::Placeholder => Key::L,
@@ -152,8 +147,9 @@ pub struct Editor {
     pub fill_shapes: bool,
     pub stroke_shapes: bool,
     pub brush_mm: f32,
-    /// The shape the shape tool draws.
-    pub shape: ShapeKind,
+    /// The shapes the outline and the filled shape tool draw.
+    outline_shape: ShapeKind,
+    filled_shape: ShapeKind,
     pub text_input: String,
     pub text_mm: f32,
     pub placeholder_label: String,
@@ -194,7 +190,8 @@ impl Editor {
             fill_shapes: true,
             stroke_shapes: false,
             brush_mm: 8.0,
-            shape: ShapeKind::Star,
+            outline_shape: ShapeKind::Rectangle,
+            filled_shape: ShapeKind::Rectangle,
             text_input: "TEXT".into(),
             text_mm: 40.0,
             placeholder_label: "LOGO".into(),
@@ -232,6 +229,19 @@ impl Editor {
         self.recent.retain(|&c| c != color);
         self.recent.insert(0, color);
         self.recent.truncate(MAX_RECENT);
+    }
+
+    /// The shape a shape tool currently draws.
+    pub fn shape_of(&self, tool: Tool) -> ShapeKind {
+        if tool == Tool::FilledShape { self.filled_shape } else { self.outline_shape }
+    }
+
+    pub fn set_shape(&mut self, tool: Tool, shape: ShapeKind) {
+        if tool == Tool::FilledShape {
+            self.filled_shape = shape;
+        } else {
+            self.outline_shape = shape;
+        }
     }
 
     pub fn set_tool(&mut self, tool: Tool) {
@@ -339,14 +349,11 @@ impl Editor {
         }
         if let Some(Drag::Box { start, tool }) = &self.drag {
             let outline = Stroke::new(1.0_f32, Color32::WHITE);
-            if *tool == Tool::Shape {
+            if matches!(tool, Tool::OutlineShape | Tool::FilledShape) {
                 // the shape itself follows the drag
-                let points: Vec<Pos2> = self.shape.outline(*start, self.marquee_end).into_iter().map(&to_s).collect();
-                painter.add(if self.shape.closed() {
-                    egui::Shape::closed_line(points, outline)
-                } else {
-                    egui::Shape::line(points, outline)
-                });
+                let shape = self.shape_of(*tool);
+                let points: Vec<Pos2> = shape.outline(*start, self.marquee_end).into_iter().map(&to_s).collect();
+                painter.add(if shape.closed() { egui::Shape::closed_line(points, outline) } else { egui::Shape::line(points, outline) });
             } else {
                 painter.rect_stroke(Rect::from_two_pos(to_s(*start), to_s(self.marquee_end)), 0.0, outline, StrokeKind::Inside);
             }
@@ -540,7 +547,7 @@ impl Editor {
                     }
                 }
             }
-            Tool::Rect | Tool::Ellipse | Tool::Shape | Tool::Placeholder => {
+            Tool::OutlineShape | Tool::FilledShape | Tool::Placeholder => {
                 if started {
                     self.drag = Some(Drag::Box { start: p, tool: self.tool });
                 }
@@ -636,14 +643,15 @@ impl Editor {
         Object::shape(name, points, true, fill, stroke)
     }
 
-    /// A shape of the shape tool: filled and/or outlined like the other
-    /// shapes, but a line is just a stroke in the paint colour.
-    fn preset_shape_object(&self, points: Vec<Pt>, px_per_mm: f32) -> Object {
-        if self.shape.closed() {
-            self.shape_object(self.shape.name(), points, px_per_mm)
+    /// What a shape tool draws: the outline tool strokes the shape (a line is
+    /// open), the filled tool fills it; both in the paint colour.
+    fn shape_tool_object(&self, tool: Tool, points: Vec<Pt>, px_per_mm: f32) -> Object {
+        let shape = self.shape_of(tool);
+        if tool == Tool::FilledShape {
+            Object::shape(shape.name(), points, true, Some(self.color), None)
         } else {
             let stroke = StrokeStyle { color: self.color, width: self.brush_mm * px_per_mm };
-            Object::shape(self.shape.name(), points, false, None, Some(stroke))
+            Object::shape(shape.name(), points, shape.closed(), None, Some(stroke))
         }
     }
 
@@ -687,7 +695,7 @@ impl Editor {
                 let end = self.marquee_end;
                 let (x0, y0, x1, y1) = (start[0].min(end[0]), start[1].min(end[1]), start[0].max(end[0]), start[1].max(end[1]));
                 // a line may be flat in one direction; the other shapes need a box
-                let is_line = tool == Tool::Shape && self.shape == ShapeKind::Line;
+                let is_line = tool == Tool::OutlineShape && self.outline_shape == ShapeKind::Line;
                 let too_small = if is_line { (end[0] - start[0]).hypot(end[1] - start[1]) < 2.0 } else { x1 - x0 < 2.0 || y1 - y0 < 2.0 };
                 if too_small {
                     return;
@@ -695,22 +703,9 @@ impl Editor {
                 let centre = [(x0 + x1) / 2.0, (y0 + y1) / 2.0];
                 let px = ws.px_per_mm();
                 match tool {
-                    Tool::Rect => {
-                        ws.add(None, self.shape_object(tr("tool.rect.name"), vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], px));
-                    }
-                    Tool::Ellipse => {
-                        let (rx, ry) = ((x1 - x0) / 2.0, (y1 - y0) / 2.0);
-                        let pts = (0..96)
-                            .map(|i| {
-                                let a = i as f32 / 96.0 * std::f32::consts::TAU;
-                                [centre[0] + rx * a.cos(), centre[1] + ry * a.sin()]
-                            })
-                            .collect();
-                        ws.add(None, self.shape_object(tr("tool.ellipse.name"), pts, px));
-                    }
-                    Tool::Shape => {
-                        let points = self.shape.outline(start, end);
-                        ws.add(None, self.preset_shape_object(points, px));
+                    Tool::OutlineShape | Tool::FilledShape => {
+                        let points = self.shape_of(tool).outline(start, end);
+                        ws.add(None, self.shape_tool_object(tool, points, px));
                     }
                     _ => {
                         let label = self.placeholder_label.clone();
