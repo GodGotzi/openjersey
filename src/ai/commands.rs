@@ -1011,7 +1011,7 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
             let path = write_target(args, ws, "json")?;
             let bytes = crate::document::io::to_json(&ws.doc)?;
             std::fs::write(&path, bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-            ws.status = format!("{}: {}", tr("status.saved"), path.display());
+            ws.status = format!("{}: {}", tr("status.saved"), path.file_name().unwrap_or_default().to_string_lossy());
             ws.file = Some(path.clone());
             text(json!({"saved": path}))
         }
@@ -1020,7 +1020,7 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
             let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
             let doc = crate::document::io::from_json(&bytes)?;
             ws.replace(doc);
-            ws.status = format!("{}: {}", tr("status.opened"), path.display());
+            ws.status = format!("{}: {}", tr("status.opened"), path.file_name().unwrap_or_default().to_string_lossy());
             ws.file = Some(path);
             text(json!({"ok": true, "top": ws.pattern.top().id, "bottom": ws.pattern.bottom().id}))
         }

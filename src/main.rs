@@ -46,6 +46,9 @@ use workspace::Workspace;
 /// How close (in mm) a dragged object must come to a line to snap to it in the 3D view.
 const SNAP_3D_MM: f32 = 6.0;
 
+/// Room kept free beside the status message in the 3D view.
+const STATUS_MARGIN: f32 = 24.0;
+
 /// Seconds the pointer rests on a control before its tooltip shows (egui's default is 0.5).
 const TOOLTIP_DELAY_SECS: f32 = 0.25;
 
@@ -225,7 +228,9 @@ impl AppHandler for JerseyApp {
         }
         if !self.ws.status.is_empty() {
             egui::Area::new(egui::Id::new("status")).fixed_pos(pane.left_bottom() + egui::vec2(10.0, -28.0)).show(&ctx, |ui| {
-                ui.label(egui::RichText::new(&self.ws.status).color(Color32::from_gray(80)));
+                // one line, as wide as the 3D view leaves room for
+                ui.set_max_width((pane.width() - STATUS_MARGIN).max(100.0));
+                ui.add(egui::Label::new(egui::RichText::new(&self.ws.status).color(Color32::from_gray(80))).truncate());
             });
         }
         self.ui_pass.end_frame(winit_window(window));
@@ -481,7 +486,7 @@ impl JerseyApp {
         self.ws.status = match io::to_json(&self.ws.doc).and_then(|b| std::fs::write(&path, b).map_err(|e| e.to_string())) {
             Ok(()) => {
                 self.ws.file = Some(path.clone());
-                format!("{}: {}", tr("status.saved"), path.display())
+                format!("{}: {}", tr("status.saved"), file_label(&path))
             }
             Err(e) => format!("{}: {e}", tr("status.save_failed")),
         };
@@ -494,7 +499,7 @@ impl JerseyApp {
         match std::fs::read(&path).map_err(|e| e.to_string()).and_then(|b| io::from_json(&b)) {
             Ok(doc) => {
                 self.ws.replace(doc);
-                self.ws.status = format!("{}: {}", tr("status.opened"), path.display());
+                self.ws.status = format!("{}: {}", tr("status.opened"), file_label(&path));
                 self.ws.file = Some(path);
             }
             Err(e) => self.ws.status = format!("{}: {e}", tr("status.open_failed")),
@@ -507,10 +512,15 @@ impl JerseyApp {
         };
         let pm = self.ws.raster.render(&self.ws.pattern, &self.ws.regions, &self.ws.doc, Mode::Print);
         self.ws.status = match pm.save_png(&path) {
-            Ok(()) => format!("{}: {}", tr("status.exported"), path.display()),
+            Ok(()) => format!("{}: {}", tr("status.exported"), file_label(&path)),
             Err(e) => format!("{}: {e}", tr("status.export_failed")),
         };
     }
+}
+
+/// A file's name for the status line (the whole path is long and private).
+fn file_label(path: &std::path::Path) -> String {
+    path.file_name().map_or_else(|| path.display().to_string(), |name| name.to_string_lossy().into_owned())
 }
 
 /// One garment's part of the sheet.
