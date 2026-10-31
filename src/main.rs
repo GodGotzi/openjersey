@@ -42,6 +42,9 @@ use ui::browser::GarmentBrowser;
 use ui::layers::LayersPanel;
 use workspace::Workspace;
 
+/// How close (in mm) a dragged object must come to a line to snap to it in the 3D view.
+const SNAP_3D_MM: f32 = 6.0;
+
 struct Fps {
     frames: u32,
     since: Instant,
@@ -296,7 +299,7 @@ impl JerseyApp {
         };
         if self.dragging_3d {
             if down && let Some(at) = pos.and_then(|p| hit(self, p)) {
-                self.ws.drag_move(at, 0.0);
+                self.ws.drag_move(at, SNAP_3D_MM * self.ws.px_per_mm());
             }
             if released || !down {
                 self.ws.end_drag();

@@ -24,7 +24,7 @@ pub fn toolbar(ctx: &egui::Context, pane: egui::Rect, ws: &mut Workspace, studio
     let shown = egui::Area::new(id)
         .pivot(Align2::CENTER_TOP)
         .fixed_pos(pane.center_top() + egui::vec2(0.0, OFFSET_FROM_TOP))
-        .order(egui::Order::Foreground)
+        .order(egui::Order::Background)
         .show(ctx, |ui| {
             let visuals = ui.visuals();
             let frame = egui::Frame::new()

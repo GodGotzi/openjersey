@@ -35,8 +35,13 @@ The launcher runs `target/release/openjersey` in this checkout, so after
 - 3D view: click an object on the model to select it, drag to move it;
   dragging elsewhere orbits.
 - Ctrl+Z/Y undo/redo, Ctrl+D duplicate, Ctrl+G / Ctrl+Shift+G group/ungroup,
-  Ctrl+C/V, Ctrl+A, Del, arrow keys nudge (Shift = 10 mm), snapping to centre
-  lines, pieces and other objects (the Snap toggle in the 3D toolbar).
+  Ctrl+C/V, Ctrl+A, Del, arrow keys nudge (Shift = 10 mm), snapping of a
+  dragged object's edges and centre to the centre lines, pieces and the edges
+  and centres of all other objects, images and logos included, in both views
+  (the Snap toggle in the 3D toolbar). Clicking a group selects it; once a
+  member is selected, clicks pick its siblings, so group members can be moved
+  one by one with the mouse (Ctrl+click or double-click selects a member
+  directly).
 - **Garment browser** (the Top and Bottom buttons in the sidebar's Model block, which also switches Men / Women): a searchable grid of
   garments with an outline of each print template, filtered by body (Men /
   Women) and tops / bottoms. A design wears one top and one bottom on one

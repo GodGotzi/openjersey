@@ -331,20 +331,16 @@ impl Workspace {
             && let Some([x0, y0, x1, y1]) = drag.start_bounds
         {
             let moved = [x0 + delta[0], y0 + delta[1], x1 + delta[0], y1 + delta[1]];
-            let (cx, cy) = ((moved[0] + moved[2]) / 2.0, (moved[1] + moved[3]) / 2.0);
             let ids: Vec<ObjectId> = drag.items.iter().map(|i| i.0).collect();
-            let (xs, ys) = self.snap_targets(&ids);
-            if let Some(&x) = xs.iter().min_by(|a, b| (*a - cx).abs().total_cmp(&(*b - cx).abs()))
-                && (x - cx).abs() < snap_px
-            {
-                delta[0] += x - cx;
-                self.guides.push(Guide::Vertical(x));
+            let targets = self.snap_targets(&ids);
+            // the moved object's edges and centre against every target line
+            if let Some((shift, line)) = nearest_line(&[moved[0], (moved[0] + moved[2]) / 2.0, moved[2]], &targets.xs, snap_px) {
+                delta[0] += shift;
+                self.guides.push(Guide::Vertical(line));
             }
-            if let Some(&y) = ys.iter().min_by(|a, b| (*a - cy).abs().total_cmp(&(*b - cy).abs()))
-                && (y - cy).abs() < snap_px
-            {
-                delta[1] += y - cy;
-                self.guides.push(Guide::Horizontal(y));
+            if let Some((shift, line)) = nearest_line(&[moved[1], (moved[1] + moved[3]) / 2.0, moved[3]], &targets.ys, snap_px) {
+                delta[1] += shift;
+                self.guides.push(Guide::Horizontal(line));
             }
         }
         let items: Vec<_> = drag.items.clone();
@@ -366,40 +362,53 @@ impl Workspace {
         }
     }
 
-    /// Centre lines of the front and back, piece centres, and the centres of
-    /// other top-level objects.
-    fn snap_targets(&self, moving: &[ObjectId]) -> (Vec<f32>, Vec<f32>) {
-        let mut xs = vec![self.pattern.place(Panel::Front, [0.0, 1.0])[0], self.pattern.place(Panel::Back, [0.0, 1.0])[0]];
-        let mut ys = Vec::new();
+    /// The lines objects snap to: the centre lines of the front and back,
+    /// piece centres, and the edges and centres of every other visible object
+    /// (graphics, logos, text, shapes), also inside groups. What is being
+    /// moved, and what is inside it, is left out.
+    fn snap_targets(&self, moving: &[ObjectId]) -> SnapLines {
+        let mut lines = SnapLines {
+            xs: vec![self.pattern.place(Panel::Front, [0.0, 1.0])[0], self.pattern.place(Panel::Back, [0.0, 1.0])[0]],
+            ys: Vec::new(),
+        };
         for p in &self.pattern.pieces {
-            xs.push(p.rect[0] + p.rect[2] / 2.0);
-            ys.push(p.rect[1] + p.rect[3] / 2.0);
+            lines.xs.push(p.rect[0] + p.rect[2] / 2.0);
+            lines.ys.push(p.rect[1] + p.rect[3] / 2.0);
         }
-        let skip: Vec<ObjectId> = moving.iter().map(|&id| self.doc.top_level(id)).collect();
-        for obj in &self.doc.objects {
-            if skip.contains(&obj.id) || !obj.visible {
+        self.collect_object_lines(&self.doc.objects, moving, &mut lines);
+        lines
+    }
+
+    fn collect_object_lines(&self, objects: &[Object], moving: &[ObjectId], lines: &mut SnapLines) {
+        for obj in objects {
+            // a watermark covers whole pieces; its edges are no useful target
+            if moving.contains(&obj.id) || !obj.visible || matches!(obj.kind, ObjectKind::Pattern { .. }) {
                 continue;
             }
             if let Some([x0, y0, x1, y1]) = geom::world_bounds(&self.raster.fonts, &self.doc, &[obj.id]) {
-                xs.push((x0 + x1) / 2.0);
-                ys.push((y0 + y1) / 2.0);
+                lines.xs.extend([x0, (x0 + x1) / 2.0, x1]);
+                lines.ys.extend([y0, (y0 + y1) / 2.0, y1]);
             }
+            self.collect_object_lines(obj.children(), moving, lines);
         }
-        (xs, ys)
     }
 
     // ---- picking ----
 
     /// What a click at `p` selects: the outermost group of the hit object,
-    /// or with `deep` the object itself.
+    /// or with `deep` the object itself. Once something inside a group is
+    /// selected, clicks stay inside that group, so its members can be picked
+    /// and moved one by one.
     pub fn pick(&self, p: Pt, tolerance: f32, deep: bool) -> Option<ObjectId> {
         let (leaf, path) = geom::hit(&self.raster.fonts, &self.pattern, &self.doc, p, tolerance)?;
         if deep {
             return Some(leaf);
         }
-        // inside a selected group, a click picks the next level down
-        for (i, g) in path.iter().enumerate() {
-            if self.selection.contains(g) {
+        // the innermost group that is selected or holds a selected object
+        let inside =
+            |group: ObjectId| self.selection.contains(&group) || self.selection.iter().any(|&s| self.doc.ancestors(s).contains(&group));
+        for (i, &group) in path.iter().enumerate().rev() {
+            if inside(group) {
                 return Some(path.get(i + 1).copied().unwrap_or(leaf));
             }
         }
@@ -409,6 +418,22 @@ impl Workspace {
     pub fn object_name(&self, id: ObjectId) -> String {
         self.doc.find(id).map(|o| o.name.clone()).unwrap_or_default()
     }
+}
+
+/// Lines (template x and y) a dragged object snaps to.
+struct SnapLines {
+    xs: Vec<f32>,
+    ys: Vec<f32>,
+}
+
+/// The closest of `targets` to any of the `candidates` within `max`, as
+/// (how far to shift, the target line).
+fn nearest_line(candidates: &[f32], targets: &[f32], max: f32) -> Option<(f32, f32)> {
+    candidates
+        .iter()
+        .flat_map(|&c| targets.iter().map(move |&t| (t - c, t)))
+        .filter(|(shift, _)| shift.abs() < max)
+        .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
 }
 
 /// An object's xf with a new position in template space.
@@ -457,5 +482,53 @@ mod tests {
         assert!(ws.doc.is_on(&ws.pattern));
         assert_eq!(ws.doc.top, before.top);
         assert!(ws.doc.find(on_sleeve).unwrap().visible);
+    }
+
+    fn blank_workspace() -> Workspace {
+        Workspace::new(Document::new(BaseColors { primary: [255; 3], accent: [0; 3], trim: [0; 3], overrides: vec![] }))
+    }
+
+    fn box_at(name: &str, at: Pt, size: f32) -> Object {
+        Object::new(name, Xf::at(at), ObjectKind::Placeholder { label: "A".into(), size: [size, size] })
+    }
+
+    #[test]
+    fn clicks_stay_inside_a_group_once_a_member_is_selected() {
+        let mut ws = blank_workspace();
+        let at = ws.pattern.place(Panel::Front, [0.0, 1.2]);
+        let other = [at[0] + 200.0, at[1]];
+        let a = ws.add(None, box_at("a", at, 60.0));
+        let b = ws.add(None, box_at("b", other, 60.0));
+        ws.selection = vec![a, b];
+        ws.group_selection();
+        let group = ws.selection[0];
+
+        ws.selection.clear();
+        assert_eq!(ws.pick(at, 1.0, false), Some(group), "a first click takes the group");
+        ws.selection = vec![group];
+        assert_eq!(ws.pick(at, 1.0, false), Some(a), "inside a selected group a click takes the member");
+        ws.selection = vec![a];
+        assert_eq!(ws.pick(other, 1.0, false), Some(b), "with a member selected, a click takes its sibling");
+        assert_eq!(ws.pick(other, 1.0, true), Some(b));
+    }
+
+    #[test]
+    fn dragging_snaps_edges_and_centres_to_other_objects() {
+        let mut ws = blank_workspace();
+        ws.snap = true;
+        let target_at = ws.pattern.place(Panel::Front, [0.0, 1.2]);
+        let target = ws.add(None, box_at("target", target_at, 100.0));
+        let start = [target_at[0] + 300.0, target_at[1] + 300.0];
+        let mover = ws.add(None, box_at("mover", start, 100.0));
+        ws.selection = vec![mover];
+        ws.begin_move(start);
+        // the mover's left edge ends 3 px right of the target's right edge: it snaps flush
+        let right_edge = target_at[0] + 50.0;
+        ws.drag_move([right_edge + 3.0 + 50.0, start[1]], 10.0);
+        let x = ws.doc.find(mover).unwrap().xf.pos[0];
+        assert!((x - (right_edge + 50.0)).abs() < 0.01, "x = {x}");
+        assert!(ws.guides.iter().any(|g| matches!(g, Guide::Vertical(v) if (*v - right_edge).abs() < 0.01)));
+        assert!(ws.doc.find(target).is_some());
+        ws.end_drag();
     }
 }

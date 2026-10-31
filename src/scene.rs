@@ -3,7 +3,7 @@
 use myth::ToneMappingMode;
 use myth::prelude::*;
 use myth::render::FrameComposer;
-use myth::scene::{Frustum, RenderCamera};
+use myth::scene::{Frustum, RenderCamera, ShadowConfig};
 
 use crate::document::Garments;
 use crate::template::pattern::Pattern;
@@ -14,6 +14,10 @@ const ENV_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/studio.hdr")
 /// 1.69 m tall; jersey and shorts span about 0.56..1.47 m).
 const TARGET: Vec3 = Vec3::new(0.0, 1.02, 0.0);
 const START: Vec3 = Vec3::new(0.0, 1.1, 2.7);
+/// Light levels: the environment only fills in; the key light shapes.
+const ENV_INTENSITY: f32 = 0.28;
+const KEY_INTENSITY: f32 = 2.3;
+const RIM_INTENSITY: f32 = 0.5;
 const BACKGROUND: [f32; 3] = [0.913, 0.913, 0.922]; // #e9e9eb like the Tauri app
 
 /// One garment model (top or bottom) in the scene.
@@ -46,7 +50,8 @@ impl Studio {
 
         let scene = engine.scene_manager.create_active();
         scene.environment.set_env_map(Some(env));
-        scene.environment.set_intensity(1.0);
+        // a dim environment keeps the shaded side dark enough to show the folds
+        scene.environment.set_intensity(ENV_INTENSITY);
         // Myth prefilters the environment light once, with 4096 samples per
         // texel; at its default 512 px cube faces that keeps an integrated
         // GPU (and the whole desktop) busy for ~9 s. The background is a
@@ -57,13 +62,23 @@ impl Studio {
         scene.background.set_mode(BackgroundMode::color(r, g, b));
         scene.tone_mapping.set_mode(ToneMappingMode::Neutral);
 
-        // soft key light from the upper left front, casting shadows so the
+        // a strong key light from the upper left front, casting shadows so the
         // sleeves and hem shade the fabric under them
-        let mut key = Light::new_directional(Vec3::ONE, 2.0);
+        let mut key = Light::new_directional(Vec3::ONE, KEY_INTENSITY);
         key.cast_shadows = std::env::var("OJ_SHADOWS").as_deref() != Ok("0");
+        // the scene is a few metres across: a sharp, close shadow map
+        key.shadow =
+            Some(ShadowConfig { map_size: 4096, cascade_count: 2, max_shadow_distance: 12.0, normal_bias: 0.01, ..Default::default() });
         let key = scene.add_light(key);
         if let Some(node) = scene.get_node_mut(key) {
             node.transform.position = Vec3::new(-2.5, 3.5, 4.0);
+            node.transform.look_at(TARGET, Vec3::Y);
+        }
+        // a weak light from behind on the other side lifts the silhouette
+        // off the dark side without flattening the shading
+        let rim = scene.add_light(Light::new_directional(Vec3::new(0.85, 0.9, 1.0), RIM_INTENSITY));
+        if let Some(node) = scene.get_node_mut(rim) {
+            node.transform.position = Vec3::new(3.0, 2.0, -3.5);
             node.transform.look_at(TARGET, Vec3::Y);
         }
 
