@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.png" alt="Five example kits: Alpine Night, Summit Teal, Neon Court, a black and white contrast kit and Sunset Retro" width="100%">
+  <img src="docs/images/hero.png" alt="Five example kits: Alpine Night, Summit Teal, Lagoon, Rose Quartz and a black and white contrast kit" width="100%">
 </p>
 
 OpenJersey is a jersey designer written in Rust. You put a design on a 3D garment and edit it in two places at once: on the model itself, and on the flat **print sheet** that a sublimation printer needs, with every piece of the garment laid out. What you change in one shows in the other.
@@ -34,16 +34,12 @@ It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code,
 
 ## Examples
 
-Eleven designs, all in [`docs/examples`](docs/examples/README.md) as files you can open. Nine were designed through MCP; the last two are VBC Stainach's own kits.
+A selection of the designs in [`docs/examples`](docs/examples/README.md), which are files you can open. Six were designed through MCP; the last is one of VBC Stainach's own kits.
 
 <table>
   <tr>
     <td align="center"><img src="docs/images/alpine-night.png" width="440"><br><b>Alpine Night</b><br>layered mountains, contour lines</td>
     <td align="center"><img src="docs/images/summit-teal.png" width="440"><br><b>Summit Teal</b><br>track suit, fading chevrons</td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/neon-court.png" width="440"><br><b>Neon Court</b><br>black with slanted neon stripes</td>
-    <td align="center"><img src="docs/images/mono-chevron.png" width="440"><br><b>Mono Chevron</b><br>black and white chevrons</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/images/coral-wave.png" width="440"><br><b>Coral Wave</b><br>sports top and slip, waves and stars</td>
@@ -54,11 +50,7 @@ Eleven designs, all in [`docs/examples`](docs/examples/README.md) as files you c
     <td align="center"><img src="docs/images/glacier-hood.png" width="440"><br><b>Glacier</b><br>hooded jacket, snow stars</td>
   </tr>
   <tr>
-    <td align="center" colspan="2"><img src="docs/images/sunset-retro.png" width="440"><br><b>Sunset Retro</b><br>retro stripes and a setting sun</td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/vbc-stainach.png" width="440"><br><b>VBC Stainach</b><br>warm-up shirt with a mountain panel</td>
-    <td align="center"><img src="docs/images/vbc-contrast-lines.png" width="440"><br><b>VBC Stainach, contrast kit</b><br>black and white marble lines</td>
+    <td align="center" colspan="2"><img src="docs/images/vbc-contrast-lines.png" width="440"><br><b>VBC Stainach, contrast kit</b><br>black and white marble lines</td>
   </tr>
 </table>
 
