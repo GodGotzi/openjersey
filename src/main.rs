@@ -36,7 +36,7 @@ use ai::server::Request;
 use document::{BaseColors, Document, Object, io};
 use editor::{CanvasView, Editor, Tool};
 use garments::Kind;
-use i18n::{tr, tr_args};
+use i18n::tr;
 use pick3d::GarmentMesh;
 use render::Mode;
 use scene::Studio;
@@ -94,6 +94,7 @@ struct JerseyApp {
     editor: Editor,
     layers: LayersPanel,
     browser: GarmentBrowser,
+    settings: ui::settings::SettingsWindow,
     mesh: GarmentMesh,
     /// ids of the top and bottom the 3D view and `mesh` show
     shown: [&'static str; 2],
@@ -151,6 +152,7 @@ impl AppHandler for JerseyApp {
             editor: Editor::new(),
             layers: LayersPanel::new(),
             browser: GarmentBrowser::new(),
+            settings: ui::settings::SettingsWindow::default(),
             mesh,
             shown,
             textures,
@@ -205,7 +207,7 @@ impl AppHandler for JerseyApp {
         }
         self.shortcuts(&ctx);
         self.editor.shortcuts(&ctx);
-        self.top_bar(&ctx, engine);
+        self.top_bar(&ctx);
         let status_top = self.status_bar(&ctx);
         let screen = ctx.content_rect();
         let panel_fill = ctx.global_style().visuals.panel_fill;
@@ -242,6 +244,18 @@ impl AppHandler for JerseyApp {
         );
         self.pane_centre_ndc = 2.0 * (pane.center().x - screen.min.x) / screen.width() - 1.0;
         self.browser.show(&ctx, &mut self.ws);
+        let changes = self.settings.show(&ctx, self.vsync);
+        if let Some(language) = changes.language {
+            i18n::set(language);
+        }
+        if let Some(index) = changes.theme {
+            theme::set(index);
+        }
+        if let Some(vsync) = changes.vsync {
+            self.vsync = vsync;
+            config::set("vsync", vsync);
+            engine.renderer.update_settings(RendererSettings { vsync, ..engine.renderer.settings().clone() });
+        }
         ui::viewport::toolbar(&ctx, pane, &mut self.ws, &mut self.studio);
 
         self.interact_3d(&ctx, pane, screen);
@@ -406,7 +420,7 @@ impl JerseyApp {
         }
     }
 
-    fn top_bar(&mut self, ctx: &egui::Context, engine: &mut Engine) {
+    fn top_bar(&mut self, ctx: &egui::Context) {
         let frame = egui::Frame::new().fill(ctx.global_style().visuals.panel_fill).inner_margin(egui::Margin::symmetric(12, 6));
         #[allow(deprecated)]
         let bar = egui::Panel::top("menu").frame(frame).show(ctx, |ui| {
@@ -461,33 +475,10 @@ impl JerseyApp {
                     ui.separator();
                     ui::layers::context_menu(ui, &mut self.ws);
                 });
-                ui.menu_button(tr("menu.settings.title"), |ui| {
-                    ui.weak(tr("menu.settings.language"));
-                    for lang in i18n::Language::ALL {
-                        if ui.radio(i18n::current() == lang, lang.name()).clicked() {
-                            i18n::set(lang);
-                            ui.close();
-                        }
-                    }
-                    ui.separator();
-                    ui.weak(tr("menu.settings.theme"));
-                    let mut chosen = theme::current_index();
-                    let dropdown = ui::widgets::theme_dropdown(ui, &mut chosen);
-                    if let Some(folder) = config::file("themes") {
-                        dropdown.on_hover_text(tr_args("menu.settings.theme_folder", &[&folder.display()]));
-                    }
-                    if chosen != theme::current_index() {
-                        theme::set(chosen);
-                    }
-                    for problem in theme::problems() {
-                        ui.add(egui::Label::new(egui::RichText::new(problem).small().color(*theme::colors().warn)).wrap());
-                    }
-                    ui.separator();
-                    if ui.checkbox(&mut self.vsync, "VSync").changed() {
-                        let settings = RendererSettings { vsync: self.vsync, ..engine.renderer.settings().clone() };
-                        engine.renderer.update_settings(settings);
-                    }
-                });
+                // a window, not a menu: a dropdown inside a menu closes the menu
+                if ui.add(egui::Button::new(tr("menu.settings.title")).frame(false)).clicked() {
+                    self.settings.open = !self.settings.open;
+                }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // right to left: redo comes first so that undo ends up on its left
                     if ui.add_enabled(self.ws.history.can_redo(), egui::Button::new("↪")).on_hover_text(tr("menu.edit.redo")).clicked() {
@@ -636,6 +627,7 @@ fn initial_document() -> Document {
 }
 
 fn main() -> myth::Result<()> {
+    config::init();
     i18n::init();
     theme::init();
     let args: Vec<String> = std::env::args().collect();
@@ -670,7 +662,8 @@ fn main() -> myth::Result<()> {
     // benchmarking knobs: OJ_VSYNC=1, OJ_PATH=basic, OJ_AA=..., OJ_SHADOWS=0, OJ_LOG_FPS=1.
     // VSync is off by default: with it on, frames that just miss the 60 Hz
     // deadline halve the rate (33 fps measured); Wayland doesn't tear anyway.
-    let vsync = std::env::var("OJ_VSYNC").as_deref() == Ok("1");
+    // OJ_VSYNC=1 or 0 wins; otherwise the saved choice from the Settings window
+    let vsync = std::env::var("OJ_VSYNC").map(|v| v == "1").unwrap_or_else(|_| config::get_bool("vsync").unwrap_or(false));
     let path = if std::env::var("OJ_PATH").as_deref() == Ok("basic") { RenderPath::BasicForward } else { RenderPath::HighFidelity };
     let result = App::new()
         .with_title("OpenJersey")

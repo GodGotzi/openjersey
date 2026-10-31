@@ -5,7 +5,7 @@
 //! language, add a file, list it in `build.rs` and in `Language`.
 //!
 //! The language comes from `OJ_LANG` (`en`/`de`), else from the saved choice
-//! (`~/.config/openjersey/language`), else from the system locale (`LANG`).
+//! (`language` in `~/.config/openjersey/settings.toml`), else from the system locale (`LANG`).
 
 use std::sync::atomic::{AtomicU8, Ordering};
 
@@ -47,7 +47,7 @@ static CURRENT: AtomicU8 = AtomicU8::new(0);
 /// Picks the startup language (see the module docs).
 pub fn init() {
     let from_env = std::env::var("OJ_LANG").ok().and_then(|v| Language::from_code(&v));
-    let saved = crate::config::read("language").and_then(|v| Language::from_code(&v));
+    let saved = crate::config::get_str("language").and_then(|v| Language::from_code(&v));
     let system = std::env::var("LANG").ok().and_then(|v| Language::from_code(&v));
     set_runtime(from_env.or(saved).or(system).unwrap_or(Language::English));
 }
@@ -63,7 +63,7 @@ pub fn current() -> Language {
 /// Switches the language and remembers the choice for the next start.
 pub fn set(lang: Language) {
     set_runtime(lang);
-    crate::config::write("language", lang.code());
+    crate::config::set("language", lang.code());
 }
 
 include!(concat!(env!("OUT_DIR"), "/translations.rs"));

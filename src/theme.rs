@@ -4,10 +4,10 @@
 //! background. The user picks one in Settings; the choice is remembered.
 //!
 //! Besides the bundled presets, the app reads `*.toml` files in the same format
-//! from `~/.config/openjersey/themes/` at start; they appear under "Your themes".
+//! from `~/.config/openjersey/themes/` (created at start) when it starts; they appear under "Your themes".
 //!
 //! The theme comes from `OJ_THEME` (a file name without `.toml`), else from
-//! the saved choice (`~/.config/openjersey/theme`), else it is Graphite.
+//! the saved choice (`theme` in `~/.config/openjersey/settings.toml`), else it is Graphite.
 
 use std::ops::Deref;
 use std::path::Path;
@@ -106,7 +106,7 @@ fn loaded() -> &'static Loaded {
             .collect();
         themes.sort_by_key(|e| e.theme.order);
         let taken: Vec<&str> = themes.iter().map(|e| e.id).collect();
-        let (own, problems) = crate::config::file("themes").map_or_else(Default::default, |dir| load_user_themes(&dir, &taken));
+        let (own, problems) = crate::config::themes_dir().map_or_else(Default::default, |dir| load_user_themes(&dir, &taken));
         themes.extend(own);
         Loaded { themes, problems }
     })
@@ -157,7 +157,7 @@ fn index_of(id: &str) -> Option<usize> {
 
 /// Picks the theme to start with (see the module docs).
 pub fn init() {
-    let wanted = std::env::var("OJ_THEME").ok().or_else(|| crate::config::read("theme"));
+    let wanted = std::env::var("OJ_THEME").ok().or_else(|| crate::config::get_str("theme"));
     let index = wanted.as_deref().and_then(index_of).or_else(|| index_of(DEFAULT)).unwrap_or(0);
     ACTIVE.store(index, Ordering::Relaxed);
 }
@@ -173,7 +173,7 @@ pub fn current() -> &'static Theme {
 /// Switches the theme and remembers the choice. Call `apply` afterwards.
 pub fn set(index: usize) {
     ACTIVE.store(index, Ordering::Relaxed);
-    crate::config::write("theme", all()[current_index()].id);
+    crate::config::set("theme", all()[current_index()].id);
 }
 
 // ---- colours for what the app paints itself ----

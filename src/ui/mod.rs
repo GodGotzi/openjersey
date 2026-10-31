@@ -3,6 +3,7 @@ pub mod canvas_panel;
 pub mod color_picker;
 pub mod layers;
 pub mod properties;
+pub mod settings;
 pub mod viewport;
 pub mod widgets;
 
