@@ -14,10 +14,11 @@ const ENV_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/studio.hdr")
 /// 1.69 m tall; jersey and shorts span about 0.56..1.47 m).
 const TARGET: Vec3 = Vec3::new(0.0, 1.02, 0.0);
 const START: Vec3 = Vec3::new(0.0, 1.1, 2.7);
-/// Light levels: the environment only fills in; the key light shapes.
+/// Where the front key light is; the back one mirrors it across z = 0.
+const KEY_DISTANCE: Vec3 = Vec3::new(-2.5, 3.5, 4.0);
+/// Light levels: the environment only fills in; the key lights shape.
 const ENV_INTENSITY: f32 = 0.28;
 const KEY_INTENSITY: f32 = 2.3;
-const RIM_INTENSITY: f32 = 0.5;
 const BACKGROUND: [f32; 3] = [0.913, 0.913, 0.922]; // #e9e9eb like the Tauri app
 
 /// One garment model (top or bottom) in the scene.
@@ -62,36 +63,33 @@ impl Studio {
         scene.background.set_mode(BackgroundMode::color(r, g, b));
         scene.tone_mapping.set_mode(ToneMappingMode::Neutral);
 
-        // a strong key light from the upper left front, casting shadows so the
-        // sleeves and hem shade the fabric under them
-        let mut key = Light::new_directional(Vec3::ONE, KEY_INTENSITY);
-        key.cast_shadows = std::env::var("OJ_SHADOWS").as_deref() != Ok("0");
-        // the scene is a few metres across: a sharp, close shadow map
-        key.shadow =
-            Some(ShadowConfig { map_size: 4096, cascade_count: 2, max_shadow_distance: 12.0, normal_bias: 0.01, ..Default::default() });
-        let key = scene.add_light(key);
-        if let Some(node) = scene.get_node_mut(key) {
-            node.transform.position = Vec3::new(-2.5, 3.5, 4.0);
-            node.transform.look_at(TARGET, Vec3::Y);
-        }
-        // a weak light from behind on the other side lifts the silhouette
-        // off the dark side without flattening the shading
-        let rim = scene.add_light(Light::new_directional(Vec3::new(0.85, 0.9, 1.0), RIM_INTENSITY));
-        if let Some(node) = scene.get_node_mut(rim) {
-            node.transform.position = Vec3::new(3.0, 2.0, -3.5);
-            node.transform.look_at(TARGET, Vec3::Y);
+        // a strong key light from the upper left of the front, casting shadows
+        // so the sleeves and hem shade the fabric under them, and the same
+        // light mirrored to the back so both sides look alike
+        for z in [KEY_DISTANCE.z, -KEY_DISTANCE.z] {
+            let mut key = Light::new_directional(Vec3::ONE, KEY_INTENSITY);
+            key.cast_shadows = std::env::var("OJ_SHADOWS").as_deref() != Ok("0");
+            // the scene is a few metres across: a sharp, close shadow map
+            key.shadow =
+                Some(ShadowConfig { map_size: 4096, cascade_count: 2, max_shadow_distance: 12.0, normal_bias: 0.01, ..Default::default() });
+            let key = scene.add_light(key);
+            if let Some(node) = scene.get_node_mut(key) {
+                node.transform.position = Vec3::new(KEY_DISTANCE.x, KEY_DISTANCE.y, z);
+                node.transform.look_at(TARGET, Vec3::Y);
+            }
         }
 
+        let start = View::from_env().camera_position();
         let mut camera = Camera::new_perspective(30.0, 16.0 / 9.0, 0.05);
         camera.set_aa_mode(aa_mode_from_env());
         let camera = scene.add_camera(camera);
         if let Some(node) = scene.get_node_mut(camera) {
-            node.transform.position = START;
+            node.transform.position = start;
             node.transform.look_at(TARGET, Vec3::Y);
         }
         scene.active_camera = Some(camera);
 
-        let mut controls = OrbitControls::new(START, TARGET);
+        let mut controls = OrbitControls::new(start, TARGET);
         controls.min_distance = 1.2;
         controls.max_distance = 6.0;
         Self { slots, camera, controls }
@@ -197,11 +195,8 @@ impl Studio {
     /// Moves the camera to look at the model from `view`, keeping the
     /// distance of the start position.
     pub fn set_view(&mut self, view: View) {
-        let from_front = START - TARGET;
-        let (sin, cos) = view.azimuth().sin_cos();
-        let radius = from_front.z;
         self.controls.set_target(TARGET);
-        self.controls.set_position(TARGET + Vec3::new(radius * sin, from_front.y, radius * cos));
+        self.controls.set_position(view.camera_position());
     }
 }
 
@@ -215,6 +210,24 @@ pub enum View {
 }
 
 impl View {
+    /// The side to start at: `OJ_VIEW` = front | left | back | right.
+    fn from_env() -> View {
+        match std::env::var("OJ_VIEW").as_deref() {
+            Ok("left") => View::Left,
+            Ok("back") => View::Back,
+            Ok("right") => View::Right,
+            _ => View::Front,
+        }
+    }
+
+    /// The camera position for this side: the start position turned around
+    /// the model's vertical axis.
+    fn camera_position(self) -> Vec3 {
+        let from_front = START - TARGET;
+        let (sin, cos) = self.azimuth().sin_cos();
+        TARGET + Vec3::new(from_front.z * sin, from_front.y, from_front.z * cos)
+    }
+
     /// Angle around the vertical axis, from the front, towards the wearer's left.
     fn azimuth(self) -> f32 {
         let quarter_turns = match self {

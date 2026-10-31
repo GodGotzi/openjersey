@@ -114,7 +114,7 @@ the font is DejaVu Sans Condensed Bold.
 
 ## Benchmarking
 Environment variables: `OJ_VSYNC=1`, `OJ_PATH=basic` (instead of the HDR
-pipeline), `OJ_AA=none|fxaa|msaa|msaa-fxaa`, `OJ_SHADOWS=0`, `OJ_LOG_FPS=1`
+pipeline), `OJ_AA=none|fxaa|msaa|msaa-fxaa`, `OJ_SHADOWS=0`, `OJ_VIEW=front|left|back|right` (start view), `OJ_LOG_FPS=1`
 (prints the frame rate to stderr).
 
 ## License and notices
