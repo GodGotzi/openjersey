@@ -1,0 +1,8 @@
+{
+ "id": "polo-shirt-man",
+ "name": "Polo Shirt",
+ "kind": "top",
+ "body": "man",
+ "unisex": false,
+ "order": 220
+}

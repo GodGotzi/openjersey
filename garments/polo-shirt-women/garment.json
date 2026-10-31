@@ -1,0 +1,8 @@
+{
+ "id": "polo-shirt-women",
+ "name": "Polo Shirt",
+ "kind": "top",
+ "body": "women",
+ "unisex": false,
+ "order": 230
+}

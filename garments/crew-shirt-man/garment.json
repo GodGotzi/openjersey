@@ -1,0 +1,8 @@
+{
+ "id": "crew-shirt-man",
+ "name": "Crew Neck Shirt",
+ "kind": "top",
+ "body": "man",
+ "unisex": true,
+ "order": 300
+}

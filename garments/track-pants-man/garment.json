@@ -1,0 +1,8 @@
+{
+ "id": "track-pants-man",
+ "name": "Track Pants",
+ "kind": "bottom",
+ "body": "man",
+ "unisex": true,
+ "order": 250
+}

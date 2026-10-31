@@ -1,0 +1,134 @@
+{
+ "atlas": {
+  "width": 1047,
+  "height": 1104,
+  "pxPerM": 1200
+ },
+ "pieces": [
+  {
+   "id": "waistband",
+   "label": "WAISTBAND",
+   "name": "Waistband",
+   "role": "trim",
+   "rect": [
+    48.0,
+    120.0,
+    951.05,
+    84.0
+   ],
+   "polygons": [
+    [
+     [
+      48.0,
+      120.0
+     ],
+     [
+      999.05,
+      120.0
+     ],
+     [
+      999.05,
+      204.0
+     ],
+     [
+      48.0,
+      204.0
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "leg_r",
+   "label": "RIGHT LEG",
+   "name": "Right Leg",
+   "role": "primary",
+   "rect": [
+    210.04,
+    336.0,
+    626.97,
+    294.0
+   ],
+   "polygons": [
+    [
+     [
+      210.04,
+      336.0
+     ],
+     [
+      837.01,
+      336.0
+     ],
+     [
+      837.01,
+      630.0
+     ],
+     [
+      210.04,
+      630.0
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "leg_l",
+   "label": "LEFT LEG",
+   "name": "Left Leg",
+   "role": "primary",
+   "rect": [
+    210.04,
+    762.0,
+    626.97,
+    294.0
+   ],
+   "polygons": [
+    [
+     [
+      210.04,
+      762.0
+     ],
+     [
+      837.01,
+      762.0
+     ],
+     [
+      837.01,
+      1056.0
+     ],
+     [
+      210.04,
+      1056.0
+     ]
+    ]
+   ]
+  }
+ ],
+ "cuffs": [],
+ "inside": [
+  963.05,
+  1020.0,
+  36.0,
+  36.0
+ ],
+ "legs": [
+  {
+   "piece": "leg_r",
+   "frontDir": 1,
+   "stripe": {
+    "topCentre": 0.5,
+    "topWidth": 0.1148,
+    "hemCentre": 0.5,
+    "hemWidth": 0.1148
+   }
+  },
+  {
+   "piece": "leg_l",
+   "frontDir": -1,
+   "stripe": {
+    "topCentre": 0.5,
+    "topWidth": 0.1148,
+    "hemCentre": 0.5,
+    "hemWidth": 0.1148
+   }
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+{
+ "id": "longsleeve-shirt-man",
+ "name": "Long-Sleeve Shirt",
+ "kind": "top",
+ "body": "man",
+ "unisex": false,
+ "order": 100
+}

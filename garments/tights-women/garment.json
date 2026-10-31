@@ -1,0 +1,8 @@
+{
+ "id": "tights-women",
+ "name": "Tights",
+ "kind": "bottom",
+ "body": "women",
+ "unisex": false,
+ "order": 360
+}

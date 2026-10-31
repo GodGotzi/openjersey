@@ -1,0 +1,8 @@
+{
+ "id": "bikini-bottom-women",
+ "name": "Bikini Bottom",
+ "kind": "bottom",
+ "body": "women",
+ "unisex": false,
+ "order": 350
+}

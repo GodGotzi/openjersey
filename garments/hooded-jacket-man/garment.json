@@ -1,0 +1,8 @@
+{
+ "id": "hooded-jacket-man",
+ "name": "Hooded Wind Jacket",
+ "kind": "top",
+ "body": "man",
+ "unisex": true,
+ "order": 260
+}

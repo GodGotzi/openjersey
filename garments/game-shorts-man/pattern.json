@@ -1,0 +1,102 @@
+{
+ "atlas": {
+  "width": 961,
+  "height": 1320,
+  "pxPerM": 1200
+ },
+ "pieces": [
+  {
+   "id": "leg_r",
+   "label": "RIGHT LEG",
+   "name": "Right Leg",
+   "role": "primary",
+   "rect": [
+    48.0,
+    120.0,
+    864.67,
+    468.0
+   ],
+   "polygons": [
+    [
+     [
+      48.0,
+      120.0
+     ],
+     [
+      912.67,
+      120.0
+     ],
+     [
+      912.67,
+      588.0
+     ],
+     [
+      48.0,
+      588.0
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "leg_l",
+   "label": "LEFT LEG",
+   "name": "Left Leg",
+   "role": "primary",
+   "rect": [
+    48.0,
+    720.0,
+    864.67,
+    468.0
+   ],
+   "polygons": [
+    [
+     [
+      48.0,
+      720.0
+     ],
+     [
+      912.67,
+      720.0
+     ],
+     [
+      912.67,
+      1188.0
+     ],
+     [
+      48.0,
+      1188.0
+     ]
+    ]
+   ]
+  }
+ ],
+ "cuffs": [],
+ "inside": [
+  876.67,
+  1236.0,
+  36.0,
+  36.0
+ ],
+ "legs": [
+  {
+   "piece": "leg_r",
+   "frontDir": 1,
+   "stripe": {
+    "topCentre": 0.5,
+    "topWidth": 0.0833,
+    "hemCentre": 0.5,
+    "hemWidth": 0.0833
+   }
+  },
+  {
+   "piece": "leg_l",
+   "frontDir": -1,
+   "stripe": {
+    "topCentre": 0.5,
+    "topWidth": 0.0833,
+    "hemCentre": 0.5,
+    "hemWidth": 0.0833
+   }
+  }
+ ]
+}

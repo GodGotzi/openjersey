@@ -1,0 +1,8 @@
+{
+ "id": "tshirt-women",
+ "name": "T-Shirt",
+ "kind": "top",
+ "body": "women",
+ "unisex": false,
+ "order": 70
+}

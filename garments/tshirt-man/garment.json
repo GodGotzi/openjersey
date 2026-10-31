@@ -1,0 +1,8 @@
+{
+ "id": "tshirt-man",
+ "name": "T-Shirt",
+ "kind": "top",
+ "body": "man",
+ "unisex": false,
+ "order": 60
+}

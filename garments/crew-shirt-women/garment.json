@@ -1,0 +1,8 @@
+{
+ "id": "crew-shirt-women",
+ "name": "Crew Neck Shirt",
+ "kind": "top",
+ "body": "women",
+ "unisex": true,
+ "order": 300
+}

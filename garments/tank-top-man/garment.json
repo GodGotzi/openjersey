@@ -1,0 +1,8 @@
+{
+ "id": "tank-top-man",
+ "name": "Tank Top",
+ "kind": "top",
+ "body": "man",
+ "unisex": false,
+ "order": 270
+}
