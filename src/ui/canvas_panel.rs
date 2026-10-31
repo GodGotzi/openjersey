@@ -12,6 +12,7 @@ use crate::workspace::Workspace;
 
 const TOOL_BUTTON: f32 = 34.0;
 const STATUS_HEIGHT: f32 = 24.0;
+const TOOLTIP_WIDTH: f32 = 260.0;
 const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
 
 /// Tools in the toolbox, grouped by what they do.
@@ -68,7 +69,12 @@ fn tool_button(ui: &mut egui::Ui, tool: Tool, selected: bool) -> egui::Response 
     ui.painter().rect_filled(rect, CornerRadius::same(6), fill);
     let color = if selected { Color32::WHITE } else { visuals.text_color() };
     ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, tool.icon(), egui::FontId::proportional(17.0), color);
-    response.on_hover_text(tool.label())
+    response.on_hover_ui(|ui| {
+        ui.set_max_width(TOOLTIP_WIDTH);
+        ui.label(RichText::new(tool.name()).strong());
+        ui.label(tool.hint());
+        ui.weak(format!("{}: {}", tr("tooltip.shortcut"), tool.shortcut()));
+    })
 }
 
 /// The colour and the options of the current tool.
@@ -162,14 +168,62 @@ fn status_bar(ui: &mut egui::Ui, editor: &mut Editor, ws: &Workspace) {
                 if ui.small_button(tr("status.fit")).on_hover_text(tr("status.fit_hint")).clicked() {
                     editor.fit_view();
                 }
-                if ui.small_button("+").clicked() {
+                if ui.small_button("+").on_hover_text(tr("status.zoom_in")).clicked() {
                     editor.zoom_by(1.25);
                 }
                 ui.label(RichText::new(format!("{:.0}%", editor.zoom() * 100.0)).monospace());
-                if ui.small_button("−").clicked() {
+                if ui.small_button("−").on_hover_text(tr("status.zoom_out")).clicked() {
                     editor.zoom_by(0.8);
                 }
             });
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// One frame of a panel holding a tool button, `time` seconds into the run;
+    /// returns the button's response id and rectangle.
+    #[allow(deprecated)]
+    fn frame(ctx: &egui::Context, time: f64, events: Vec<egui::Event>) -> (egui::Id, egui::Rect) {
+        let raw = egui::RawInput {
+            time: Some(time),
+            events,
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, Vec2::new(400.0, 300.0))),
+            ..Default::default()
+        };
+        let mut shown = (egui::Id::NULL, egui::Rect::NOTHING);
+        let _ = ctx.run(raw, |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                let response = tool_button(ui, Tool::Brush, false);
+                shown = (response.id, response.rect);
+            });
+        });
+        shown
+    }
+
+    #[test]
+    fn hovering_a_tool_button_shows_its_tooltip() {
+        let ctx = egui::Context::default();
+        ctx.global_style_mut(|style| style.interaction.tooltip_delay = 0.25);
+        let (id, rect) = frame(&ctx, 0.0, vec![]);
+        let hover = vec![egui::Event::PointerMoved(rect.center())];
+        frame(&ctx, 0.1, hover);
+        assert!(!egui::Tooltip::was_tooltip_open_last_frame(&ctx, id), "not yet: the pointer has only just arrived");
+        for step in 2..12 {
+            frame(&ctx, step as f64 * 0.1, vec![]);
+        }
+        frame(&ctx, 1.3, vec![]);
+        assert!(egui::Tooltip::was_tooltip_open_last_frame(&ctx, id), "the pointer rested on the button; its tooltip should be showing");
+    }
+
+    #[test]
+    fn every_tool_has_a_tooltip_text_and_a_shortcut() {
+        for tool in Tool::ALL {
+            assert!(!tool.hint().is_empty() && !tool.name().is_empty() && !tool.shortcut().is_empty());
+            assert!(!tool.hint().starts_with("tool."), "{:?} has no hint text", tool.name());
+        }
+    }
 }

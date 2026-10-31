@@ -80,7 +80,8 @@ impl Tool {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    /// What the tool does and how to use it, for its tooltip.
+    pub fn hint(self) -> &'static str {
         match self {
             Tool::Select => tr("tool.select.hint"),
             Tool::Hand => tr("tool.hand.hint"),
@@ -95,6 +96,11 @@ impl Tool {
             Tool::Fill => tr("tool.fill.hint"),
             Tool::Eyedropper => tr("tool.eyedropper.hint"),
         }
+    }
+
+    /// The shortcut key's name (`V`).
+    pub fn shortcut(self) -> &'static str {
+        self.key().name()
     }
 
     fn key(self) -> Key {

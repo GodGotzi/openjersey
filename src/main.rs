@@ -45,6 +45,9 @@ use workspace::Workspace;
 /// How close (in mm) a dragged object must come to a line to snap to it in the 3D view.
 const SNAP_3D_MM: f32 = 6.0;
 
+/// Seconds the pointer rests on a control before its tooltip shows (egui's default is 0.5).
+const TOOLTIP_DELAY_SECS: f32 = 0.25;
+
 struct Fps {
     frames: u32,
     since: Instant,
@@ -124,6 +127,7 @@ impl AppHandler for JerseyApp {
         splash_status(tr("status.loading_design"));
         let wgpu_ctx = engine.renderer.wgpu_ctx().expect("renderer initialised");
         let ui_pass = UiPass::new(&wgpu_ctx.device, wgpu_ctx.surface_view_format, winit_window(window));
+        ui_pass.context().global_style_mut(|style| style.interaction.tooltip_delay = TOOLTIP_DELAY_SECS);
         let mut ws = Workspace::new(initial_document());
         let pm = ws.raster.render(&ws.pattern, &ws.regions, &ws.doc, Mode::Display);
         ws.dirty = false;

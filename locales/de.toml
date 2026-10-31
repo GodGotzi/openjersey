@@ -174,6 +174,8 @@ starting = "Wird gestartet …"
 subtitle = "TRIKOT-DESIGNER"
 
 [status]
+zoom_in = "Vergrößern"
+zoom_out = "Verkleinern"
 export_failed = "Export fehlgeschlagen"
 exported = "Exportiert"
 fit = "Einpassen"
@@ -187,51 +189,51 @@ saved = "Gespeichert"
 selection = "Auswahl"
 
 [tool.brush]
-hint = "Pinsel (B)"
+hint = "Freihand in der aktuellen Farbe zeichnen. Die Größe steht in der Optionsleiste."
 name = "Pinsel"
 
 [tool.ellipse]
-hint = "Ellipse (O)"
+hint = "Eine Ellipse oder einen Kreis aufziehen. Füllung und Kontur stehen in der Optionsleiste."
 name = "Ellipse"
 
 [tool.eraser]
-hint = "Radierer: Pinselstriche löschen (E)"
+hint = "Pinselstriche löschen, indem man darüber zieht."
 name = "Radierer"
 
 [tool.eyedropper]
-hint = "Pipette (Y)"
+hint = "Irgendwo auf das Blatt klicken, um dessen Farbe aufzunehmen."
 name = "Pipette"
 
 [tool.fill]
-hint = "Füllen: Teil oder Objekt einfärben (F)"
+hint = "Auf ein Teil oder Objekt klicken, um es in der aktuellen Farbe einzufärben."
 name = "Füllen"
 
 [tool.hand]
-hint = "Hand: Ansicht verschieben (H)"
+hint = "Ansicht durch Ziehen verschieben. Mit der mittleren oder rechten Maustaste oder der Leertaste geht das in jedem Werkzeug."
 name = "Hand"
 
 [tool.image]
-hint = "Bild / SVG importieren (I)"
+hint = "Ein PNG, JPG oder SVG importieren und per Klick platzieren."
 name = "Bild"
 
 [tool.placeholder]
-hint = "Logo-Platzhalter aufziehen (L)"
+hint = "Einen Rahmen aufziehen, der den Platz für ein Sponsorenlogo markiert. Er fehlt in der Druckdatei."
 name = "Logo-Platzhalter"
 
 [tool.polygon]
-hint = "Polygon: klicken, Doppelklick/Enter schließt (P)"
+hint = "Klicken setzt Punkte; Doppelklick oder Enter schließt die Form."
 name = "Polygon"
 
 [tool.rect]
-hint = "Rechteck (R)"
+hint = "Ein Rechteck aufziehen. Füllung und Kontur stehen in der Optionsleiste."
 name = "Rechteck"
 
 [tool.select]
-hint = "Auswahl / Transformieren (V)"
+hint = "Objekte auswählen, verschieben, skalieren und drehen. Umschalt erweitert die Auswahl; Strg+Klick wählt ein Gruppenmitglied."
 name = "Auswahl"
 
 [tool.text]
-hint = "Text (T)"
+hint = "Klicken platziert Text. Text und Größe stehen in der Optionsleiste."
 name = "Text"
 
 [viewport]
@@ -243,3 +245,6 @@ snap = "Einrasten"
 snap_hint = "Einrasten an Mittellinien, Teilen und anderen Objekten"
 view_hint = "Modell von dieser Seite ansehen"
 visibility_hint = "Ein- oder ausblenden (ausgeblendete Teile fehlen auf der Druckvorlage)"
+
+[tooltip]
+shortcut = "Kürzel"

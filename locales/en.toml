@@ -175,6 +175,8 @@ starting = "Starting …"
 subtitle = "JERSEY DESIGNER"
 
 [status]
+zoom_in = "Zoom in"
+zoom_out = "Zoom out"
 export_failed = "Export failed"
 exported = "Exported"
 fit = "Fit"
@@ -188,51 +190,51 @@ saved = "Saved"
 selection = "Selection"
 
 [tool.brush]
-hint = "Brush (B)"
+hint = "Draw freehand strokes in the current colour. The size is in the options bar."
 name = "Brush"
 
 [tool.ellipse]
-hint = "Ellipse (O)"
+hint = "Drag out an ellipse or a circle. Fill and outline are in the options bar."
 name = "Ellipse"
 
 [tool.eraser]
-hint = "Eraser: delete brush strokes (E)"
+hint = "Delete brush strokes by dragging over them."
 name = "Eraser"
 
 [tool.eyedropper]
-hint = "Eyedropper (Y)"
+hint = "Click anywhere on the sheet to take its colour."
 name = "Eyedropper"
 
 [tool.fill]
-hint = "Fill: colour a piece or object (F)"
+hint = "Click a piece or an object to colour it with the current colour."
 name = "Bucket fill"
 
 [tool.hand]
-hint = "Hand: pan the view (H)"
+hint = "Pan the view by dragging. The middle or right mouse button, or Space, pans with any tool."
 name = "Hand"
 
 [tool.image]
-hint = "Import image / SVG (I)"
+hint = "Import a PNG, JPG or SVG, then click to place it."
 name = "Image"
 
 [tool.placeholder]
-hint = "Drag out a logo placeholder (L)"
+hint = "Drag out a box that marks where a sponsor logo goes. It is left out of the print file."
 name = "Logo placeholder"
 
 [tool.polygon]
-hint = "Polygon: click to add points, double-click/Enter closes (P)"
+hint = "Click to add points; double-click or Enter closes the shape."
 name = "Polygon"
 
 [tool.rect]
-hint = "Rectangle (R)"
+hint = "Drag out a rectangle. Fill and outline are in the options bar."
 name = "Rectangle"
 
 [tool.select]
-hint = "Select / transform (V)"
+hint = "Select, move, scale and rotate objects. Shift adds to the selection; Ctrl+click picks a member of a group."
 name = "Select"
 
 [tool.text]
-hint = "Text (T)"
+hint = "Click to place text. The text and its size are in the options bar."
 name = "Text"
 
 [viewport]
@@ -244,3 +246,6 @@ snap = "Snap"
 snap_hint = "Snap to centre lines, pieces and other objects"
 view_hint = "Look at the model from this side"
 visibility_hint = "Show or hide (hidden garments are left off the print sheet)"
+
+[tooltip]
+shortcut = "Shortcut"
