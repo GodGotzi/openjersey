@@ -70,6 +70,7 @@ With **Snap** on, a dragged object's edges and centre snap to the centre lines o
 | File → New / Open / Save / Save as | Designs are `.json` files with their graphics embedded |
 | File → Template | Start from a ready-made design |
 | File → Export print template | The sheet as a PNG for the printer; logo placeholders are left out |
+| Agent | Toggles the agent log in the right sidebar, see [Agent mode](ai-assistants.md#agent-mode) |
 | Settings | Language ▸ (English, Deutsch), Theme ▸ (the bundled ones and your own, see [Themes](themes.md)) and a VSync switch. The choices are remembered |
 
 Older save files open too; they are moved onto the current sheet layout.

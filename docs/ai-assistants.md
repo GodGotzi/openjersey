@@ -40,6 +40,12 @@ The server sends the client short instructions with exactly this workflow, and o
 - Text is never mirrored. On the back the wearer's left is on the left of the sheet.
 - Keep logo placeholders where they are unless you ask otherwise; `import_image` can fill one.
 
+## Agent mode
+
+Click **Agent** in the menu bar, before Settings, to open a log at the bottom of the right sidebar. It shows what an assistant does from the outside: when a client connects or disconnects, requests turned away for a wrong token, and every tool call with its arguments, result or error, how long it took and whether the design changed. Click a call for details, **Copy** puts the log on the clipboard and **Clear** empties it. The panel keeps the last 500 events, and the choice is remembered (`agent_mode` in `settings.toml`).
+
+![The Agent panel in the right sidebar](images/agent-mode.png)
+
 ## Security
 
 The app listens on `127.0.0.1` only. The bridge authenticates with a random token from `~/.cache/openjersey/session.json` (readable by your user only). The file tools only write paths ending in `.json` (designs) or `.png` (exports), so an assistant can't overwrite arbitrary files.

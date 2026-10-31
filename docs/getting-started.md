@@ -63,7 +63,7 @@ openjersey --export-template sheet.png --preset example --top "polo shirt" --bot
 The app keeps what it remembers in `~/.config/openjersey/` (or `$XDG_CONFIG_HOME/openjersey/`), created at the first start:
 
 ```
-settings.toml     language, theme and VSync, changed in the Settings menu
+settings.toml     language, theme, VSync and Agent mode, changed in the Settings menu
 themes/           your own colour themes (see Themes)
 ```
 
@@ -73,6 +73,7 @@ themes/           your own colour themes (see Themes)
 language = "de"        # "en" or "de"; without it the system language is used
 theme = "graphite"     # a bundled theme, or the name of a file in themes/
 vsync = false
+agent_mode = false     # show the agent log panel
 ```
 
 The environment variables below win over it for one run.
