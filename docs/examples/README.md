@@ -1,6 +1,6 @@
 # Examples
 
-Ten designs, each a saved `.json` file you can open in OpenJersey (File → Open), with the renders the README shows. Eight were designed through the [MCP interface](../ai-assistants.md); two are a club's own designs, prepared for publishing.
+Eleven designs, each a saved `.json` file you can open in OpenJersey (File → Open), with the renders the README shows. Nine were designed through the [MCP interface](../ai-assistants.md); two are a club's own designs, prepared for publishing.
 
 | Design | Garments | Idea |
 | --- | --- | --- |
@@ -9,6 +9,7 @@ Ten designs, each a saved `.json` file you can open in OpenJersey (File → Open
 | [`neon-court`](neon-court.json) | Sleeveless shirt, beach shorts (men) | Black with slanted neon stripes |
 | [`coral-wave`](coral-wave.json) | Sports top, bikini bottom (women) | Coral-to-pink gradient with wave lines and stars |
 | [`mono-chevron`](mono-chevron.json) | Crew neck shirt, game shorts (men) | Black and white, nested chevrons |
+| [`lagoon`](lagoon.json) | Tank top, bikini bottom / slip (women) | Deep-water gradient, layered waves and a sun setting behind them |
 | [`rose-quartz`](rose-quartz.json) | Raglan T-shirt, fitted shorts (women) | Pastel honeycomb |
 | [`glacier-hood`](glacier-hood.json) | Hooded jacket, track pants (women) | Deep navy with a scatter of snow stars |
 | [`sunset-retro`](sunset-retro.json) | Polo shirt, board shorts (men) | Retro sunset stripes |
@@ -21,7 +22,7 @@ Each design has `docs/images/<name>.png` (front and back) and `docs/images/<name
 
 ```sh
 cargo build --release
-python3 docs/examples/build_examples.py            # all eight, or name some: ... alpine-night neon-court
+python3 docs/examples/build_examples.py            # all nine, or name some: ... alpine-night neon-court
 python3 docs/generate-mcp-reference.py             # the tool reference
 ```
 

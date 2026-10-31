@@ -34,7 +34,7 @@ It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code,
 
 ## Examples
 
-Ten designs, all in [`docs/examples`](docs/examples/README.md) as files you can open. Eight were designed through MCP; the last two are VBC Stainach's own kits.
+Eleven designs, all in [`docs/examples`](docs/examples/README.md) as files you can open. Nine were designed through MCP; the last two are VBC Stainach's own kits.
 
 <table>
   <tr>
@@ -43,15 +43,18 @@ Ten designs, all in [`docs/examples`](docs/examples/README.md) as files you can 
   </tr>
   <tr>
     <td align="center"><img src="docs/images/neon-court.png" width="440"><br><b>Neon Court</b><br>black with slanted neon stripes</td>
-    <td align="center"><img src="docs/images/coral-wave.png" width="440"><br><b>Coral Wave</b><br>beach set, waves and stars</td>
-  </tr>
-  <tr>
     <td align="center"><img src="docs/images/mono-chevron.png" width="440"><br><b>Mono Chevron</b><br>black and white chevrons</td>
-    <td align="center"><img src="docs/images/rose-quartz.png" width="440"><br><b>Rose Quartz</b><br>pastel honeycomb</td>
   </tr>
   <tr>
+    <td align="center"><img src="docs/images/coral-wave.png" width="440"><br><b>Coral Wave</b><br>sports top and slip, waves and stars</td>
+    <td align="center"><img src="docs/images/lagoon.png" width="440"><br><b>Lagoon</b><br>tank top and slip, a sun setting behind the waves</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/rose-quartz.png" width="440"><br><b>Rose Quartz</b><br>pastel honeycomb</td>
     <td align="center"><img src="docs/images/glacier-hood.png" width="440"><br><b>Glacier</b><br>hooded jacket, snow stars</td>
-    <td align="center"><img src="docs/images/sunset-retro.png" width="440"><br><b>Sunset Retro</b><br>retro stripes and a setting sun</td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/images/sunset-retro.png" width="440"><br><b>Sunset Retro</b><br>retro stripes and a setting sun</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/images/vbc-stainach.png" width="440"><br><b>VBC Stainach</b><br>warm-up shirt with a mountain panel</td>

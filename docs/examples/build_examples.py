@@ -384,6 +384,43 @@ def glacier_hood(m: Mcp):
     d.finish("glacier-hood")
 
 
+def wave_layers(d: Design, piece: str, colours, top: float, step: float, amplitude: float, wavelength=0.55, phase=0.0):
+    """Stacked bands with wavy upper edges, like swell on the sea: each band
+    runs down to the bottom of the piece and the next one covers it."""
+    with d.layer(f"Waves · {piece}"):
+        x, y, w, h = d.pieces[piece]
+        steps = 40
+        for i, colour in enumerate(colours):
+            edge = y + h * (top + step * i)
+            pts = [(x - 8 + (w + 16) * k / steps, edge + amplitude * math.sin(2 * math.pi * (k / steps) / wavelength + phase + i * 1.4)) for k in range(steps + 1)]
+            d.polygon(pts + [(x + w + 8, y + h + 10), (x - 8, y + h + 10)], fill=colour, clip=[piece])
+
+
+def lagoon(m: Mcp):
+    d = Design(m, "tank-top-women", "bikini-bottom-women")
+    deep, teal, foam, gold, navy = "#071f33", "#0d8f98", "#8fe3d2", "#ffc857", "#0a2a40"
+    d.colours(primary=deep, accent=navy, trim=gold)
+    sea = [mix(teal, deep, 0.55), mix(teal, deep, 0.25), teal, mix(teal, foam, 0.5)]
+    for piece, phase in (("front", 0.0), ("back", 1.1)):
+        gradient(d, piece, 0.0, 0.66, deep, mix(deep, teal, 0.5), power=1.3)
+        if piece == "front":  # the sun sets behind the first wave
+            x, y, w, h = d.pieces[piece]
+            with d.layer("Sun"):
+                d.add("add_ellipse", x_mm=round(x + w / 2, 1), y_mm=round(y + h * 0.70, 1), width_mm=round(w * 0.40, 1), height_mm=round(w * 0.40, 1), fill=gold, clip=[piece])
+        wave_layers(d, piece, sea, top=0.66, step=0.075, amplitude=13, phase=phase)
+        scatter(d, piece, "star", 7, "#fff4d6", 8, 18, seed=21 if piece == "front" else 8, top=0.18, bottom=0.5)
+    for piece, phase in (("bottom_front", 0.4), ("bottom_back", 1.6)):
+        gradient(d, piece, 0.0, 1.0, mix(deep, teal, 0.15), mix(deep, teal, 0.5), power=1.0)
+        wave_layers(d, piece, sea[1:], top=0.28, step=0.2, amplitude=9, wavelength=0.6, phase=phase)
+        d.rect(piece, 0.5, 0.045, 1.2, 0.07, gold)
+    d.add("add_text", text="LAGOON", panel="front", across_mm=0, above_hem_mm=265, cap_height_mm=24, color=gold, clip=["front"])
+    # the back is a racerback: the narrow strip takes small lettering, the number sits below it
+    d.add("add_text", text="PLAYER", panel="back", across_mm=0, above_hem_mm=385, cap_height_mm=20, color=gold, max_width_mm=100, clip=["back"])
+    d.add("add_text", text="14", panel="back", across_mm=0, above_hem_mm=215, cap_height_mm=95, color="#fff4d6", clip=["back"])
+    d.add("add_text", text="LAGOON VBC", panel="back", across_mm=0, above_hem_mm=120, cap_height_mm=13, color=gold, max_width_mm=140, clip=["back"])
+    d.finish("lagoon")
+
+
 def sunset_retro(m: Mcp):
     d = Design(m, "polo-shirt-man", "board-shorts-man")
     night, orange, pink, gold, plum = "#1a1030", "#ff8a3d", "#ff4f8b", "#ffd166", "#6b2f8a"
@@ -417,6 +454,7 @@ DESIGNS = {
     "rose-quartz": rose_quartz,
     "glacier-hood": glacier_hood,
     "sunset-retro": sunset_retro,
+    "lagoon": lagoon,
 }
 
 
