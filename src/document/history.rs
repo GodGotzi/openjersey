@@ -33,6 +33,17 @@ impl History {
         }
     }
 
+    /// How many undo steps there are.
+    pub fn depth(&self) -> usize {
+        self.undo.len()
+    }
+
+    /// Merges every undo step taken since the history had `depth` steps
+    /// into one (the state before the first of them).
+    pub fn squash_since(&mut self, depth: usize) {
+        self.undo.truncate(depth + 1);
+    }
+
     pub fn undo(&mut self, doc: &mut Document) -> bool {
         self.last_tag = None;
         let Some(prev) = self.undo.pop() else { return false };

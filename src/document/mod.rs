@@ -10,13 +10,15 @@ pub mod io;
 pub mod legacy;
 mod relayout;
 
+use crate::i18n::tr;
 use serde::{Deserialize, Serialize};
 use tiny_skia::Transform;
 
 pub use asset::Asset;
 pub use history::History;
 
-use crate::template::pattern::{Garment, PieceId, Pt};
+use crate::garments::{self, Kind};
+use crate::template::pattern::{Pattern, PieceId, Pt};
 use crate::template::regions::{ColorRole, RegionId};
 
 pub type Rgb = [u8; 3];
@@ -43,9 +45,7 @@ impl Xf {
 
     /// Local -> parent space: scale, then rotate, then move.
     pub fn matrix(&self) -> Transform {
-        Transform::from_scale(self.scale[0], self.scale[1])
-            .post_rotate(self.rotation.to_degrees())
-            .post_translate(self.pos[0], self.pos[1])
+        Transform::from_scale(self.scale[0], self.scale[1]).post_rotate(self.rotation.to_degrees()).post_translate(self.pos[0], self.pos[1])
     }
 }
 
@@ -80,28 +80,50 @@ pub enum ObjectKind {
     },
     /// An imported PNG/JPG/SVG, `size` (w, h) centred on the origin. `tint`
     /// recolours the whole graphic (e.g. a white logo on a dark shirt).
-    Graphic { asset: std::sync::Arc<Asset>, size: [f32; 2], tint: Option<Rgb> },
+    Graphic {
+        asset: std::sync::Arc<Asset>,
+        size: [f32; 2],
+        tint: Option<Rgb>,
+    },
     /// Polygon or polyline (brush strokes, contour lines, shapes).
-    Shape { points: Vec<Pt>, closed: bool, fill: Option<Rgb>, stroke: Option<StrokeStyle> },
+    Shape {
+        points: Vec<Pt>,
+        closed: bool,
+        fill: Option<Rgb>,
+        stroke: Option<StrokeStyle>,
+    },
     /// Text repeated in staggered rows (a watermark), only inside `area`, or
     /// inside the object's clip pieces when `area` is empty.
-    Pattern { text: String, size: f32, line_spacing: f32, angle: f32, italic: f32, color: Rgb, area: Vec<Vec<Pt>> },
+    Pattern {
+        text: String,
+        size: f32,
+        line_spacing: f32,
+        angle: f32,
+        italic: f32,
+        color: Rgb,
+        area: Vec<Vec<Pt>>,
+    },
     /// A reserved area for a logo that will come later. Shown in the editor,
     /// left out of the print file.
-    Placeholder { label: String, size: [f32; 2] },
-    Group { children: Vec<Object> },
+    Placeholder {
+        label: String,
+        size: [f32; 2],
+    },
+    Group {
+        children: Vec<Object>,
+    },
 }
 
 impl ObjectKind {
     pub fn type_name(&self) -> &'static str {
         match self {
             ObjectKind::Text { .. } => "Text",
-            ObjectKind::Graphic { .. } => "Grafik",
-            ObjectKind::Shape { closed: true, .. } => "Form",
-            ObjectKind::Shape { closed: false, .. } => "Linie",
-            ObjectKind::Pattern { .. } => "Muster",
-            ObjectKind::Placeholder { .. } => "Logo-Platzhalter",
-            ObjectKind::Group { .. } => "Gruppe",
+            ObjectKind::Graphic { .. } => tr("Graphic", "Grafik"),
+            ObjectKind::Shape { closed: true, .. } => tr("Shape", "Form"),
+            ObjectKind::Shape { closed: false, .. } => tr("Line", "Linie"),
+            ObjectKind::Pattern { .. } => tr("Pattern", "Muster"),
+            ObjectKind::Placeholder { .. } => tr("Logo placeholder", "Logo-Platzhalter"),
+            ObjectKind::Group { .. } => tr("Group", "Gruppe"),
         }
     }
 }
@@ -122,6 +144,21 @@ pub struct Object {
     #[serde(default)]
     pub xf: Xf,
     pub kind: ObjectKind,
+    /// Set while the object is hidden because the garment lacks its piece
+    /// (see relayout): it shows again on the next garment that has it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parked: Option<Parked>,
+}
+
+/// Where a hidden object sat: its piece and that piece's corner (garment
+/// origin for front and back) on the sheet it was last placed on.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Parked {
+    pub piece: PieceId,
+    pub corner: Pt,
+    /// whether it was showing before it was parked
+    #[serde(default = "yes")]
+    pub visible: bool,
 }
 
 fn yes() -> bool {
@@ -135,7 +172,7 @@ fn one() -> f32 {
 impl Object {
     /// A new object (id assigned on insertion).
     pub fn new(name: impl Into<String>, xf: Xf, kind: ObjectKind) -> Self {
-        Self { id: 0, name: name.into(), visible: true, locked: false, opacity: 1.0, clip: Vec::new(), xf, kind }
+        Self { id: 0, name: name.into(), visible: true, locked: false, opacity: 1.0, clip: Vec::new(), xf, kind, parked: None }
     }
 
     /// A shape from points in parent space; the object's origin is put at
@@ -231,20 +268,21 @@ impl Default for Garments {
 }
 
 impl Garments {
-    pub fn shows(&self, g: Garment) -> bool {
-        match g {
-            Garment::Shirt => self.shirt,
-            Garment::Shorts => self.shorts,
+    pub fn shows(&self, kind: Kind) -> bool {
+        match kind {
+            Kind::Top => self.shirt,
+            Kind::Bottom => self.shorts,
         }
-    }
-
-    pub fn shows_piece(&self, p: PieceId) -> bool {
-        self.shows(p.garment())
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
+    /// ids of the top and bottom the design is made for (see `crate::garments`)
+    #[serde(default = "default_top")]
+    pub top: String,
+    #[serde(default = "default_bottom")]
+    pub bottom: String,
     pub base: BaseColors,
     #[serde(default)]
     pub garments: Garments,
@@ -253,9 +291,42 @@ pub struct Document {
     pub next_id: ObjectId,
 }
 
+fn default_top() -> String {
+    garments::DEFAULT_TOP.into()
+}
+
+fn default_bottom() -> String {
+    garments::DEFAULT_BOTTOM.into()
+}
+
 impl Document {
+    /// An empty design for the default top and bottom.
     pub fn new(base: BaseColors) -> Self {
-        Self { base, garments: Garments::default(), objects: Vec::new(), next_id: 1 }
+        let (top, bottom) = (garments::default(Kind::Top, garments::Body::Man), garments::default(Kind::Bottom, garments::Body::Man));
+        Self { top: top.id.into(), bottom: bottom.id.into(), base, garments: Garments::default(), objects: Vec::new(), next_id: 1 }
+    }
+
+    /// An empty design for the sheet of `pattern`.
+    pub fn for_sheet(pattern: &Pattern, base: BaseColors) -> Self {
+        Self { top: pattern.top().id.into(), bottom: pattern.bottom().id.into(), ..Self::new(base) }
+    }
+
+    /// The sheet the design is made for.
+    pub fn sheet(&self) -> Pattern {
+        Pattern::of(garments::get_or_default(&self.top, Kind::Top), garments::get_or_default(&self.bottom, Kind::Bottom))
+    }
+
+    /// Is the design made for this sheet?
+    pub fn is_on(&self, pattern: &Pattern) -> bool {
+        self.top == pattern.top().id && self.bottom == pattern.bottom().id
+    }
+
+    /// Moves the design from `from`'s sheet onto `to`'s (another top or bottom).
+    pub fn move_to_sheet(&mut self, from: &Pattern, to: &Pattern) {
+        let rects = relayout::piece_rects(from);
+        relayout::from_layout(self, &relayout::OldLayout::of(from, &rects), to);
+        self.top = to.top().id.into();
+        self.bottom = to.bottom().id.into();
     }
 
     /// The inside colour of shirt and shorts on the model.
@@ -352,10 +423,7 @@ impl Document {
 
     /// Parent space -> template space for an object's parent.
     pub fn parent_matrix(&self, id: ObjectId) -> Transform {
-        self.ancestors(id)
-            .iter()
-            .filter_map(|&a| self.find(a))
-            .fold(Transform::identity(), |m, a| m.pre_concat(a.xf.matrix()))
+        self.ancestors(id).iter().filter_map(|&a| self.find(a)).fold(Transform::identity(), |m, a| m.pre_concat(a.xf.matrix()))
     }
 
     /// Local -> template space.
@@ -422,7 +490,7 @@ impl Document {
         let (parent, index) = self.locate(id)?;
         let mut copy = self.find(id)?.clone();
         copy.xf.pos = [copy.xf.pos[0] + offset[0], copy.xf.pos[1] + offset[1]];
-        copy.name = format!("{} Kopie", copy.name);
+        copy.name = format!("{} {}", copy.name, tr("copy", "Kopie"));
         self.assign_ids(&mut copy);
         let new_id = copy.id;
         self.insert(parent, index + 1, copy);
@@ -433,10 +501,8 @@ impl Document {
     /// centre of their bounds, so it rotates and scales about its middle.
     pub fn group(&mut self, ids: &[ObjectId], centre: Pt, name: &str) -> Option<ObjectId> {
         let parent = self.locate(*ids.first()?)?.0;
-        let mut members: Vec<(usize, ObjectId)> = ids
-            .iter()
-            .filter_map(|&id| self.locate(id).filter(|(p, _)| *p == parent).map(|(_, i)| (i, id)))
-            .collect();
+        let mut members: Vec<(usize, ObjectId)> =
+            ids.iter().filter_map(|&id| self.locate(id).filter(|(p, _)| *p == parent).map(|(_, i)| (i, id))).collect();
         members.sort();
         let insert_at = members.first()?.0;
         let mut children = Vec::new();
@@ -473,7 +539,6 @@ impl Document {
         }
         ids
     }
-
 }
 
 /// Splits a matrix back into move/rotate/scale (no shear).
@@ -493,14 +558,11 @@ mod tests {
     use super::*;
 
     fn text(name: &str) -> Object {
-        Object::new(name, Xf::at([10.0, 20.0]), ObjectKind::Text {
-            text: name.into(),
-            size: 10.0,
-            color: None,
-            fatten: 0.0,
-            italic: 0.0,
-            max_width: None,
-        })
+        Object::new(
+            name,
+            Xf::at([10.0, 20.0]),
+            ObjectKind::Text { text: name.into(), size: 10.0, color: None, fatten: 0.0, italic: 0.0, max_width: None },
+        )
     }
 
     fn doc() -> Document {
@@ -533,9 +595,7 @@ mod tests {
     fn moving_into_a_rotated_group_keeps_the_position() {
         let mut d = doc();
         let a = d.add(None, text("a"));
-        let mut g = Object::new("g", Xf { pos: [100.0, 50.0], rotation: 0.7, scale: [2.0, 2.0] }, ObjectKind::Group {
-            children: vec![],
-        });
+        let mut g = Object::new("g", Xf { pos: [100.0, 50.0], rotation: 0.7, scale: [2.0, 2.0] }, ObjectKind::Group { children: vec![] });
         g.name = "g".into();
         let g = d.add(None, g);
         let before = map(&d.world_matrix(a), [3.0, 4.0]);

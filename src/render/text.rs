@@ -9,8 +9,7 @@ pub struct Fonts {
 
 impl Fonts {
     pub fn new() -> Self {
-        let font = FontArc::try_from_slice(include_bytes!("../../assets/DejaVuSansCondensed-Bold.ttf"))
-            .expect("bundled font is valid");
+        let font = FontArc::try_from_slice(include_bytes!("../../assets/DejaVuSansCondensed-Bold.ttf")).expect("bundled font is valid");
         Self { font }
     }
 

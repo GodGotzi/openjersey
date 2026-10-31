@@ -1,6 +1,7 @@
 //! Imported images (PNG/JPG and SVG), kept as their original file bytes so a
 //! saved design is self-contained; decoded and rasterised on demand.
 
+use crate::i18n::{pick, tr};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -21,12 +22,15 @@ pub struct Asset {
     pub format: AssetFormat,
     pub bytes: Vec<u8>,
     decoded: OnceLock<Option<Decoded>>,
-    cache: Mutex<HashMap<(u32, u32, Option<Rgb>), Arc<Pixmap>>>,
+    cache: Mutex<HashMap<RasterKey, Arc<Pixmap>>>,
 }
+
+/// A rasterised size and tint of an asset.
+type RasterKey = (u32, u32, Option<Rgb>);
 
 enum Decoded {
     Raster(Pixmap),
-    Svg(resvg::usvg::Tree),
+    Svg(Box<resvg::usvg::Tree>),
 }
 
 impl std::fmt::Debug for Asset {
@@ -48,14 +52,14 @@ impl Asset {
             cache: Mutex::new(HashMap::new()),
         };
         if asset.decoded().is_none() {
-            return Err(format!("{} konnte nicht gelesen werden", asset.name));
+            return Err(pick(format!("{} could not be read", asset.name), format!("{} konnte nicht gelesen werden", asset.name)));
         }
         Ok(asset)
     }
 
     pub fn from_file(path: &std::path::Path) -> Result<Self, String> {
         let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("bild").to_string();
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or(tr("image", "bild")).to_string();
         Self::new(name, bytes)
     }
 
@@ -64,7 +68,7 @@ impl Asset {
             .get_or_init(|| match self.format {
                 AssetFormat::Svg => {
                     let opt = resvg::usvg::Options::default();
-                    resvg::usvg::Tree::from_data(&self.bytes, &opt).ok().map(Decoded::Svg)
+                    resvg::usvg::Tree::from_data(&self.bytes, &opt).ok().map(|t| Decoded::Svg(Box::new(t)))
                 }
                 AssetFormat::Raster => {
                     let img = image::load_from_memory(&self.bytes).ok()?.to_rgba8();
@@ -141,8 +145,7 @@ struct AssetFile {
 
 impl Serialize for Asset {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        AssetFile { name: self.name.clone(), data: base64::engine::general_purpose::STANDARD.encode(&self.bytes) }
-            .serialize(s)
+        AssetFile { name: self.name.clone(), data: base64::engine::general_purpose::STANDARD.encode(&self.bytes) }.serialize(s)
     }
 }
 
@@ -160,7 +163,8 @@ mod tests {
 
     #[test]
     fn svg_renders_at_the_requested_size_and_tint() {
-        let a = Asset::new("vbc-logo.svg", include_bytes!("../../assets/vbc-logo.svg").to_vec()).unwrap();
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="140" viewBox="0 0 100 140"><rect width="100" height="140" fill="#000"/></svg>"##;
+        let a = Asset::new("logo.svg", svg.as_bytes().to_vec()).unwrap();
         assert_eq!(a.format, AssetFormat::Svg);
         let pm = a.raster(200, 280, Some([255, 0, 0])).unwrap();
         assert_eq!((pm.width(), pm.height()), (200, 280));

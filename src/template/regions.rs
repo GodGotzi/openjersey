@@ -4,7 +4,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::pattern::{point_in_polygon, Pattern, PieceId, Pt};
+use super::pattern::{Pattern, PieceId, Pt, piece_name, point_in_polygon};
+use crate::i18n::{Language, current};
 
 const LEG_HEM_BAND: f32 = 0.018;
 
@@ -23,33 +24,31 @@ pub enum RegionId {
     LegHem(Side),
 }
 
-fn side_of(piece: PieceId) -> Side {
-    match piece {
-        PieceId::SideL | PieceId::SleeveL | PieceId::LegL => Side::Left,
-        _ => Side::Right,
+fn side_label(s: Side) -> &'static str {
+    if s == Side::Left { "links" } else { "rechts" }
+}
+
+fn region_label(en: &str, de: &str, side: Side) -> String {
+    match current() {
+        Language::English => format!("{} {en}", if side == Side::Left { "Left" } else { "Right" }),
+        Language::German => format!("{de} {}", side_label(side)),
     }
 }
 
 impl RegionId {
-    pub fn label(self) -> String {
-        let side = |s: Side| if s == Side::Left { "links" } else { "rechts" };
+    /// Display name in the current language; pieces are named by their pattern.
+    pub fn label(self, pattern: &Pattern) -> String {
         match self {
-            RegionId::Piece(p) => match p {
-                PieceId::Front => "Vorderteil".into(),
-                PieceId::Back => "Rückenteil".into(),
-                PieceId::SideR | PieceId::SideL => format!("Seitenteil {}", side(side_of(p))),
-                PieceId::SleeveR | PieceId::SleeveL => format!("Ärmel {}", side(side_of(p))),
-                PieceId::Collar => "Kragen".into(),
-                PieceId::LegR | PieceId::LegL => format!("Hosenbein {}", side(side_of(p))),
-            },
-            RegionId::Cuff(s) => format!("Bündchen {}", side(s)),
-            RegionId::LegStripe(s) => format!("Hosenstreifen {}", side(s)),
-            RegionId::LegHem(s) => format!("Hosensaum {}", side(s)),
+            RegionId::Piece(p) => pattern.get(p).map_or_else(|| p.as_str().to_string(), piece_name),
+            RegionId::Cuff(s) => region_label("cuff", "Bündchen", s),
+            RegionId::LegStripe(s) => region_label("leg stripe", "Hosenstreifen", s),
+            RegionId::LegHem(s) => region_label("leg hem", "Hosensaum", s),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ColorRole {
     Primary,
     Accent,
@@ -70,22 +69,13 @@ pub fn regions(pattern: &Pattern) -> Vec<Region> {
     let mut out: Vec<Region> = pattern
         .pieces
         .iter()
-        .map(|piece| Region {
-            id: RegionId::Piece(piece.id),
-            role: match piece.id {
-                PieceId::Front | PieceId::Back | PieceId::LegR | PieceId::LegL => ColorRole::Primary,
-                PieceId::SideR | PieceId::SideL | PieceId::SleeveR | PieceId::SleeveL => ColorRole::Accent,
-                PieceId::Collar => ColorRole::Trim,
-            },
-            polygons: piece.polygons.clone(),
-            clip: None,
-        })
+        .map(|piece| Region { id: RegionId::Piece(piece.id), role: piece.role, polygons: piece.polygons.clone(), clip: None })
         .collect();
 
     let rect = |[x, y, w, h]: [f32; 4]| vec![[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
     for cuff in &pattern.cuffs {
         out.push(Region {
-            id: RegionId::Cuff(side_of(cuff.piece)),
+            id: RegionId::Cuff(cuff.piece.side().unwrap_or(Side::Right)),
             role: ColorRole::Trim,
             polygons: vec![rect(cuff.rect)],
             clip: Some(cuff.piece),
@@ -98,8 +88,9 @@ pub fn regions(pattern: &Pattern) -> Vec<Region> {
         let (top, top_half) = (x + w * s.top_centre, w * s.top_width / 2.0);
         let (hem, hem_half) = (x + w * s.hem_centre, w * s.hem_width / 2.0);
         // a little past the piece so the stripe reaches the waist and hem edges
+        let side = leg.piece.side().unwrap_or(Side::Right);
         out.push(Region {
-            id: RegionId::LegStripe(side_of(leg.piece)),
+            id: RegionId::LegStripe(side),
             role: ColorRole::Accent,
             polygons: vec![vec![
                 [top - top_half, y - 4.0],
@@ -110,7 +101,7 @@ pub fn regions(pattern: &Pattern) -> Vec<Region> {
             clip: Some(leg.piece),
         });
         out.push(Region {
-            id: RegionId::LegHem(side_of(leg.piece)),
+            id: RegionId::LegHem(side),
             role: ColorRole::Trim,
             polygons: vec![rect([x - 20.0, y + h - LEG_HEM_BAND * m, w + 40.0, LEG_HEM_BAND * m + 20.0])],
             clip: Some(leg.piece),
@@ -124,21 +115,14 @@ pub fn hit_test(pattern: &Pattern, regions: &[Region], at: Pt) -> Option<RegionI
     regions
         .iter()
         .rev()
-        .find(|r| {
-            r.polygons.iter().any(|poly| point_in_polygon(poly, at))
-                && r.clip.is_none_or(|piece| pattern.piece(piece).contains(at))
-        })
+        .find(|r| r.polygons.iter().any(|poly| point_in_polygon(poly, at)) && r.clip.is_none_or(|piece| pattern.piece(piece).contains(at)))
         .map(|r| r.id)
 }
 
 pub fn distance_to_segment(p: Pt, a: Pt, b: Pt) -> f32 {
     let ab = [b[0] - a[0], b[1] - a[1]];
     let len2 = ab[0] * ab[0] + ab[1] * ab[1];
-    let t = if len2 == 0.0 {
-        0.0
-    } else {
-        (((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / len2).clamp(0.0, 1.0)
-    };
+    let t = if len2 == 0.0 { 0.0 } else { (((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / len2).clamp(0.0, 1.0) };
     (p[0] - (a[0] + ab[0] * t)).hypot(p[1] - (a[1] + ab[1] * t))
 }
 
@@ -152,10 +136,10 @@ mod tests {
         let p = Pattern::load();
         let r = regions(&p);
         let hit = |at| hit_test(&p, &r, at);
-        assert_eq!(hit(p.place(Panel::Front, [0.0, 1.1])), Some(RegionId::Piece(PieceId::Front)));
-        assert_eq!(hit(p.place(Panel::Back, [0.0, 1.1])), Some(RegionId::Piece(PieceId::Back)));
-        let [x, y, w, h] = p.piece(PieceId::SleeveL).rect;
-        assert_eq!(hit([x + w / 2.0, y + h * 0.4]), Some(RegionId::Piece(PieceId::SleeveL)));
+        assert_eq!(hit(p.place(Panel::Front, [0.0, 1.1])), Some(RegionId::Piece(PieceId::FRONT)));
+        assert_eq!(hit(p.place(Panel::Back, [0.0, 1.1])), Some(RegionId::Piece(PieceId::BACK)));
+        let [x, y, w, h] = p.piece(PieceId::SLEEVE_L).rect;
+        assert_eq!(hit([x + w / 2.0, y + h * 0.4]), Some(RegionId::Piece(PieceId::SLEEVE_L)));
         assert_eq!(hit([x + w / 2.0, y + h - 3.0]), Some(RegionId::Cuff(Side::Left)));
         let leg = &p.legs[0];
         assert_eq!(hit(p.place_on_leg(leg, 0.35, 0.2)), Some(RegionId::Piece(leg.piece)));

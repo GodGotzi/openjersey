@@ -12,7 +12,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::commands::Output;
 
@@ -38,15 +38,14 @@ pub fn session_path() -> PathBuf {
     base.join("openjersey").join("session.json")
 }
 
-/// Starts listening; tool calls arrive on the returned channel. The sender
-/// is handed out too, so the in-app chat can queue calls the same way.
-pub fn start() -> (Sender<Request>, Receiver<Request>) {
+/// Starts listening; tool calls arrive on the returned channel.
+pub fn start() -> Receiver<Request> {
     let (tx, rx) = mpsc::channel::<Request>();
-    let Ok(listener) = TcpListener::bind("127.0.0.1:0") else { return (tx, rx) };
-    let Ok(port) = listener.local_addr().map(|a| a.port()) else { return (tx, rx) };
+    let Ok(listener) = TcpListener::bind("127.0.0.1:0") else { return rx };
+    let Ok(port) = listener.local_addr().map(|a| a.port()) else { return rx };
     let mut bytes = [0u8; 16];
     if getrandom::fill(&mut bytes).is_err() {
-        return (tx, rx);
+        return rx;
     }
     let token: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
     let path = session_path();
@@ -55,7 +54,7 @@ pub fn start() -> (Sender<Request>, Receiver<Request>) {
     }
     let session = Session { port, token: token.clone(), pid: std::process::id() };
     if write_private(&path, &serde_json::to_vec(&session).unwrap_or_default()).is_err() {
-        return (tx, rx);
+        return rx;
     }
     let accept_tx = tx.clone();
     std::thread::spawn(move || {
@@ -65,7 +64,7 @@ pub fn start() -> (Sender<Request>, Receiver<Request>) {
             std::thread::spawn(move || serve(stream, &token, tx));
         }
     });
-    (tx, rx)
+    rx
 }
 
 fn write_private(path: &std::path::Path, data: &[u8]) -> std::io::Result<()> {

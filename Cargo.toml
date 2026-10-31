@@ -2,6 +2,10 @@
 name = "openjersey"
 version = "0.1.0"
 edition = "2024"
+description = "Volleyball jersey designer: 3D model, print template and sublimation layout"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/GodGotzi/openjersey"
+readme = "README.md"
 
 [dependencies]
 ab_glyph = "0.2"
@@ -16,5 +20,7 @@ serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 softbuffer = "0.4"
 tiny-skia = "0.12"
-ureq = { version = "3", features = ["json"] }
 winit = "0.30.13"
+
+[build-dependencies]
+serde_json = "1"

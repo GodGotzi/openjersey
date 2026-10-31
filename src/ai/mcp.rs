@@ -7,10 +7,10 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::commands;
-use super::server::{session_path, Session};
+use super::server::{Session, session_path};
 
 const PROTOCOLS: [&str; 3] = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -30,7 +30,7 @@ pub fn run() {
                 let version = if PROTOCOLS.contains(&asked) { asked } else { PROTOCOLS[0] };
                 Ok(json!({
                     "protocolVersion": version,
-                    "capabilities": {"tools": {}},
+                    "capabilities": {"tools": {}, "prompts": {}},
                     "serverInfo": {"name": "openjersey", "version": env!("CARGO_PKG_VERSION")},
                     "instructions": commands::INSTRUCTIONS,
                 }))
@@ -39,8 +39,28 @@ pub fn run() {
             "tools/list" => Ok(json!({
                 "tools": commands::specs().into_iter().map(|t| json!({
                     "name": t.name, "description": t.description, "inputSchema": t.schema,
+                    "annotations": {
+                        "title": t.name.replace('_', " "),
+                        "readOnlyHint": commands::is_read_only(t.name),
+                        "destructiveHint": commands::is_destructive(t.name),
+                    },
                 })).collect::<Vec<_>>()
             })),
+            "prompts/list" => Ok(json!({"prompts": commands::prompts().iter().map(|p| json!({
+                "name": p.name, "description": p.description,
+                "arguments": p.arguments.iter().map(|(n, d, required)| json!({"name": n, "description": d, "required": required})).collect::<Vec<_>>(),
+            })).collect::<Vec<_>>()})),
+            "prompts/get" => {
+                let name = params.get("name").and_then(Value::as_str).unwrap_or_default();
+                let args = params.get("arguments").cloned().unwrap_or(json!({}));
+                match commands::prompts().iter().find(|p| p.name == name) {
+                    Some(p) => Ok(json!({
+                        "description": p.description,
+                        "messages": [{"role": "user", "content": {"type": "text", "text": (p.render)(&args)}}],
+                    })),
+                    None => Err(json!({"code": -32602, "message": format!("unknown prompt {name}")})),
+                }
+            }
             "tools/call" => {
                 let name = params.get("name").and_then(Value::as_str).unwrap_or_default();
                 let args = params.get("arguments").cloned().unwrap_or(json!({}));

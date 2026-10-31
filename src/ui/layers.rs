@@ -1,7 +1,8 @@
-//! The "Ebenen" panel: the object tree (top of the stack first) with
+//! The layers panel: the object tree (top of the stack first) with
 //! visibility, lock, renaming, drag-and-drop reordering and a context menu,
 //! plus the garment pieces' base colours pinned at the bottom.
 
+use crate::i18n::tr;
 use std::collections::HashSet;
 
 use myth::egui::egui::{self, Color32, RichText, Sense};
@@ -36,19 +37,23 @@ impl LayersPanel {
 
     pub fn ui(&mut self, ui: &mut egui::Ui, ws: &mut Workspace) {
         ui.horizontal(|ui| {
-            ui.strong("Ebenen");
+            ui.strong(tr("Layers", "Ebenen"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let any = !ws.selection.is_empty();
-                if ui.add_enabled(any, egui::Button::new("🗑").small()).on_hover_text("Löschen (Entf)").clicked() {
+                if ui.add_enabled(any, egui::Button::new("🗑").small()).on_hover_text(tr("Delete (Del)", "Löschen (Entf)")).clicked() {
                     ws.delete_selection();
                 }
-                if ui.add_enabled(any, egui::Button::new("⧉").small()).on_hover_text("Duplizieren (Strg+D)").clicked() {
+                if ui
+                    .add_enabled(any, egui::Button::new("⧉").small())
+                    .on_hover_text(tr("Duplicate (Ctrl+D)", "Duplizieren (Strg+D)"))
+                    .clicked()
+                {
                     ws.duplicate_selection();
                 }
-                if ui.add_enabled(any, egui::Button::new("⏷").small()).on_hover_text("Nach hinten").clicked() {
+                if ui.add_enabled(any, egui::Button::new("⏷").small()).on_hover_text(tr("Send backward", "Nach hinten")).clicked() {
                     ws.restack_selection(-1);
                 }
-                if ui.add_enabled(any, egui::Button::new("⏶").small()).on_hover_text("Nach vorne").clicked() {
+                if ui.add_enabled(any, egui::Button::new("⏶").small()).on_hover_text(tr("Bring forward", "Nach vorne")).clicked() {
                     ws.restack_selection(1);
                 }
             });
@@ -61,20 +66,20 @@ impl LayersPanel {
         }
 
         let mut actions = Vec::new();
-        egui::ScrollArea::vertical().id_salt("layers").auto_shrink([false, true]).max_height(ui.available_height() * 0.55).show(
-            ui,
-            |ui| {
-                let objects = ws.doc.objects.clone();
-                for obj in objects.iter().rev() {
-                    self.row(ui, ws, obj, 0, &mut actions);
-                }
-                if ws.doc.objects.is_empty() {
-                    ui.weak("Noch keine Objekte. Werkzeug rechts wählen oder Vorlage laden.");
-                }
-                ui.add_space(6.0);
-                self.base_colors(ui, ws);
-            },
-        );
+        egui::ScrollArea::vertical().id_salt("layers").auto_shrink([false, true]).max_height(ui.available_height() * 0.55).show(ui, |ui| {
+            let objects = ws.doc.objects.clone();
+            for obj in objects.iter().rev() {
+                self.row(ui, ws, obj, 0, &mut actions);
+            }
+            if ws.doc.objects.is_empty() {
+                ui.weak(tr(
+                    "No objects yet. Pick a tool on the right or load a template.",
+                    "Noch keine Objekte. Werkzeug rechts wählen oder Vorlage laden.",
+                ));
+            }
+            ui.add_space(6.0);
+            self.base_colors(ui, ws);
+        });
 
         for action in actions {
             match action {
@@ -144,12 +149,12 @@ impl LayersPanel {
                 ui.add_space(18.0);
             }
             let eye = if obj.visible { "👁" } else { "–" };
-            if ui.add(egui::Button::new(eye).small().frame(false)).on_hover_text("Sichtbar").clicked() {
+            if ui.add(egui::Button::new(eye).small().frame(false)).on_hover_text(tr("Visible", "Sichtbar")).clicked() {
                 actions.push(Action::ToggleVisible(obj.id));
             }
             let lock = if obj.locked { "🔒" } else { "🔓" };
             let lock_text = RichText::new(lock).color(if obj.locked { Color32::LIGHT_YELLOW } else { Color32::from_gray(90) });
-            if ui.add(egui::Button::new(lock_text).small().frame(false)).on_hover_text("Sperren").clicked() {
+            if ui.add(egui::Button::new(lock_text).small().frame(false)).on_hover_text(tr("Lock", "Sperren")).clicked() {
                 actions.push(Action::ToggleLocked(obj.id));
             }
             ui.label(RichText::new(kind_icon(&obj.kind)).color(Color32::from_gray(140)));
@@ -226,50 +231,55 @@ impl LayersPanel {
         let mut inside = ws.doc.inside_color();
         let mut inside_changed = false;
         ui.horizontal(|ui| {
-            ui.label("Kleidung:");
-            ui.checkbox(&mut garments.shirt, "Trikot");
-            ui.checkbox(&mut garments.shorts, "Hose");
-            ui.separator();
-            inside_changed = ui.color_edit_button_srgb(&mut inside).on_hover_text("Farbe der Innenseite am Modell").changed();
-            ui.label("Innen");
+            inside_changed = ui
+                .color_edit_button_srgb(&mut inside)
+                .on_hover_text(tr("Colour of the inside on the model", "Farbe der Innenseite am Modell"))
+                .changed();
+            ui.label(tr("Inside", "Innen"));
         });
         if inside_changed {
             garments.inside = Some(inside);
         }
         if garments != ws.doc.garments {
             // dragging in the colour picker is one undo step
-            if inside_changed { ws.checkpoint_tagged("inside-color") } else { ws.checkpoint() }
+            if inside_changed {
+                ws.checkpoint_tagged("inside-color")
+            } else {
+                ws.checkpoint()
+            }
             ws.doc.garments = garments;
             ws.changed();
         }
-        egui::CollapsingHeader::new(RichText::new("Schnittteile (Grundfarben)").strong()).default_open(false).show(ui, |ui| {
-            let mut roles = [ws.doc.base.primary, ws.doc.base.accent, ws.doc.base.trim];
-            let mut changed = false;
-            ui.horizontal(|ui| {
-                for (c, label) in roles.iter_mut().zip(["Grund", "Akzent", "Besatz"]) {
-                    changed |= ui.color_edit_button_srgb(c).changed();
-                    ui.label(label);
+        egui::CollapsingHeader::new(RichText::new(tr("Pattern pieces (base colours)", "Schnittteile (Grundfarben)")).strong())
+            .default_open(false)
+            .show(ui, |ui| {
+                let mut roles = [ws.doc.base.primary, ws.doc.base.accent, ws.doc.base.trim];
+                let mut changed = false;
+                ui.horizontal(|ui| {
+                    for (c, label) in roles.iter_mut().zip([tr("Base", "Grund"), tr("Accent", "Akzent"), tr("Trim", "Besatz")]) {
+                        changed |= ui.color_edit_button_srgb(c).changed();
+                        ui.label(label);
+                    }
+                });
+                if changed {
+                    ws.checkpoint_tagged("base-roles");
+                    [ws.doc.base.primary, ws.doc.base.accent, ws.doc.base.trim] = roles;
+                    ws.changed();
+                }
+                ui.separator();
+                let regions: Vec<_> = ws.regions.iter().map(|r| (r.id, r.role)).collect();
+                for (id, role) in regions {
+                    ui.horizontal(|ui| {
+                        let mut c = ws.doc.base.region(id, role);
+                        if ui.color_edit_button_srgb(&mut c).changed() {
+                            ws.checkpoint_tagged(&format!("base-{id:?}"));
+                            ws.doc.base.set_region(id, c);
+                            ws.changed();
+                        }
+                        ui.label(id.label(&ws.pattern));
+                    });
                 }
             });
-            if changed {
-                ws.checkpoint_tagged("base-roles");
-                [ws.doc.base.primary, ws.doc.base.accent, ws.doc.base.trim] = roles;
-                ws.changed();
-            }
-            ui.separator();
-            let regions: Vec<_> = ws.regions.iter().map(|r| (r.id, r.role)).collect();
-            for (id, role) in regions {
-                ui.horizontal(|ui| {
-                    let mut c = ws.doc.base.region(id, role);
-                    if ui.color_edit_button_srgb(&mut c).changed() {
-                        ws.checkpoint_tagged(&format!("base-{id:?}"));
-                        ws.doc.base.set_region(id, c);
-                        ws.changed();
-                    }
-                    ui.label(id.label());
-                });
-            }
-        });
     }
 }
 
@@ -301,38 +311,38 @@ pub fn kind_icon(kind: &ObjectKind) -> &'static str {
 
 /// Shared by the layer list and the canvas.
 pub fn context_menu(ui: &mut egui::Ui, ws: &mut Workspace) {
-    if ui.button("Duplizieren (Strg+D)").clicked() {
+    if ui.button(tr("Duplicate (Ctrl+D)", "Duplizieren (Strg+D)")).clicked() {
         ws.duplicate_selection();
         ui.close();
     }
-    if ui.button("Löschen (Entf)").clicked() {
+    if ui.button(tr("Delete (Del)", "Löschen (Entf)")).clicked() {
         ws.delete_selection();
         ui.close();
     }
     ui.separator();
-    if ui.add_enabled(ws.selection.len() > 1, egui::Button::new("Gruppieren (Strg+G)")).clicked() {
+    if ui.add_enabled(ws.selection.len() > 1, egui::Button::new(tr("Group (Ctrl+G)", "Gruppieren (Strg+G)"))).clicked() {
         ws.group_selection();
         ui.close();
     }
-    if ui.button("Gruppe auflösen (Strg+Shift+G)").clicked() {
+    if ui.button(tr("Ungroup (Ctrl+Shift+G)", "Gruppe auflösen (Strg+Shift+G)")).clicked() {
         ws.ungroup_selection();
         ui.close();
     }
     ui.separator();
-    if ui.button("Nach vorne").clicked() {
+    if ui.button(tr("Bring forward", "Nach vorne")).clicked() {
         ws.restack_selection(1);
         ui.close();
     }
-    if ui.button("Nach hinten").clicked() {
+    if ui.button(tr("Send backward", "Nach hinten")).clicked() {
         ws.restack_selection(-1);
         ui.close();
     }
     ui.separator();
-    if ui.button("Auf Teil zentrieren").clicked() {
+    if ui.button(tr("Centre on piece", "Auf Teil zentrieren")).clicked() {
         ws.centre_selection_on_piece();
         ui.close();
     }
-    if ui.button("Auf andere Seite spiegeln (vorne ↔ hinten)").clicked() {
+    if ui.button(tr("Mirror to the other side (front ↔ back)", "Auf andere Seite spiegeln (vorne ↔ hinten)")).clicked() {
         ws.mirror_selection_to_other_side();
         ui.close();
     }

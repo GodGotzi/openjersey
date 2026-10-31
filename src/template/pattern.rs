@@ -1,41 +1,82 @@
-//! The print template layout from `assets/pattern.json` (written by
-//! `blender/build_jersey.py`): one atlas holding every garment piece side by
-//! side like the reference template (front, back, side panels, sleeves,
-//! collar, legs). Coordinates are atlas pixels, y down.
+//! The print sheet of a design: the top's atlas with the bottom's below it,
+//! from the garments' `pattern.json` files (written by `blender/build.py`,
+//! see blender/GARMENTS.md). Each atlas holds every piece of its garment side
+//! by side like a sublimation print template (front, back, side panels, sleeves,
+//! collar, … ; legs, waistband, …). Coordinates are sheet pixels, y down.
 
-use serde::Deserialize;
+use std::collections::HashSet;
+use std::sync::Mutex;
+
+use serde::{Deserialize, Serialize};
+
+use super::regions::ColorRole;
+use crate::garments::{self, Garment, Kind};
 
 pub type Pt = [f32; 2];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PieceId {
-    Front,
-    Back,
-    SideR,
-    SideL,
-    SleeveR,
-    SleeveL,
-    Collar,
-    LegR,
-    LegL,
-}
+/// A garment piece, by the id its pattern.json gives it ("front", "sleeve_l",
+/// "leg_r", "waistband", …). Ids are unique within a top and bottom.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PieceId(&'static str);
 
 impl PieceId {
-    pub fn garment(self) -> Garment {
-        match self {
-            PieceId::LegR | PieceId::LegL => Garment::Shorts,
-            _ => Garment::Shirt,
+    pub const FRONT: Self = Self("front");
+    pub const BACK: Self = Self("back");
+    pub const SIDE_L: Self = Self("side_l");
+    pub const SIDE_R: Self = Self("side_r");
+    pub const SLEEVE_L: Self = Self("sleeve_l");
+    pub const SLEEVE_R: Self = Self("sleeve_r");
+    pub const COLLAR: Self = Self("collar");
+    pub const LEG_L: Self = Self("leg_l");
+    pub const LEG_R: Self = Self("leg_r");
+
+    pub fn new(id: &str) -> Self {
+        static IDS: Mutex<Option<HashSet<&'static str>>> = Mutex::new(None);
+        let mut ids = IDS.lock().expect("not poisoned");
+        let ids = ids.get_or_insert_with(HashSet::new);
+        match ids.get(id) {
+            Some(&s) => Self(s),
+            None => {
+                let s: &'static str = Box::leak(id.to_owned().into_boxed_str());
+                ids.insert(s);
+                Self(s)
+            }
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        self.0
+    }
+
+    /// The wearer's side the piece is on, by its `_l` / `_r` suffix.
+    pub fn side(self) -> Option<super::regions::Side> {
+        use super::regions::Side;
+        if self.0.ends_with("_l") {
+            Some(Side::Left)
+        } else if self.0.ends_with("_r") {
+            Some(Side::Right)
+        } else {
+            None
         }
     }
 }
 
-/// The two garments on the sheet; a design can leave one out (e.g. a
-/// warm-up shirt without shorts).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Garment {
-    Shirt,
-    Shorts,
+impl std::fmt::Debug for PieceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+impl Serialize for PieceId {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for PieceId {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        Ok(PieceId::new(&String::deserialize(d)?))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,7 +85,7 @@ pub enum Panel {
     Back,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Atlas {
     pub width: u32,
@@ -52,29 +93,41 @@ pub struct Atlas {
     pub px_per_m: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Piece {
     pub id: PieceId,
+    /// printed on the sheet
     pub label: String,
+    /// shown in the editor
+    pub name: String,
+    /// the base colour it takes by default
+    pub role: ColorRole,
     /// x, y, w, h
     pub rect: [f32; 4],
     pub polygons: Vec<Vec<Pt>>,
+    /// top or bottom
+    #[serde(skip, default = "top")]
+    pub kind: Kind,
 }
 
-#[derive(Debug, Deserialize)]
+fn top() -> Kind {
+    Kind::Top
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Cuff {
     pub piece: PieceId,
     pub rect: [f32; 4],
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Placement {
     origin: Pt,
     x_sign: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Leg {
     pub piece: PieceId,
@@ -84,10 +137,9 @@ pub struct Leg {
     pub stripe: LegStripe,
 }
 
-/// The leg stripe continues the jersey's side panel: straight down from the
-/// jersey's side seam and as wide as the panel, measured on the fabric at the
-/// waist and at the hem. Fractions of the piece width.
-#[derive(Debug, Deserialize)]
+/// The leg stripe runs down the outer side seam, measured on the fabric at
+/// the waist and at the hem. Fractions of the piece width.
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LegStripe {
     pub top_centre: f32,
@@ -96,37 +148,167 @@ pub struct LegStripe {
     pub hem_width: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 struct Placements {
     front: Placement,
     back: Placement,
 }
 
+/// One garment's pattern.json.
 #[derive(Debug, Deserialize)]
+struct File {
+    atlas: Atlas,
+    pieces: Vec<Piece>,
+    #[serde(default)]
+    cuffs: Vec<Cuff>,
+    inside: [f32; 4],
+    placement: Option<Placements>,
+    #[serde(default)]
+    legs: Vec<Leg>,
+}
+
+/// Where a garment's own atlas lies on the sheet (its model's UVs cover it).
+#[derive(Debug, Clone)]
+pub struct Part {
+    pub garment: &'static Garment,
+    /// x, y, w, h in sheet pixels
+    pub rect: [f32; 4],
+}
+
+#[derive(Debug, Clone)]
 pub struct Pattern {
     pub atlas: Atlas,
     pub pieces: Vec<Piece>,
     pub cuffs: Vec<Cuff>,
-    /// x, y, w, h of the plain square the fabric's inside is mapped to
-    pub inside: [f32; 4],
+    /// x, y, w, h of the plain squares the fabric's inside is mapped to
+    pub insides: Vec<[f32; 4]>,
     placement: Placements,
     pub legs: Vec<Leg>,
+    /// top, then bottom
+    pub parts: [Part; 2],
+}
+
+/// The piece's display name in the current language. The pattern file holds
+/// the English name; German names are looked up by the printed label (which
+/// tells apart the different collars), then by piece id.
+pub fn piece_name(piece: &Piece) -> String {
+    use crate::i18n::{Language, current};
+    if current() == Language::English {
+        return piece.name.clone();
+    }
+    let by_label = match piece.label.as_str() {
+        "NECK BAND" | "NECK BINDING" => Some("Halsblende"),
+        "COLLAR" if piece.name.to_lowercase().contains("stand") || piece.name.contains("Stehkragen") => Some("Stehkragen"),
+        _ => None,
+    };
+    let german = by_label.or(match piece.id.as_str() {
+        "waistband" => Some("Bund"),
+        "back_panel" => Some("Rückenpanel"),
+        "leg_r" => Some("Hosenbein rechts"),
+        "leg_l" => Some("Hosenbein links"),
+        "bottom_front" => Some("Slip vorne"),
+        "bottom_back" => Some("Slip hinten"),
+        "front" => Some("Vorderteil"),
+        "back" => Some("Rückenteil"),
+        "sleeve_r" => Some("Ärmel rechts"),
+        "sleeve_l" => Some("Ärmel links"),
+        "side_r" => Some("Seitenteil rechts"),
+        "side_l" => Some("Seitenteil links"),
+        "shoulder_r" => Some("Schulterteil rechts"),
+        "shoulder_l" => Some("Schulterteil links"),
+        "collar" => Some("Kragen"),
+        "hood" => Some("Kapuze"),
+        "zipper" => Some("Reißverschluss"),
+        "placket" => Some("Knopfleiste"),
+        "underbust_band" => Some("Unterbrustband"),
+        "armhole_r" => Some("Armausschnitt rechts"),
+        "armhole_l" => Some("Armausschnitt links"),
+        _ => None,
+    });
+    german.map_or_else(|| piece.name.clone(), str::to_string)
 }
 
 impl Pattern {
+    /// The sheet of a top and a bottom: the top's atlas, the bottom's centred below.
+    pub fn of(top: &'static Garment, bottom: &'static Garment) -> Self {
+        let parse = |g: &Garment| -> File {
+            serde_json::from_str(g.pattern_json).unwrap_or_else(|e| panic!("{}: pattern.json is malformed: {e}", g.id))
+        };
+        let (t, b) = (parse(top), parse(bottom));
+        let width = t.atlas.width.max(b.atlas.width);
+        let height = t.atlas.height + b.atlas.height;
+        let offsets = [[((width - t.atlas.width) / 2) as f32, 0.0], [((width - b.atlas.width) / 2) as f32, t.atlas.height as f32]];
+        let parts = [
+            Part { garment: top, rect: [offsets[0][0], 0.0, t.atlas.width as f32, t.atlas.height as f32] },
+            Part { garment: bottom, rect: [offsets[1][0], offsets[1][1], b.atlas.width as f32, b.atlas.height as f32] },
+        ];
+        let mv = |[x, y]: Pt, [dx, dy]: Pt| [x + dx, y + dy];
+        let mv_rect = |[x, y, w, h]: [f32; 4], d: Pt| [x + d[0], y + d[1], w, h];
+        let placement = t.placement.clone().expect("a top has a front/back placement");
+        let placement = Placements {
+            front: Placement { origin: mv(placement.front.origin, offsets[0]), ..placement.front },
+            back: Placement { origin: mv(placement.back.origin, offsets[0]), ..placement.back },
+        };
+        let mut pattern = Pattern {
+            atlas: Atlas { width, height, px_per_m: t.atlas.px_per_m },
+            pieces: Vec::new(),
+            cuffs: Vec::new(),
+            insides: Vec::new(),
+            placement,
+            legs: Vec::new(),
+            parts,
+        };
+        for (file, kind, d) in [(t, Kind::Top, offsets[0]), (b, Kind::Bottom, offsets[1])] {
+            for mut piece in file.pieces {
+                piece.rect = mv_rect(piece.rect, d);
+                for poly in &mut piece.polygons {
+                    for p in poly.iter_mut() {
+                        *p = mv(*p, d);
+                    }
+                }
+                piece.kind = kind;
+                pattern.pieces.push(piece);
+            }
+            pattern.cuffs.extend(file.cuffs.into_iter().map(|c| Cuff { rect: mv_rect(c.rect, d), ..c }));
+            pattern.insides.push(mv_rect(file.inside, d));
+            pattern.legs.extend(file.legs);
+        }
+        pattern
+    }
+
+    /// The default top and bottom.
     pub fn load() -> Self {
-        serde_json::from_str(include_str!("../../assets/pattern.json")).expect("assets/pattern.json is malformed")
+        Self::of(garments::default(Kind::Top, garments::Body::Man), garments::default(Kind::Bottom, garments::Body::Man))
+    }
+
+    pub fn top(&self) -> &'static Garment {
+        self.parts[0].garment
+    }
+
+    pub fn bottom(&self) -> &'static Garment {
+        self.parts[1].garment
     }
 
     pub fn size(&self) -> (u32, u32) {
         (self.atlas.width, self.atlas.height)
     }
 
+    /// A piece every top has (front, back).
     pub fn piece(&self, id: PieceId) -> &Piece {
-        self.pieces.iter().find(|p| p.id == id).expect("every piece is in pattern.json")
+        self.get(id).unwrap_or_else(|| panic!("no piece {id:?}"))
     }
 
-    /// Atlas pixel of a point on the front or back, given in front-view
+    /// A piece of this top or bottom, if it has one.
+    pub fn get(&self, id: PieceId) -> Option<&Piece> {
+        self.pieces.iter().find(|p| p.id == id)
+    }
+
+    /// Is `p` on piece `id` (false if there is no such piece)?
+    pub fn on_piece(&self, id: PieceId, p: Pt) -> bool {
+        self.get(id).is_some_and(|piece| piece.contains(p))
+    }
+
+    /// Sheet pixel of a point on the front or back, given in front-view
     /// garment meters (x right = wearer's left, z up).
     pub fn place(&self, panel: Panel, [x, z]: Pt) -> Pt {
         let p = match panel {
@@ -137,7 +319,7 @@ impl Pattern {
         [p.origin[0] + p.x_sign * x * m, p.origin[1] - z * m]
     }
 
-    /// Inverse of `place`: template pixel -> front-view garment meters.
+    /// Inverse of `place`: sheet pixel -> front-view garment meters.
     pub fn unplace(&self, panel: Panel, [px, py]: Pt) -> Pt {
         let p = match panel {
             Panel::Front => &self.placement.front,
@@ -177,27 +359,37 @@ impl Piece {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::garments::GARMENTS;
 
     #[test]
-    fn layout_is_portrait_with_the_shirt_on_top() {
-        let p = Pattern::load();
-        let x = |id| p.piece(id).rect[0];
-        let y = |id| p.piece(id).rect[1];
-        assert!(p.atlas.height > p.atlas.width);
-        // front and back, then side, sleeve, sleeve, side, then the collar
-        assert!(x(PieceId::Front) < x(PieceId::Back) && y(PieceId::Front) == y(PieceId::Back));
-        assert!(x(PieceId::SideR) < x(PieceId::SleeveR) && x(PieceId::SleeveL) < x(PieceId::SideL));
-        assert!(y(PieceId::SleeveR) > y(PieceId::Front) && y(PieceId::Collar) > y(PieceId::SleeveR));
-        // the shorts below everything of the shirt
-        assert!(y(PieceId::LegR) > y(PieceId::Collar) && y(PieceId::LegL) > y(PieceId::LegR));
+    fn every_top_and_bottom_make_a_sheet() {
+        let bottom = garments::default(Kind::Bottom, garments::Body::Man);
+        for top in GARMENTS.iter().filter(|g| g.kind == Kind::Top) {
+            let p = Pattern::of(top, bottom);
+            // the top's pieces above the bottom's, inside the sheet
+            let lowest_top = p.pieces.iter().filter(|q| q.kind == Kind::Top).map(|q| q.rect[1] + q.rect[3]).fold(0.0, f32::max);
+            let highest_bottom = p.pieces.iter().filter(|q| q.kind == Kind::Bottom).map(|q| q.rect[1]).fold(f32::MAX, f32::min);
+            assert!(lowest_top < highest_bottom, "{}", top.id);
+            for q in &p.pieces {
+                assert!(q.rect[0] >= 0.0 && q.rect[0] + q.rect[2] <= p.atlas.width as f32, "{} {:?}", top.id, q.id);
+                assert!(q.rect[1] + q.rect[3] <= p.atlas.height as f32, "{} {:?}", top.id, q.id);
+            }
+            assert!(p.piece(PieceId::FRONT).contains(p.place(Panel::Front, [0.075, 1.235])), "{}", top.id);
+            assert!(p.piece(PieceId::BACK).contains(p.place(Panel::Back, [0.0, 1.17])), "{}", top.id);
+        }
+        for bottom in GARMENTS.iter().filter(|g| g.kind == Kind::Bottom) {
+            let p = Pattern::of(garments::default(Kind::Top, bottom.body), bottom);
+            for leg in &p.legs {
+                assert!(p.piece(leg.piece).contains(p.place_on_leg(leg, 0.17, 0.075)), "{}", bottom.id);
+            }
+        }
     }
 
     #[test]
-    fn placement_lands_on_the_pieces() {
-        let p = Pattern::load();
-        assert!(p.piece(PieceId::Front).contains(p.place(Panel::Front, [0.075, 1.235])));
-        assert!(p.piece(PieceId::Back).contains(p.place(Panel::Back, [0.0, 1.17])));
-        let leg = &p.legs[0];
-        assert!(p.piece(leg.piece).contains(p.place_on_leg(leg, 0.17, 0.075)));
+    fn piece_ids_are_interned() {
+        assert_eq!(PieceId::new("front"), PieceId::FRONT);
+        assert_eq!(PieceId::new("waistband").as_str(), "waistband");
+        let json = serde_json::to_string(&PieceId::SLEEVE_L).unwrap();
+        assert_eq!(serde_json::from_str::<PieceId>(&json).unwrap(), PieceId::SLEEVE_L);
     }
 }

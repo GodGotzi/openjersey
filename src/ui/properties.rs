@@ -1,35 +1,25 @@
 //! The properties of the selected object: transform in millimetres,
 //! opacity, clipping to pieces, and the settings of its kind.
 
+use crate::i18n::tr;
 use std::sync::Arc;
 
 use myth::egui::egui::{self, DragValue};
 
-use crate::document::{map, Asset, Object, ObjectKind, Rgb, StrokeStyle};
-use crate::template::pattern::PieceId;
-use crate::workspace::{with_world_pos, Workspace};
-
-const PIECES: [(PieceId, &str); 9] = [
-    (PieceId::Front, "Vorderteil"),
-    (PieceId::Back, "Rückenteil"),
-    (PieceId::SideL, "Seite links"),
-    (PieceId::SideR, "Seite rechts"),
-    (PieceId::SleeveL, "Ärmel links"),
-    (PieceId::SleeveR, "Ärmel rechts"),
-    (PieceId::Collar, "Kragen"),
-    (PieceId::LegL, "Hosenbein links"),
-    (PieceId::LegR, "Hosenbein rechts"),
-];
+use crate::document::{Asset, Object, ObjectKind, Rgb, StrokeStyle, map};
+use crate::template::pattern::piece_name;
+use crate::template::regions::RegionId;
+use crate::workspace::{Workspace, with_world_pos};
 
 pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
-    ui.strong("Eigenschaften");
+    ui.strong(tr("Properties", "Eigenschaften"));
     ui.separator();
     let [id] = ws.selection.as_slice() else {
         if ws.selection.is_empty() {
-            ui.weak("Nichts ausgewählt.");
+            ui.weak(tr("Nothing selected.", "Nichts ausgewählt."));
         } else {
-            ui.weak(format!("{} Objekte ausgewählt.", ws.selection.len()));
-            if ui.button("Gruppieren").clicked() {
+            ui.weak(format!("{} {}", ws.selection.len(), tr("objects selected.", "Objekte ausgewählt.")));
+            if ui.button(tr("Group", "Gruppieren")).clicked() {
                 ws.group_selection();
             }
         }
@@ -43,6 +33,8 @@ pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
     let mut pos_mm = [world[0] / mm, world[1] / mm];
     let mut replace_asset = false;
     let mut fit_logo: Option<Arc<Asset>> = None;
+    // the model's pieces, for "only on"
+    let pieces: Vec<_> = ws.pattern.pieces.iter().map(|p| (p.id, piece_name(p))).collect();
 
     egui::ScrollArea::vertical().id_salt("props").auto_shrink([false, false]).show(ui, |ui| {
         egui::Grid::new("props-grid").num_columns(2).spacing([8.0, 4.0]).show(ui, |ui| {
@@ -50,7 +42,7 @@ pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
             ui.text_edit_singleline(&mut obj.name);
             ui.end_row();
 
-            ui.label("Typ");
+            ui.label(tr("Type", "Typ"));
             ui.label(obj.kind.type_name());
             ui.end_row();
 
@@ -61,14 +53,14 @@ pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
             });
             ui.end_row();
 
-            ui.label("Drehung");
+            ui.label(tr("Rotation", "Drehung"));
             let mut deg = obj.xf.rotation.to_degrees();
             if ui.add(DragValue::new(&mut deg).speed(0.5).suffix("°").range(-360.0..=360.0)).changed() {
                 obj.xf.rotation = deg.to_radians();
             }
             ui.end_row();
 
-            ui.label("Skalierung");
+            ui.label(tr("Scale", "Skalierung"));
             ui.horizontal(|ui| {
                 let mut sx = obj.xf.scale[0] * 100.0;
                 let mut sy = obj.xf.scale[1] * 100.0;
@@ -87,27 +79,28 @@ pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
             });
             ui.end_row();
 
-            ui.label("Deckkraft");
+            ui.label(tr("Opacity", "Deckkraft"));
             ui.add(egui::Slider::new(&mut obj.opacity, 0.0..=1.0));
             ui.end_row();
 
             ui.label("");
             ui.horizontal(|ui| {
-                ui.checkbox(&mut obj.visible, "sichtbar");
-                ui.checkbox(&mut obj.locked, "gesperrt");
+                ui.checkbox(&mut obj.visible, tr("visible", "sichtbar"));
+                ui.checkbox(&mut obj.locked, tr("locked", "gesperrt"));
             });
             ui.end_row();
 
-            ui.label("Nur auf");
+            ui.label(tr("Only on", "Nur auf"));
             let text = if obj.clip.is_empty() {
-                "allen Teilen".to_string()
+                tr("all pieces", "allen Teilen").to_string()
             } else {
-                obj.clip.iter().filter_map(|c| PIECES.iter().find(|p| p.0 == *c)).map(|p| p.1).collect::<Vec<_>>().join(", ")
+                obj.clip.iter().map(|&c| RegionId::Piece(c).label(&ws.pattern)).collect::<Vec<_>>().join(", ")
             };
             ui.menu_button(text, |ui| {
-                for (piece, name) in PIECES {
+                for (piece, name) in &pieces {
+                    let piece = *piece;
                     let mut on = obj.clip.contains(&piece);
-                    if ui.checkbox(&mut on, name).changed() {
+                    if ui.checkbox(&mut on, name.as_str()).changed() {
                         if on {
                             obj.clip.push(piece);
                         } else {
@@ -124,7 +117,7 @@ pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
     });
 
     if replace_asset
-        && let Some(path) = rfd::FileDialog::new().add_filter("Bild / Logo", &["svg", "png", "jpg", "jpeg"]).pick_file()
+        && let Some(path) = rfd::FileDialog::new().add_filter(tr("Image / logo", "Bild / Logo"), &["svg", "png", "jpg", "jpeg"]).pick_file()
     {
         match Asset::from_file(&path) {
             Ok(asset) => {
@@ -185,8 +178,11 @@ fn kind_ui(ui: &mut egui::Ui, kind: &mut ObjectKind, mm: f32, replace: &mut bool
             ui.horizontal(|ui| {
                 let mut on = max_width.is_some();
                 if ui
-                    .checkbox(&mut on, "max. Breite")
-                    .on_hover_text("Längerer Text wird schmaler gesetzt, damit er hineinpasst (z. B. lange Spielernamen)")
+                    .checkbox(&mut on, tr("max. width", "max. Breite"))
+                    .on_hover_text(tr(
+                        "Longer text is set narrower so that it fits (e.g. long player names)",
+                        "Längerer Text wird schmaler gesetzt, damit er hineinpasst (z. B. lange Spielernamen)",
+                    ))
                     .changed()
                 {
                     *max_width = on.then_some(200.0 * mm);
@@ -199,14 +195,14 @@ fn kind_ui(ui: &mut egui::Ui, kind: &mut ObjectKind, mm: f32, replace: &mut bool
                 }
             });
             let mut cap = *size * 0.73 / mm;
-            if ui.add(egui::Slider::new(&mut cap, 3.0..=300.0).logarithmic(true).text("mm Versalhöhe")).changed() {
+            if ui.add(egui::Slider::new(&mut cap, 3.0..=300.0).logarithmic(true).text(tr("mm cap height", "mm Versalhöhe"))).changed() {
                 *size = cap * mm / 0.73;
             }
-            ui.add(egui::Slider::new(fatten, 0.0..=0.15).text("fetter"));
-            ui.add(egui::Slider::new(italic, -0.4..=0.4).text("kursiv"));
+            ui.add(egui::Slider::new(fatten, 0.0..=0.15).text(tr("bolder", "fetter")));
+            ui.add(egui::Slider::new(italic, -0.4..=0.4).text(tr("italic", "kursiv")));
             let mut auto = color.is_none();
             ui.horizontal(|ui| {
-                if ui.checkbox(&mut auto, "automatische Farbe").changed() {
+                if ui.checkbox(&mut auto, tr("automatic colour", "automatische Farbe")).changed() {
                     *color = if auto { None } else { Some([255, 255, 255]) };
                 }
                 if let Some(c) = color {
@@ -215,24 +211,24 @@ fn kind_ui(ui: &mut egui::Ui, kind: &mut ObjectKind, mm: f32, replace: &mut bool
             });
         }
         ObjectKind::Graphic { asset, size, tint } => {
-            ui.label(format!("Datei: {}", asset.name));
+            ui.label(format!("{} {}", tr("File:", "Datei:"), asset.name));
             let mut w = size[0] / mm;
-            if ui.add(DragValue::new(&mut w).speed(0.5).suffix(" mm breit").range(2.0..=1000.0)).changed() {
+            if ui.add(DragValue::new(&mut w).speed(0.5).suffix(tr(" mm wide", " mm breit")).range(2.0..=1000.0)).changed() {
                 let ratio = size[1] / size[0];
                 size[0] = w * mm;
                 size[1] = size[0] * ratio;
             }
-            color_opt(ui, "einfärben", tint, [255, 255, 255]);
-            if ui.button("Bild ersetzen…").clicked() {
+            color_opt(ui, tr("tint", "einfärben"), tint, [255, 255, 255]);
+            if ui.button(tr("Replace image…", "Bild ersetzen…")).clicked() {
                 *replace = true;
             }
         }
         ObjectKind::Shape { closed, fill, stroke, .. } => {
-            ui.checkbox(closed, "geschlossen");
-            color_opt(ui, "Füllung", fill, [255, 255, 255]);
+            ui.checkbox(closed, tr("closed", "geschlossen"));
+            color_opt(ui, tr("Fill", "Füllung"), fill, [255, 255, 255]);
             ui.horizontal(|ui| {
                 let mut on = stroke.is_some();
-                if ui.checkbox(&mut on, "Kontur").changed() {
+                if ui.checkbox(&mut on, tr("Outline", "Kontur")).changed() {
                     *stroke = on.then_some(stroke.unwrap_or(StrokeStyle { color: [255, 255, 255], width: 3.0 * mm }));
                 }
                 if let Some(s) = stroke {
@@ -248,25 +244,25 @@ fn kind_ui(ui: &mut egui::Ui, kind: &mut ObjectKind, mm: f32, replace: &mut bool
             ui.label("Text");
             ui.text_edit_singleline(text);
             let mut cap = *size * 0.73 / mm;
-            if ui.add(egui::Slider::new(&mut cap, 2.0..=60.0).text("mm Versalhöhe")).changed() {
+            if ui.add(egui::Slider::new(&mut cap, 2.0..=60.0).text(tr("mm cap height", "mm Versalhöhe"))).changed() {
                 *size = cap * mm / 0.73;
             }
             let mut sp = *line_spacing / mm;
-            if ui.add(egui::Slider::new(&mut sp, 3.0..=100.0).text("mm Zeilenabstand")).changed() {
+            if ui.add(egui::Slider::new(&mut sp, 3.0..=100.0).text(tr("mm line spacing", "mm Zeilenabstand"))).changed() {
                 *line_spacing = sp * mm;
             }
             let mut deg = angle.to_degrees();
-            if ui.add(egui::Slider::new(&mut deg, -90.0..=90.0).text("° Winkel")).changed() {
+            if ui.add(egui::Slider::new(&mut deg, -90.0..=90.0).text(tr("° angle", "° Winkel"))).changed() {
                 *angle = deg.to_radians();
             }
-            ui.add(egui::Slider::new(italic, -0.4..=0.4).text("kursiv"));
+            ui.add(egui::Slider::new(italic, -0.4..=0.4).text(tr("italic", "kursiv")));
             ui.horizontal(|ui| {
-                ui.label("Farbe");
+                ui.label(tr("Colour", "Farbe"));
                 ui.color_edit_button_srgb(color);
             });
         }
         ObjectKind::Placeholder { label, size } => {
-            ui.label("Beschriftung");
+            ui.label(tr("Label", "Beschriftung"));
             ui.text_edit_singleline(label);
             ui.horizontal(|ui| {
                 let (mut w, mut h) = (size[0] / mm / 10.0, size[1] / mm / 10.0);
@@ -278,12 +274,19 @@ fn kind_ui(ui: &mut egui::Ui, kind: &mut ObjectKind, mm: f32, replace: &mut bool
                     size[1] = h * 10.0 * mm;
                 }
             });
-            if ui.button("Logo einsetzen…").on_hover_text("Ersetzt den Platzhalter durch eine Grafik in seiner Größe").clicked() {
+            if ui
+                .button(tr("Insert logo…", "Logo einsetzen…"))
+                .on_hover_text(tr(
+                    "Replaces the placeholder with a graphic of the same size",
+                    "Ersetzt den Platzhalter durch eine Grafik in seiner Größe",
+                ))
+                .clicked()
+            {
                 *replace = true;
             }
         }
         ObjectKind::Group { children } => {
-            ui.label(format!("{} Objekte", children.len()));
+            ui.label(format!("{} {}", children.len(), tr("objects", "Objekte")));
         }
     }
 }

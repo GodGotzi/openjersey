@@ -1,13 +1,13 @@
-//! The 3D side: studio lighting, the jersey + shorts model and the camera.
+//! The 3D side: studio lighting, the garment models (top and bottom) and the camera.
 
+use myth::ToneMappingMode;
 use myth::prelude::*;
 use myth::render::FrameComposer;
 use myth::scene::{Frustum, RenderCamera};
-use myth::ToneMappingMode;
 
 use crate::document::Garments;
+use crate::template::pattern::Pattern;
 
-const MODEL_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/jersey.glb");
 const ENV_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/studio.hdr");
 
 /// Orbit target and start position, in model meters (the mannequin is
@@ -16,19 +16,33 @@ const TARGET: Vec3 = Vec3::new(0.0, 1.02, 0.0);
 const START: Vec3 = Vec3::new(0.0, 1.1, 2.7);
 const BACKGROUND: [f32; 3] = [0.913, 0.913, 0.922]; // #e9e9eb like the Tauri app
 
-pub struct Studio {
+/// One garment model (top or bottom) in the scene.
+struct Slot {
     prefab: PrefabHandle,
-    pub loaded: bool,
-    /// the "jersey" and "shorts" mesh nodes, once instantiated
-    garment_nodes: [Option<NodeHandle>; 2],
+    path: &'static str,
+    /// the instantiated model's nodes, root first; empty until loaded
+    nodes: Vec<NodeHandle>,
+    /// the print texture it wears; `nodes` are rebuilt when this changes
+    texture: Option<TextureHandle>,
+    failed: bool,
+}
+
+pub struct Studio {
+    /// top, bottom
+    slots: [Slot; 2],
     camera: NodeHandle,
     pub controls: OrbitControls,
 }
-
 impl Studio {
-    pub fn new(engine: &mut Engine) -> Self {
+    pub fn new(engine: &mut Engine, pattern: &Pattern) -> Self {
         let env = engine.assets.load_hdr_texture(ENV_PATH);
-        let prefab = engine.assets.load_gltf(MODEL_PATH);
+        let slots = pattern.parts.clone().map(|part| Slot {
+            prefab: engine.assets.load_gltf(part.garment.glb_path),
+            path: part.garment.glb_path,
+            nodes: Vec::new(),
+            texture: None,
+            failed: false,
+        });
 
         let scene = engine.scene_manager.create_active();
         scene.environment.set_env_map(Some(env));
@@ -65,56 +79,95 @@ impl Studio {
         let mut controls = OrbitControls::new(START, TARGET);
         controls.min_distance = 1.2;
         controls.max_distance = 6.0;
-        Self { prefab, loaded: false, garment_nodes: [None; 2], camera, controls }
+        Self { slots, camera, controls }
     }
 
-    /// Instantiates the model once loaded and gives jersey and shorts a
-    /// fabric material carrying the print template. Returns true when it happened.
-    pub fn try_instantiate(&mut self, engine: &mut Engine, print: TextureHandle) -> bool {
-        if self.loaded {
-            return false;
-        }
-        let assets = engine.assets.clone();
-        let Some(scene) = engine.scene_manager.active_scene_mut() else { return false };
-        let Some(prefab) = assets.prefabs.get(self.prefab) else {
-            if let Some(err) = assets.prefabs.get_error(self.prefab) {
-                eprintln!("failed to load {MODEL_PATH}: {err}");
-                self.loaded = true;
-            }
-            return false;
-        };
-        let root = scene.instantiate(prefab.as_ref());
-        scene.update_subtree(root);
+    /// Both models are in the scene.
+    pub fn loaded(&self) -> bool {
+        self.slots.iter().all(|s| !s.nodes.is_empty() || s.failed)
+    }
 
-        // the fabric's inside is mapped to a plain swatch on the template,
-        // so one material shows both print and inside (the solidified
-        // fabric has an inner surface of its own)
-        let fabric = assets.materials.add(
-            PhysicalMaterial::new(Vec4::ONE)
-                .with_map(print)
-                .with_roughness(0.95)
-                .with_side(Side::Double)
-                .with_sheen(Vec3::splat(0.45), 0.9),
-        );
-        let meshes: Vec<NodeHandle> = scene.meshes.iter().map(|(node, _)| node).collect();
-        for node in meshes {
-            if let Some(mesh) = scene.get_mesh_mut(node) {
-                mesh.material = fabric;
-                mesh.cast_shadows = true;
-                mesh.receive_shadows = true;
+    /// Swaps in the models of `pattern`'s top and bottom where they changed;
+    /// `try_instantiate` puts them in once loaded.
+    pub fn set_garments(&mut self, engine: &mut Engine, pattern: &Pattern) {
+        for (slot, part) in self.slots.iter_mut().zip(&pattern.parts) {
+            if slot.path == part.garment.glb_path {
+                continue;
             }
+            if let Some(scene) = engine.scene_manager.active_scene_mut()
+                && let Some(&root) = slot.nodes.first()
+            {
+                scene.remove_node(root);
+            }
+            *slot = Slot {
+                prefab: engine.assets.load_gltf(part.garment.glb_path),
+                path: part.garment.glb_path,
+                nodes: Vec::new(),
+                texture: None,
+                failed: false,
+            };
         }
-        self.garment_nodes = ["jersey", "shorts"].map(|name| scene.find_node_by_name(name));
-        self.loaded = true;
-        true
+    }
+
+    /// Instantiates each model once loaded (again, if its texture changed),
+    /// with a fabric material carrying its part of the print sheet.
+    pub fn try_instantiate(&mut self, engine: &mut Engine, textures: [TextureHandle; 2]) {
+        let assets = engine.assets.clone();
+        let Some(scene) = engine.scene_manager.active_scene_mut() else { return };
+        for (slot, texture) in self.slots.iter_mut().zip(textures) {
+            if slot.failed || (!slot.nodes.is_empty() && slot.texture == Some(texture)) {
+                continue;
+            }
+            let Some(prefab) = assets.prefabs.get(slot.prefab) else {
+                if let Some(err) = assets.prefabs.get_error(slot.prefab) {
+                    eprintln!("failed to load {}: {err}", slot.path);
+                    slot.failed = true;
+                }
+                continue;
+            };
+            if let Some(&root) = slot.nodes.first() {
+                scene.remove_node(root);
+            }
+            let root = scene.instantiate(prefab.as_ref());
+            scene.update_subtree(root);
+            let mut nodes = vec![root];
+            let mut i = 0;
+            while i < nodes.len() {
+                if let Some(node) = scene.get_node(nodes[i]) {
+                    nodes.extend(node.children().iter().copied());
+                }
+                i += 1;
+            }
+            // the fabric's inside is mapped to a plain swatch on the sheet,
+            // so one material shows both print and inside (the solidified
+            // fabric has an inner surface of its own)
+            let fabric = assets.materials.add(
+                PhysicalMaterial::new(Vec4::ONE)
+                    .with_map(texture)
+                    .with_roughness(0.95)
+                    .with_side(Side::Double)
+                    .with_sheen(Vec3::splat(0.45), 0.9),
+            );
+            for &node in &nodes {
+                if let Some(mesh) = scene.get_mesh_mut(node) {
+                    mesh.material = fabric;
+                    mesh.cast_shadows = true;
+                    mesh.receive_shadows = true;
+                }
+            }
+            slot.nodes = nodes;
+            slot.texture = Some(texture);
+        }
     }
 
     /// Hides the garments the design leaves out.
     pub fn show_garments(&self, engine: &mut Engine, shown: &Garments) {
         let Some(scene) = engine.scene_manager.active_scene_mut() else { return };
-        for (node, visible) in self.garment_nodes.iter().zip([shown.shirt, shown.shorts]) {
-            if let Some(node) = node.and_then(|n| scene.get_node_mut(n)) {
-                node.visible = visible;
+        for (slot, visible) in self.slots.iter().zip([shown.shirt, shown.shorts]) {
+            for &node in &slot.nodes {
+                if let Some(node) = scene.get_node_mut(node) {
+                    node.visible = visible;
+                }
             }
         }
     }
@@ -126,13 +179,36 @@ impl Studio {
         }
     }
 
-    pub fn reset_view(&mut self, back: bool) {
-        let mut pos = START;
-        if back {
-            pos.z = -pos.z;
-        }
+    /// Moves the camera to look at the model from `view`, keeping the
+    /// distance of the start position.
+    pub fn set_view(&mut self, view: View) {
+        let from_front = START - TARGET;
+        let (sin, cos) = view.azimuth().sin_cos();
+        let radius = from_front.z;
         self.controls.set_target(TARGET);
-        self.controls.set_position(pos);
+        self.controls.set_position(TARGET + Vec3::new(radius * sin, from_front.y, radius * cos));
+    }
+}
+
+/// A side of the model the camera can be moved to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum View {
+    Front,
+    Left,
+    Back,
+    Right,
+}
+
+impl View {
+    /// Angle around the vertical axis, from the front, towards the wearer's left.
+    fn azimuth(self) -> f32 {
+        let quarter_turns = match self {
+            View::Front => 0.0,
+            View::Left => 1.0,
+            View::Back => 2.0,
+            View::Right => 3.0,
+        };
+        quarter_turns * std::f32::consts::FRAC_PI_2
     }
 }
 

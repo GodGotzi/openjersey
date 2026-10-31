@@ -29,16 +29,7 @@ pub enum LayerKind {
     Text { text: String, pos: Pt, height: f32, rotation: f32, color: Option<Rgb>, fatten: f32 },
     Image { logo: LogoFile, pos: Pt, width: f32, rotation: f32 },
     Shape { points: Vec<Pt>, color: Rgb },
-    Pattern {
-        text: String,
-        height: f32,
-        line_spacing: f32,
-        angle: f32,
-        skew: f32,
-        color: Rgb,
-        opacity: f32,
-        area: Vec<Vec<Pt>>,
-    },
+    Pattern { text: String, height: f32, line_spacing: f32, angle: f32, skew: f32, color: Rgb, opacity: f32, area: Vec<Vec<Pt>> },
 }
 
 #[derive(Debug, Deserialize)]

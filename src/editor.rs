@@ -1,12 +1,13 @@
 //! The 2D canvas: the print template with every garment piece laid out like
-//! the reference template, a transform gizmo for the selection, and the
+//! a sublimation print template, a transform gizmo for the selection, and the
 //! drawing tools.
 
+use crate::i18n::tr;
 use std::sync::Arc;
 
-use myth::egui::egui::{self, Color32, Key, Pos2, Rect, Sense, Stroke, StrokeKind, TextureId, Vec2};
+use myth::egui::egui::{self, Align2, Color32, Key, Pos2, Rect, Sense, Stroke, StrokeKind, TextureId, Vec2};
 
-use crate::document::{map, unmap, Asset, Garments, Object, ObjectId, ObjectKind, Rgb, StrokeStyle, Xf};
+use crate::document::{Asset, Garments, Object, ObjectId, ObjectKind, Rgb, StrokeStyle, Xf, map, unmap};
 use crate::render::geom;
 use crate::template::pattern::{Pattern, Pt};
 use crate::template::regions::hit_test;
@@ -61,20 +62,40 @@ impl Tool {
         }
     }
 
+    /// The short name shown in the tool options bar.
+    pub fn name(self) -> &'static str {
+        match self {
+            Tool::Select => tr("Select", "Auswahl"),
+            Tool::Hand => tr("Hand", "Hand"),
+            Tool::Brush => tr("Brush", "Pinsel"),
+            Tool::Eraser => tr("Eraser", "Radierer"),
+            Tool::Rect => tr("Rectangle", "Rechteck"),
+            Tool::Ellipse => tr("Ellipse", "Ellipse"),
+            Tool::Polygon => tr("Polygon", "Polygon"),
+            Tool::Text => tr("Text", "Text"),
+            Tool::Image => tr("Image", "Bild"),
+            Tool::Placeholder => tr("Logo placeholder", "Logo-Platzhalter"),
+            Tool::Fill => tr("Fill", "Füllen"),
+            Tool::Eyedropper => tr("Eyedropper", "Pipette"),
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
-            Tool::Select => "Auswahl / Transformieren (V)",
-            Tool::Hand => "Hand: Ansicht verschieben (H)",
-            Tool::Brush => "Pinsel (B)",
-            Tool::Eraser => "Radierer: Pinselstriche löschen (E)",
-            Tool::Rect => "Rechteck (R)",
-            Tool::Ellipse => "Ellipse (O)",
-            Tool::Polygon => "Polygon: klicken, Doppelklick/Enter schließt (P)",
-            Tool::Text => "Text (T)",
-            Tool::Image => "Bild / SVG importieren (I)",
-            Tool::Placeholder => "Logo-Platzhalter aufziehen (L)",
-            Tool::Fill => "Füllen: Teil oder Objekt einfärben (F)",
-            Tool::Eyedropper => "Pipette (Y)",
+            Tool::Select => tr("Select / transform (V)", "Auswahl / Transformieren (V)"),
+            Tool::Hand => tr("Hand: pan the view (H)", "Hand: Ansicht verschieben (H)"),
+            Tool::Brush => tr("Brush (B)", "Pinsel (B)"),
+            Tool::Eraser => tr("Eraser: delete brush strokes (E)", "Radierer: Pinselstriche löschen (E)"),
+            Tool::Rect => tr("Rectangle (R)", "Rechteck (R)"),
+            Tool::Ellipse => tr("Ellipse (O)", "Ellipse (O)"),
+            Tool::Polygon => {
+                tr("Polygon: click to add points, double-click/Enter closes (P)", "Polygon: klicken, Doppelklick/Enter schließt (P)")
+            }
+            Tool::Text => tr("Text (T)", "Text (T)"),
+            Tool::Image => tr("Import image / SVG (I)", "Bild / SVG importieren (I)"),
+            Tool::Placeholder => tr("Drag out a logo placeholder (L)", "Logo-Platzhalter aufziehen (L)"),
+            Tool::Fill => tr("Fill: colour a piece or object (F)", "Füllen: Teil oder Objekt einfärben (F)"),
+            Tool::Eyedropper => tr("Eyedropper (Y)", "Pipette (Y)"),
         }
     }
 
@@ -129,6 +150,8 @@ pub struct Editor {
     pan: Vec2,
     drag: Option<Drag>,
     marquee_end: Pt,
+    /// The cursor over the canvas, in sheet millimetres (for the status bar).
+    pub cursor_mm: Option<Pt>,
     /// set by the eyedropper; read by the app to show it
     pub picked: Option<Rgb>,
 }
@@ -140,6 +163,10 @@ pub struct CanvasView<'a> {
     pub pixels: Option<&'a tiny_skia::Pixmap>,
 }
 
+const MIN_ZOOM: f32 = 0.5;
+const MAX_ZOOM: f32 = 16.0;
+/// Thickness of the rulers along the top and left of the canvas.
+const RULER: f32 = 24.0;
 const HANDLE: f32 = 5.0;
 const ROTATE_OFFSET: f32 = 26.0;
 const SELECTION: Color32 = Color32::from_rgb(70, 140, 255);
@@ -162,8 +189,27 @@ impl Editor {
             pan: Vec2::ZERO,
             drag: None,
             marquee_end: [0.0, 0.0],
+            cursor_mm: None,
             picked: None,
         }
+    }
+
+    /// The zoom relative to fitting the shown pieces into the view.
+    pub fn zoom(&self) -> f32 {
+        self.zoom
+    }
+
+    /// Zooms around the centre of the view.
+    pub fn zoom_by(&mut self, factor: f32) {
+        let zoom = (self.zoom * factor).clamp(MIN_ZOOM, MAX_ZOOM);
+        self.pan *= zoom / self.zoom;
+        self.zoom = zoom;
+    }
+
+    /// Fits the shown pieces into the view again.
+    pub fn fit_view(&mut self) {
+        self.zoom = 1.0;
+        self.pan = Vec2::ZERO;
     }
 
     pub fn set_tool(&mut self, tool: Tool) {
@@ -177,7 +223,8 @@ impl Editor {
     }
 
     pub fn choose_image(&mut self) {
-        if let Some(path) = rfd::FileDialog::new().add_filter("Bild / Logo", &["svg", "png", "jpg", "jpeg"]).pick_file() {
+        if let Some(path) = rfd::FileDialog::new().add_filter(tr("Image / logo", "Bild / Logo"), &["svg", "png", "jpg", "jpeg"]).pick_file()
+        {
             match Asset::from_file(&path) {
                 Ok(asset) => self.pending_image = Some(Arc::new(asset)),
                 Err(err) => eprintln!("{err}"),
@@ -200,7 +247,10 @@ impl Editor {
     pub fn canvas(&mut self, ui: &mut egui::Ui, ws: &mut Workspace, view: CanvasView<'_>) {
         let (tw, th) = ws.pattern.size();
         let template = Vec2::new(tw as f32, th as f32);
-        let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
+        let (full, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
+        // the rulers take the top and left edge; the sheet lives in the rest
+        let rect = Rect::from_min_max(full.min + Vec2::splat(RULER), full.max);
+        let hover = response.hover_pos().filter(|p| rect.contains(*p));
         // fit the pieces that are shown (the shirt alone when the shorts are left out)
         let (focus_min, focus_size) = shown_area(&ws.pattern, &ws.doc.garments).unwrap_or((Vec2::ZERO, template));
         let focus_centre = focus_min + focus_size / 2.0;
@@ -211,19 +261,22 @@ impl Editor {
         let to_s = |p: Pt| Pos2::new(origin.x + p[0] * scale, origin.y + p[1] * scale);
 
         // zoom around the cursor
-        if let Some(hover) = response.hover_pos() {
+        if let Some(hover) = hover {
             let scroll = ui.input(|i| i.smooth_scroll_delta.y);
             if scroll != 0.0 {
                 let before = to_t(hover);
-                self.zoom = (self.zoom * (scroll * 0.002).exp()).clamp(0.5, 16.0);
+                self.zoom = (self.zoom * (scroll * 0.002).exp()).clamp(MIN_ZOOM, MAX_ZOOM);
                 let s = fit * self.zoom;
                 let o = rect.center() - focus_centre * s + self.pan;
                 self.pan += hover - Pos2::new(o.x + before[0] * s, o.y + before[1] * s);
             }
         }
 
-        let pointer = response.interact_pointer_pos().or(response.hover_pos());
+        // a drag that began on the sheet may leave it; anything else must start on the sheet
+        let pointer = response.interact_pointer_pos().or(hover).filter(|p| self.drag.is_some() || rect.contains(*p));
         let at = pointer.map(to_t);
+        let mm = ws.px_per_mm();
+        self.cursor_mm = hover.map(to_t).map(|[x, y]| [x / mm, y / mm]);
         let mods = ui.input(|i| i.modifiers);
         let pan_button = ui.input(|i| i.pointer.secondary_down() || i.pointer.middle_down());
 
@@ -247,18 +300,15 @@ impl Editor {
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0.0, Color32::from_gray(40));
         let image_rect = Rect::from_min_size(origin, template * scale);
+        painter.rect_filled(image_rect.translate(Vec2::new(2.0, 4.0)).expand(1.0), 3.0, Color32::from_black_alpha(70));
         painter.image(view.texture, image_rect, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
         draw_labels(&painter, &ws.pattern, &ws.doc.garments, to_s, scale);
 
         for guide in &ws.guides {
             let c = Color32::from_rgb(255, 60, 200);
             match *guide {
-                Guide::Vertical(x) => {
-                    painter.line_segment([to_s([x, 0.0]), to_s([x, template.y])], Stroke::new(1.0_f32, c))
-                }
-                Guide::Horizontal(y) => {
-                    painter.line_segment([to_s([0.0, y]), to_s([template.x, y])], Stroke::new(1.0_f32, c))
-                }
+                Guide::Vertical(x) => painter.line_segment([to_s([x, 0.0]), to_s([x, template.y])], Stroke::new(1.0_f32, c)),
+                Guide::Horizontal(y) => painter.line_segment([to_s([0.0, y]), to_s([template.x, y])], Stroke::new(1.0_f32, c)),
             };
         }
         self.draw_selection(&painter, ws, &to_s);
@@ -272,12 +322,12 @@ impl Editor {
         }
         if !self.polygon.is_empty() {
             let mut pts: Vec<Pos2> = self.polygon.iter().map(|&p| to_s(p)).collect();
-            if let Some(h) = response.hover_pos() {
+            if let Some(h) = hover {
                 pts.push(h);
             }
             painter.add(egui::Shape::line(pts, Stroke::new(1.5_f32, Color32::WHITE)));
         }
-        if let Some(hover) = response.hover_pos() {
+        if let Some(hover) = hover {
             match self.tool {
                 Tool::Brush | Tool::Eraser => {
                     let r = self.brush_mm * ws.px_per_mm() * scale / 2.0;
@@ -287,16 +337,16 @@ impl Editor {
                     if let Some(p) = at {
                         let name = match ws.pick(p, 2.0 / scale, true) {
                             Some(id) => ws.object_name(id),
-                            None => hit_test(&ws.pattern, &ws.regions, p).map(|r| r.label()).unwrap_or_default(),
+                            None => hit_test(&ws.pattern, &ws.regions, p).map(|r| r.label(&ws.pattern)).unwrap_or_default(),
                         };
                         tooltip(&painter, hover, &name);
                     }
                 }
-                Tool::Image if self.pending_image.is_some() => tooltip(&painter, hover, "Klicken zum Platzieren"),
+                Tool::Image if self.pending_image.is_some() => tooltip(&painter, hover, tr("Click to place", "Klicken zum Platzieren")),
                 _ => {}
             }
         }
-        painter.rect_stroke(rect, 0.0, Stroke::new(1.0_f32, Color32::from_gray(25)), StrokeKind::Inside);
+        draw_rulers(&ui.painter_at(full), full, rect, origin, scale * mm, hover);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -415,12 +465,14 @@ impl Editor {
                 if started || clicked {
                     let width = self.brush_mm * px_mm;
                     let stroke = Some(StrokeStyle { color: self.color, width });
-                    let id = ws.add(None, Object::new("Pinselstrich", Xf::default(), ObjectKind::Shape {
-                        points: vec![p],
-                        closed: false,
-                        fill: None,
-                        stroke,
-                    }));
+                    let id = ws.add(
+                        None,
+                        Object::new(
+                            tr("Brush stroke", "Pinselstrich"),
+                            Xf::default(),
+                            ObjectKind::Shape { points: vec![p], closed: false, fill: None, stroke },
+                        ),
+                    );
                     self.drag = Some(Drag::Brush { id, points: vec![p] });
                     if clicked {
                         self.finish_drag(ws);
@@ -474,14 +526,21 @@ impl Editor {
             }
             Tool::Text => {
                 if clicked && !self.text_input.is_empty() {
-                    ws.add(None, Object::new(self.text_input.clone(), Xf::at(p), ObjectKind::Text {
-                        text: self.text_input.clone(),
-                        size: self.text_mm * px_mm / 0.73,
-                        color: Some(self.color),
-                        fatten: 0.04,
-                        italic: 0.0,
-                        max_width: None,
-                    }));
+                    ws.add(
+                        None,
+                        Object::new(
+                            self.text_input.clone(),
+                            Xf::at(p),
+                            ObjectKind::Text {
+                                text: self.text_input.clone(),
+                                size: self.text_mm * px_mm / 0.73,
+                                color: Some(self.color),
+                                fatten: 0.04,
+                                italic: 0.0,
+                                max_width: None,
+                            },
+                        ),
+                    );
                     self.tool = Tool::Select;
                 }
             }
@@ -490,11 +549,7 @@ impl Editor {
                     let [nw, nh] = asset.natural_size();
                     let w = 100.0 * px_mm; // 10 cm wide to start with
                     let name = asset.name.clone();
-                    ws.add(None, Object::new(name, Xf::at(p), ObjectKind::Graphic {
-                        asset,
-                        size: [w, w * nh / nw.max(1.0)],
-                        tint: None,
-                    }));
+                    ws.add(None, Object::new(name, Xf::at(p), ObjectKind::Graphic { asset, size: [w, w * nh / nw.max(1.0)], tint: None }));
                     self.tool = Tool::Select;
                 }
             }
@@ -522,11 +577,12 @@ impl Editor {
                 }
             }
             Tool::Eyedropper => {
-                if clicked && let Some(pm) = pixels {
-                    if let Some(c) = crate::render::Rasterizer::pick_color(pm, p) {
-                        self.color = c;
-                        self.picked = Some(c);
-                    }
+                if clicked
+                    && let Some(pm) = pixels
+                    && let Some(c) = crate::render::Rasterizer::pick_color(pm, p)
+                {
+                    self.color = c;
+                    self.picked = Some(c);
                 }
             }
             Tool::Hand => {}
@@ -539,7 +595,7 @@ impl Editor {
             return;
         }
         let px = ws.px_per_mm();
-        ws.add(None, self.shape_object("Polygon", points, px));
+        ws.add(None, self.shape_object(tr("Polygon", "Polygon"), points, px));
         self.tool = Tool::Select;
     }
 
@@ -562,9 +618,8 @@ impl Editor {
                     .iter()
                     .filter(|o| o.visible && !o.locked)
                     .filter(|o| {
-                        geom::world_bounds(&ws.raster.fonts, &ws.doc, &[o.id]).is_some_and(|[x0, y0, x1, y1]| {
-                            x0 >= sel[0] && y0 >= sel[1] && x1 <= sel[2] && y1 <= sel[3]
-                        })
+                        geom::world_bounds(&ws.raster.fonts, &ws.doc, &[o.id])
+                            .is_some_and(|[x0, y0, x1, y1]| x0 >= sel[0] && y0 >= sel[1] && x1 <= sel[2] && y1 <= sel[3])
                     })
                     .map(|o| o.id)
                     .collect();
@@ -574,7 +629,7 @@ impl Editor {
                 // re-centre the stroke on its points
                 let replacement = ws.doc.find(id).map(|o| {
                     let ObjectKind::Shape { stroke, .. } = &o.kind else { return o.clone() };
-                    let mut new = Object::shape("Pinselstrich", points.clone(), false, None, *stroke);
+                    let mut new = Object::shape(tr("Brush stroke", "Pinselstrich"), points.clone(), false, None, *stroke);
                     new.id = o.id;
                     new
                 });
@@ -596,7 +651,7 @@ impl Editor {
                 let px = ws.px_per_mm();
                 match tool {
                     Tool::Rect => {
-                        ws.add(None, self.shape_object("Rechteck", vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], px));
+                        ws.add(None, self.shape_object(tr("Rectangle", "Rechteck"), vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], px));
                     }
                     Tool::Ellipse => {
                         let (rx, ry) = ((x1 - x0) / 2.0, (y1 - y0) / 2.0);
@@ -606,14 +661,18 @@ impl Editor {
                                 [centre[0] + rx * a.cos(), centre[1] + ry * a.sin()]
                             })
                             .collect();
-                        ws.add(None, self.shape_object("Ellipse", pts, px));
+                        ws.add(None, self.shape_object(tr("Ellipse", "Ellipse"), pts, px));
                     }
                     _ => {
                         let label = self.placeholder_label.clone();
-                        ws.add(None, Object::new(format!("Platzhalter {label}"), Xf::at(centre), ObjectKind::Placeholder {
-                            label,
-                            size: [x1 - x0, y1 - y0],
-                        }));
+                        ws.add(
+                            None,
+                            Object::new(
+                                format!("{} {label}", tr("Placeholder", "Platzhalter")),
+                                Xf::at(centre),
+                                ObjectKind::Placeholder { label, size: [x1 - x0, y1 - y0] },
+                            ),
+                        );
                     }
                 }
                 self.tool = Tool::Select;
@@ -674,7 +733,13 @@ impl Editor {
             if ws.selection.len() == 1 && !ws.doc.find(id).is_some_and(|o| o.locked) {
                 let quad = [q[0], q[1], q[2], q[3]];
                 for c in quad {
-                    painter.rect(Rect::from_center_size(c, Vec2::splat(HANDLE * 2.0)), 1.0, Color32::WHITE, Stroke::new(1.0_f32, SELECTION), StrokeKind::Middle);
+                    painter.rect(
+                        Rect::from_center_size(c, Vec2::splat(HANDLE * 2.0)),
+                        1.0,
+                        Color32::WHITE,
+                        Stroke::new(1.0_f32, SELECTION),
+                        StrokeKind::Middle,
+                    );
                 }
                 if let Some(r) = rotate_handle(&quad) {
                     let top = Pos2::new((quad[0].x + quad[1].x) / 2.0, (quad[0].y + quad[1].y) / 2.0);
@@ -687,6 +752,53 @@ impl Editor {
 }
 
 /// Above the middle of the top edge, pointing away from the centre.
+/// Rulers along the top and left edge in millimetres from the sheet's
+/// corner, with a marker at the cursor. `scale_mm` is screen pixels per mm.
+fn draw_rulers(painter: &egui::Painter, full: Rect, view: Rect, origin: Pos2, scale_mm: f32, cursor: Option<Pos2>) {
+    const BACKGROUND: Color32 = Color32::from_gray(30);
+    const TICK: Color32 = Color32::from_gray(95);
+    const LABEL: Color32 = Color32::from_gray(165);
+    // a label about every 70 px, small ticks at a fifth of that step
+    let major = [5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0, 1000.0].into_iter().find(|step| step * scale_mm >= 70.0).unwrap_or(1000.0);
+    let minor = major / 5.0;
+    let top = Rect::from_min_max(full.min, Pos2::new(full.max.x, view.min.y));
+    let left = Rect::from_min_max(full.min, Pos2::new(view.min.x, full.max.y));
+    painter.rect_filled(top, 0.0, BACKGROUND);
+    painter.rect_filled(left, 0.0, BACKGROUND);
+    let font = egui::FontId::proportional(9.0);
+    for horizontal in [true, false] {
+        let (from, to, origin_axis) = if horizontal { (view.min.x, view.max.x, origin.x) } else { (view.min.y, view.max.y, origin.y) };
+        let first = ((from - origin_axis) / scale_mm / minor).floor() as i64;
+        let last = ((to - origin_axis) / scale_mm / minor).ceil() as i64;
+        for i in first..=last {
+            let screen = origin_axis + i as f32 * minor * scale_mm;
+            if screen < from || screen > to {
+                continue;
+            }
+            let is_major = i % 5 == 0;
+            let length = if is_major { 10.0 } else { 4.0 };
+            let (a, b) = if horizontal {
+                (Pos2::new(screen, view.min.y - length), Pos2::new(screen, view.min.y))
+            } else {
+                (Pos2::new(view.min.x - length, screen), Pos2::new(view.min.x, screen))
+            };
+            painter.line_segment([a, b], Stroke::new(1.0_f32, TICK));
+            if is_major {
+                let label = format!("{}", (i as f32 * minor).round() as i64);
+                let at = if horizontal { Pos2::new(screen + 3.0, full.min.y + 2.0) } else { Pos2::new(full.min.x + 2.0, screen + 2.0) };
+                painter.text(at, Align2::LEFT_TOP, label, font.clone(), LABEL);
+            }
+        }
+    }
+    painter.rect_stroke(top, 0.0, Stroke::new(1.0_f32, Color32::from_gray(20)), StrokeKind::Inside);
+    painter.rect_stroke(left, 0.0, Stroke::new(1.0_f32, Color32::from_gray(20)), StrokeKind::Inside);
+    painter.text(full.min + Vec2::splat(RULER / 2.0), Align2::CENTER_CENTER, "mm", egui::FontId::proportional(8.0), LABEL);
+    if let Some(c) = cursor {
+        painter.line_segment([Pos2::new(c.x, view.min.y - RULER), Pos2::new(c.x, view.min.y)], Stroke::new(1.0_f32, SELECTION));
+        painter.line_segment([Pos2::new(view.min.x - RULER, c.y), Pos2::new(view.min.x, c.y)], Stroke::new(1.0_f32, SELECTION));
+    }
+}
+
 fn rotate_handle(q: &[Pos2; 4]) -> Option<Pos2> {
     let top = Pos2::new((q[0].x + q[1].x) / 2.0, (q[0].y + q[1].y) / 2.0);
     let bottom = Pos2::new((q[2].x + q[3].x) / 2.0, (q[2].y + q[3].y) / 2.0);
@@ -707,7 +819,7 @@ fn tooltip(painter: &egui::Painter, at: Pos2, text: &str) {
 /// The shown pieces' bounds with room for their labels and a margin
 /// (template pixels): top-left and size.
 fn shown_area(pattern: &Pattern, garments: &Garments) -> Option<(Vec2, Vec2)> {
-    let rects = pattern.pieces.iter().filter(|p| garments.shows_piece(p.id)).map(|p| p.rect);
+    let rects = pattern.pieces.iter().filter(|p| garments.shows(p.kind)).map(|p| p.rect);
     let [x0, y0, x1, y1] = rects.fold(None, |acc: Option<[f32; 4]>, [x, y, w, h]| {
         let [a, b, c, d] = acc.unwrap_or([x, y, x + w, y + h]);
         Some([a.min(x), b.min(y), c.max(x + w), d.max(y + h)])
@@ -720,7 +832,7 @@ fn shown_area(pattern: &Pattern, garments: &Garments) -> Option<(Vec2, Vec2)> {
     Some((min, max - min))
 }
 
-/// Piece names above each piece, like the reference template; a leg piece
+/// Piece names above each piece, like a sublimation print template; a leg piece
 /// gets its back and front half named.
 fn draw_labels(painter: &egui::Painter, pattern: &Pattern, garments: &Garments, to_screen: impl Fn(Pt) -> Pos2, scale: f32) {
     // labels only once there is room for them
@@ -736,7 +848,7 @@ fn draw_labels(painter: &egui::Painter, pattern: &Pattern, garments: &Garments, 
         let pos = Pos2::new(pos.x.max(left + half + 2.0), pos.y);
         painter.text(pos, egui::Align2::CENTER_BOTTOM, text, font.clone(), color);
     };
-    for piece in pattern.pieces.iter().filter(|p| garments.shows_piece(p.id)) {
+    for piece in pattern.pieces.iter().filter(|p| garments.shows(p.kind)) {
         let [x, y, w, _] = piece.rect;
         match pattern.legs.iter().find(|l| l.piece == piece.id) {
             Some(leg) => {

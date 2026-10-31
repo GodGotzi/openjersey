@@ -3,8 +3,8 @@
 use tiny_skia::Transform;
 
 use super::text::Fonts;
-use crate::document::{map, unmap, Document, Object, ObjectId, ObjectKind};
-use crate::template::pattern::{point_in_polygon, Pattern, Pt};
+use crate::document::{Document, Object, ObjectId, ObjectKind, map, unmap};
+use crate::template::pattern::{Pattern, Pt, point_in_polygon};
 use crate::template::regions::distance_to_segment;
 
 /// Axis-aligned box in an object's local space: [x0, y0, x1, y1].
@@ -81,7 +81,7 @@ pub fn world_bounds(fonts: &Fonts, doc: &Document, ids: &[ObjectId]) -> Option<B
 
 /// Does the object's own content cover template point `p`?
 fn covers(fonts: &Fonts, pattern: &Pattern, obj: &Object, world: &Transform, p: Pt, tolerance: f32) -> bool {
-    if !obj.clip.is_empty() && !obj.clip.iter().any(|&id| pattern.piece(id).contains(p)) {
+    if !obj.clip.is_empty() && !obj.clip.iter().any(|&id| pattern.on_piece(id, p)) {
         return false;
     }
     let Some(local) = unmap(world, p) else { return false };
@@ -89,11 +89,8 @@ fn covers(fonts: &Fonts, pattern: &Pattern, obj: &Object, world: &Transform, p: 
     let scale = (world.sx * world.sy - world.kx * world.ky).abs().sqrt().max(1e-6);
     let tol = tolerance / scale;
     match &obj.kind {
-        ObjectKind::Text { .. } | ObjectKind::Graphic { .. } | ObjectKind::Placeholder { .. } => {
-            local_bounds(fonts, obj).is_some_and(|[x0, y0, x1, y1]| {
-                local[0] >= x0 - tol && local[0] <= x1 + tol && local[1] >= y0 - tol && local[1] <= y1 + tol
-            })
-        }
+        ObjectKind::Text { .. } | ObjectKind::Graphic { .. } | ObjectKind::Placeholder { .. } => local_bounds(fonts, obj)
+            .is_some_and(|[x0, y0, x1, y1]| local[0] >= x0 - tol && local[0] <= x1 + tol && local[1] >= y0 - tol && local[1] <= y1 + tol),
         ObjectKind::Shape { points, closed, fill, stroke } => {
             if *closed && fill.is_some() && point_in_polygon(points, local) {
                 return true;
@@ -133,7 +130,7 @@ pub fn hit(fonts: &Fonts, pattern: &Pattern, doc: &Document, p: Pt, tolerance: f
             }
             let m = parent.pre_concat(obj.xf.matrix());
             if let ObjectKind::Group { children } = &obj.kind {
-                if !obj.clip.is_empty() && !obj.clip.iter().any(|&id| pattern.piece(id).contains(p)) {
+                if !obj.clip.is_empty() && !obj.clip.iter().any(|&id| pattern.on_piece(id, p)) {
                     continue;
                 }
                 path.push(obj.id);
@@ -162,15 +159,16 @@ mod tests {
         let fonts = Fonts::new();
         let pattern = Pattern::load();
         let mut doc = Document::new(BaseColors { primary: [0; 3], accent: [0; 3], trim: [0; 3], overrides: vec![] });
-        let under = doc.add(None, Object::new("u", Xf::at([500.0, 500.0]), ObjectKind::Placeholder {
-            label: "A".into(),
-            size: [200.0, 40.0],
-        }));
-        let over = doc.add(None, Object::new(
-            "o",
-            Xf { pos: [500.0, 500.0], rotation: std::f32::consts::FRAC_PI_2, scale: [1.0, 1.0] },
-            ObjectKind::Placeholder { label: "B".into(), size: [200.0, 40.0] },
-        ));
+        let under =
+            doc.add(None, Object::new("u", Xf::at([500.0, 500.0]), ObjectKind::Placeholder { label: "A".into(), size: [200.0, 40.0] }));
+        let over = doc.add(
+            None,
+            Object::new(
+                "o",
+                Xf { pos: [500.0, 500.0], rotation: std::f32::consts::FRAC_PI_2, scale: [1.0, 1.0] },
+                ObjectKind::Placeholder { label: "B".into(), size: [200.0, 40.0] },
+            ),
+        );
         // inside both: the top one wins
         assert_eq!(hit(&fonts, &pattern, &doc, [505.0, 505.0], 0.0).map(|h| h.0), Some(over));
         // only inside the unrotated one

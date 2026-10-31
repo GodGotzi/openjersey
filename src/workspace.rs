@@ -2,11 +2,13 @@
 //! rendering state, and the drag logic used by both the 2D canvas and the 3D
 //! view.
 
-use crate::document::{map, unmap, Document, History, Object, ObjectId, ObjectKind, Xf};
-use crate::render::geom::{self, Bounds};
+use crate::document::{Document, History, Object, ObjectId, ObjectKind, Xf, map, unmap};
+use crate::garments::{Body, Garment, Kind};
+use crate::i18n::tr;
 use crate::render::Rasterizer;
+use crate::render::geom::{self, Bounds};
 use crate::template::pattern::{Panel, Pattern, PieceId, Pt};
-use crate::template::regions::{regions, Region};
+use crate::template::regions::{Region, regions};
 
 pub struct Workspace {
     pub doc: Document,
@@ -27,6 +29,8 @@ pub struct Workspace {
     /// Snap guide to draw (template x or y line) while moving.
     pub guides: Vec<Guide>,
     pub status: String,
+    /// The design file the document was opened from or last saved to.
+    pub file: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -44,7 +48,7 @@ struct MoveDrag {
 
 impl Workspace {
     pub fn new(doc: Document) -> Self {
-        let pattern = Pattern::load();
+        let pattern = doc.sheet();
         let regions = regions(&pattern);
         Self {
             doc,
@@ -60,6 +64,7 @@ impl Workspace {
             snap: true,
             guides: Vec::new(),
             status: String::new(),
+            file: None,
         }
     }
 
@@ -82,6 +87,46 @@ impl Workspace {
         self.rev += 1;
         self.dirty = true;
         self.selection.retain(|&id| self.doc.find(id).is_some());
+        // a new design, undo or redo can bring other garments
+        if !self.doc.is_on(&self.pattern) {
+            self.pattern = self.doc.sheet();
+            self.regions = regions(&self.pattern);
+            self.raster = Rasterizer::new(); // its masks are the old pieces'
+        }
+    }
+
+    pub fn body(&self) -> Body {
+        self.pattern.top().body
+    }
+
+    /// Puts the design on another top or bottom, keeping its objects where
+    /// they are on the body (one undo step). A garment for the other body
+    /// brings the matching other garment along.
+    pub fn set_garment(&mut self, garment: &'static Garment) {
+        let (mut top, mut bottom) = (self.pattern.top(), self.pattern.bottom());
+        match garment.kind {
+            Kind::Top => top = garment,
+            Kind::Bottom => bottom = garment,
+        }
+        let body = garment.body;
+        let fit = |g: &'static Garment| g.for_body(body).unwrap_or_else(|| crate::garments::default(g.kind, body));
+        let (top, bottom) = (fit(top), fit(bottom));
+        if top.id == self.pattern.top().id && bottom.id == self.pattern.bottom().id {
+            return;
+        }
+        self.checkpoint();
+        let to = Pattern::of(top, bottom);
+        self.doc.move_to_sheet(&self.pattern, &to);
+        self.changed();
+        self.status = format!("{} + {}", top.label(), bottom.name);
+    }
+
+    /// Switches to the other body, taking the same products where they exist.
+    pub fn set_body(&mut self, body: Body) {
+        if body != self.body() {
+            let top = self.pattern.top();
+            self.set_garment(top.for_body(body).unwrap_or_else(|| crate::garments::default(Kind::Top, body)));
+        }
     }
 
     pub fn replace(&mut self, doc: Document) {
@@ -89,6 +134,14 @@ impl Workspace {
         self.doc = doc;
         self.selection.clear();
         self.changed();
+    }
+
+    /// Runs `f` so that everything it changes undoes in one step.
+    pub fn grouped<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        let depth = self.history.depth();
+        let out = f(self);
+        self.history.squash_since(depth);
+        out
     }
 
     pub fn undo(&mut self) {
@@ -128,8 +181,7 @@ impl Workspace {
         }
         self.checkpoint();
         let offset = 5.0 * self.px_per_mm();
-        let new: Vec<ObjectId> =
-            self.selection.clone().into_iter().filter_map(|id| self.doc.duplicate(id, [offset, offset])).collect();
+        let new: Vec<ObjectId> = self.selection.clone().into_iter().filter_map(|id| self.doc.duplicate(id, [offset, offset])).collect();
         self.selection = new;
         self.changed();
     }
@@ -144,7 +196,7 @@ impl Workspace {
         let centre = [(x0 + x1) / 2.0, (y0 + y1) / 2.0];
         let centre = parent.and_then(|p| unmap(&self.doc.world_matrix(p), centre)).unwrap_or(centre);
         self.checkpoint();
-        if let Some(id) = self.doc.group(&self.selection.clone(), centre, "Gruppe") {
+        if let Some(id) = self.doc.group(&self.selection.clone(), centre, tr("Group", "Gruppe")) {
             self.selection = vec![id];
         }
         self.changed();
@@ -188,9 +240,9 @@ impl Workspace {
         for id in self.selection.clone() {
             let Some(obj) = self.doc.find(id) else { continue };
             let world = map(&self.doc.world_matrix(id), [0.0, 0.0]);
-            let (from, to) = if self.pattern.piece(PieceId::Front).contains(world) {
+            let (from, to) = if self.pattern.piece(PieceId::FRONT).contains(world) {
                 (Panel::Front, Panel::Back)
-            } else if self.pattern.piece(PieceId::Back).contains(world) {
+            } else if self.pattern.piece(PieceId::BACK).contains(world) {
                 (Panel::Back, Panel::Front)
             } else {
                 continue;
@@ -200,12 +252,12 @@ impl Workspace {
             copy.xf.rotation = -copy.xf.rotation;
             for piece in &mut copy.clip {
                 *piece = match *piece {
-                    PieceId::Front => PieceId::Back,
-                    PieceId::Back => PieceId::Front,
+                    PieceId::FRONT => PieceId::BACK,
+                    PieceId::BACK => PieceId::FRONT,
                     other => other,
                 };
             }
-            copy.name = format!("{} ({})", obj.name, if to == Panel::Back { "hinten" } else { "vorne" });
+            copy.name = format!("{} ({})", obj.name, if to == Panel::Back { tr("back", "hinten") } else { tr("front", "vorne") });
             new.push(self.doc.add(None, copy));
         }
         if !new.is_empty() {
@@ -220,7 +272,7 @@ impl Workspace {
         let c = [(x0 + x1) / 2.0, (y0 + y1) / 2.0];
         let target_x = if let Some(panel) = [Panel::Front, Panel::Back]
             .into_iter()
-            .find(|&p| self.pattern.piece(if p == Panel::Front { PieceId::Front } else { PieceId::Back }).contains(c))
+            .find(|&p| self.pattern.piece(if p == Panel::Front { PieceId::FRONT } else { PieceId::BACK }).contains(c))
         {
             self.pattern.place(panel, [0.0, 1.0])[0]
         } else if let Some(piece) = self.pattern.pieces.iter().find(|p| p.contains(c)) {
@@ -250,8 +302,7 @@ impl Workspace {
     // ---- dragging selected objects (2D canvas and 3D view) ----
 
     pub fn begin_move(&mut self, at: Pt) {
-        let ids: Vec<ObjectId> =
-            self.selection.iter().copied().filter(|&id| self.doc.find(id).is_some_and(|o| !o.locked)).collect();
+        let ids: Vec<ObjectId> = self.selection.iter().copied().filter(|&id| self.doc.find(id).is_some_and(|o| !o.locked)).collect();
         if ids.is_empty() {
             return;
         }
@@ -275,7 +326,8 @@ impl Workspace {
         let Some(drag) = &self.drag else { return };
         let mut delta = [at[0] - drag.start[0], at[1] - drag.start[1]];
         self.guides.clear();
-        if self.snap && snap_px > 0.0
+        if self.snap
+            && snap_px > 0.0
             && let Some([x0, y0, x1, y1]) = drag.start_bounds
         {
             let moved = [x0 + delta[0], y0 + delta[1], x1 + delta[0], y1 + delta[1]];
@@ -363,4 +415,47 @@ impl Workspace {
 pub fn with_world_pos(doc: &Document, id: ObjectId, xf: Xf, world: Pt) -> Xf {
     let parent = doc.parent_matrix(id);
     Xf { pos: unmap(&parent, world).unwrap_or(world), ..xf }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::BaseColors;
+
+    #[test]
+    fn switching_garments_keeps_objects_on_the_body() {
+        let doc = Document::new(BaseColors { primary: [255; 3], accent: [0; 3], trim: [0; 3], overrides: vec![] });
+        let mut ws = Workspace::new(doc);
+        let chest = ws.pattern.place(Panel::Front, [0.05, 1.2]);
+        let placeholder = |name: &str, at| Object::new(name, Xf::at(at), ObjectKind::Placeholder { label: "A".into(), size: [10.0, 10.0] });
+        let front = ws.add(None, placeholder("chest", chest));
+        let sleeve = ws.pattern.piece(PieceId::SLEEVE_L).rect;
+        let on_sleeve = ws.add(None, placeholder("sleeve", [sleeve[0] + sleeve[2] / 2.0, sleeve[1] + sleeve[3] / 2.0]));
+        let leg = ws.pattern.piece(PieceId::LEG_L).rect;
+        let on_leg = ws.add(None, placeholder("leg", [leg[0] + 10.0, leg[1] + 10.0]));
+        let before = ws.doc.clone();
+
+        // every other top: the chest stays on the chest, sleeves vanish where there are none
+        let others: Vec<_> = crate::garments::GARMENTS.iter().filter(|g| g.kind == Kind::Top && g.id != ws.pattern.top().id).collect();
+        let switches = others.len();
+        for top in others {
+            ws.set_garment(top);
+            assert_eq!(ws.pattern.top().id, top.id);
+            assert_eq!(ws.doc.top, top.id);
+            let pos = ws.doc.find(front).unwrap().xf.pos;
+            let on_body = ws.pattern.unplace(Panel::Front, pos);
+            assert!((on_body[0] - 0.05).abs() < 1e-3 && (on_body[1] - 1.2).abs() < 1e-3, "{}", top.id);
+            assert_eq!(ws.doc.find(on_sleeve).unwrap().visible, ws.pattern.get(PieceId::SLEEVE_L).is_some(), "{}", top.id);
+            // the leg moves along with the bottom's atlas (if the bottom has legs)
+            if let Some(l) = ws.pattern.get(PieceId::LEG_L) {
+                assert_eq!(ws.doc.find(on_leg).unwrap().xf.pos, [l.rect[0] + 10.0, l.rect[1] + 10.0], "{}", top.id);
+            }
+        }
+        for _ in 0..switches {
+            ws.undo();
+        }
+        assert!(ws.doc.is_on(&ws.pattern));
+        assert_eq!(ws.doc.top, before.top);
+        assert!(ws.doc.find(on_sleeve).unwrap().visible);
+    }
 }

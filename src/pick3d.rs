@@ -1,51 +1,57 @@
 //! The garment mesh on the CPU: picking (which template pixel is under the
 //! pointer in the 3D view) and a small software renderer for previews the AI
 //! tools can look at. Myth has no raycasting, so this is our own; it loads the
-//! same `assets/jersey.glb` the 3D view shows.
+//! same model the 3D view shows.
 
 use myth::math::{Mat3, Mat4, Vec2, Vec3, Vec4};
 use tiny_skia::Pixmap;
 
 use crate::document::Garments;
-use crate::template::pattern::{Garment, Pt};
+use crate::garments::Kind;
+use crate::template::pattern::{Pattern, Pt};
 
 pub struct GarmentMesh {
     tris: Vec<[Vec3; 3]>,
     uvs: Vec<[Vec2; 3]>,
     /// which garment each triangle belongs to
-    garment: Vec<Garment>,
-    /// template size in pixels, to turn UVs into template points
+    garment: Vec<Kind>,
+    /// sheet size in pixels, to turn UVs into sheet points
     atlas: [f32; 2],
 }
 
 impl GarmentMesh {
-    pub fn load(atlas: (u32, u32)) -> Self {
-        let (doc, buffers, _) = gltf::import_slice(include_bytes!("../assets/jersey.glb")).expect("bundled glb");
+    /// The top and bottom of `pattern`'s sheet; UVs become sheet fractions.
+    pub fn load(pattern: &Pattern) -> Self {
         let mut tris = Vec::new();
         let mut uvs = Vec::new();
         let mut garment = Vec::new();
-        for node in doc.nodes() {
-            let Some(mesh) = node.mesh() else { continue };
-            let g = if node.name() == Some("shorts") { Garment::Shorts } else { Garment::Shirt };
-            let m = Mat4::from_cols_array_2d(&node.transform().matrix());
-            for prim in mesh.primitives() {
-                let reader = prim.reader(|b| Some(&buffers[b.index()]));
-                let (Some(pos), Some(tex)) = (reader.read_positions(), reader.read_tex_coords(0)) else { continue };
-                let pos: Vec<Vec3> = pos.map(|p| m.transform_point3(Vec3::from(p))).collect();
-                let tex: Vec<Vec2> = tex.into_f32().map(Vec2::from).collect();
-                let idx: Vec<u32> = match reader.read_indices() {
-                    Some(i) => i.into_u32().collect(),
-                    None => (0..pos.len() as u32).collect(),
-                };
-                for t in idx.chunks_exact(3) {
-                    let (a, b, c) = (t[0] as usize, t[1] as usize, t[2] as usize);
-                    tris.push([pos[a], pos[b], pos[c]]);
-                    uvs.push([tex[a], tex[b], tex[c]]);
-                    garment.push(g);
+        let (sw, sh) = (pattern.atlas.width as f32, pattern.atlas.height as f32);
+        for part in &pattern.parts {
+            let (doc, buffers, _) = gltf::import_slice(part.garment.glb).expect("bundled glb");
+            let [px, py, pw, ph] = part.rect;
+            let to_sheet = |uv: Vec2| Vec2::new((px + uv.x * pw) / sw, (py + uv.y * ph) / sh);
+            for node in doc.nodes() {
+                let Some(mesh) = node.mesh() else { continue };
+                let m = Mat4::from_cols_array_2d(&node.transform().matrix());
+                for prim in mesh.primitives() {
+                    let reader = prim.reader(|b| Some(&buffers[b.index()]));
+                    let (Some(pos), Some(tex)) = (reader.read_positions(), reader.read_tex_coords(0)) else { continue };
+                    let pos: Vec<Vec3> = pos.map(|p| m.transform_point3(Vec3::from(p))).collect();
+                    let tex: Vec<Vec2> = tex.into_f32().map(|t| to_sheet(Vec2::from(t))).collect();
+                    let idx: Vec<u32> = match reader.read_indices() {
+                        Some(i) => i.into_u32().collect(),
+                        None => (0..pos.len() as u32).collect(),
+                    };
+                    for t in idx.chunks_exact(3) {
+                        let (a, b, c) = (t[0] as usize, t[1] as usize, t[2] as usize);
+                        tris.push([pos[a], pos[b], pos[c]]);
+                        uvs.push([tex[a], tex[b], tex[c]]);
+                        garment.push(part.garment.kind);
+                    }
                 }
             }
         }
-        Self { tris, uvs, garment, atlas: [atlas.0 as f32, atlas.1 as f32] }
+        Self { tris, uvs, garment, atlas: [sw, sh] }
     }
 
     /// Nearest hit of a ray: (distance, template point).
@@ -108,10 +114,8 @@ impl GarmentMesh {
             if s.iter().any(|c| c.w <= 0.0) {
                 continue;
             }
-            let p: Vec<Vec3> = s
-                .iter()
-                .map(|c| Vec3::new((c.x / c.w * 0.5 + 0.5) * w as f32, (0.5 - c.y / c.w * 0.5) * h as f32, c.z / c.w))
-                .collect();
+            let p: Vec<Vec3> =
+                s.iter().map(|c| Vec3::new((c.x / c.w * 0.5 + 0.5) * w as f32, (0.5 - c.y / c.w * 0.5) * h as f32, c.z / c.w)).collect();
             let (minx, maxx) = (p.iter().map(|q| q.x).fold(f32::MAX, f32::min), p.iter().map(|q| q.x).fold(f32::MIN, f32::max));
             let (miny, maxy) = (p.iter().map(|q| q.y).fold(f32::MAX, f32::min), p.iter().map(|q| q.y).fold(f32::MIN, f32::max));
             let area = edge(p[0], p[1], p[2]);
@@ -177,16 +181,18 @@ fn intersect(origin: Vec3, dir: Vec3, tri: &[Vec3; 3]) -> Option<(f32, f32, f32)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::template::pattern::{Pattern, PieceId};
+    use crate::template::pattern::PieceId;
 
     #[test]
     fn a_ray_at_the_chest_lands_on_the_front_piece() {
-        let pattern = Pattern::load();
-        let mesh = GarmentMesh::load(pattern.size());
-        let (_, at) = mesh.pick(Vec3::new(0.05, 1.2, 2.0), Vec3::new(0.0, 0.0, -1.0), &Garments::default()).expect("hits the shirt");
-        assert!(pattern.piece(PieceId::Front).contains(at), "{at:?}");
-        let (_, at) = mesh.pick(Vec3::new(0.05, 1.2, -2.0), Vec3::new(0.0, 0.0, 1.0), &Garments::default()).expect("hits the back");
-        assert!(pattern.piece(PieceId::Back).contains(at), "{at:?}");
+        let bottom = crate::garments::default(Kind::Bottom, crate::garments::Body::Man);
+        for top in crate::garments::GARMENTS.iter().filter(|g| g.kind == Kind::Top) {
+            let pattern = Pattern::of(top, bottom.for_body(top.body).unwrap_or(bottom));
+            let mesh = GarmentMesh::load(&pattern);
+            let (_, at) = mesh.pick(Vec3::new(0.05, 1.2, 2.0), Vec3::new(0.0, 0.0, -1.0), &Garments::default()).expect("hits the shirt");
+            assert!(pattern.piece(PieceId::FRONT).contains(at), "{} {at:?}", top.id);
+            let (_, at) = mesh.pick(Vec3::new(0.0, 1.2, -2.0), Vec3::new(0.0, 0.0, 1.0), &Garments::default()).expect("hits the back");
+            assert!(pattern.piece(PieceId::BACK).contains(at), "{} {at:?}", top.id);
+        }
     }
 }
-

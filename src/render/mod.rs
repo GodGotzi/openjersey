@@ -11,16 +11,14 @@ pub mod text;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use tiny_skia::{
-    Color, FillRule, LineCap, LineJoin, Mask, Paint, PathBuilder, Pixmap, PixmapPaint, Stroke, StrokeDash, Transform,
-};
+use tiny_skia::{Color, FillRule, LineCap, LineJoin, Mask, Paint, PathBuilder, Pixmap, PixmapPaint, Stroke, StrokeDash, Transform};
 
 use crate::document::{BaseColors, Document, Object, ObjectId, ObjectKind, Rgb};
 use crate::template::pattern::{Pattern, PieceId, Pt};
 use crate::template::regions::Region;
 use text::Fonts;
 
-/// Template background between the pieces (the grey of the reference sheets).
+/// Template background between the pieces (a neutral grey).
 pub const BACKGROUND: Rgb = [0xe4, 0xe4, 0xe7];
 const BLEED: f32 = 3.0;
 const SELECTION: Rgb = [0x46, 0x8c, 0xff];
@@ -49,12 +47,7 @@ struct Split {
 
 impl Rasterizer {
     pub fn new() -> Self {
-        Self {
-            fonts: Fonts::new(),
-            base: RefCell::new(None),
-            masks: RefCell::new(HashMap::new()),
-            split: RefCell::new(None),
-        }
+        Self { fonts: Fonts::new(), base: RefCell::new(None), masks: RefCell::new(HashMap::new()), split: RefCell::new(None) }
     }
 
     /// The whole template (opaque, so premultiplied = straight RGBA).
@@ -72,7 +65,7 @@ impl Rasterizer {
         // a bit wider than the bleed, so no anti-aliased fringe stays behind
         let cover = Stroke { width: BLEED * 2.0 + 4.0, line_join: LineJoin::Round, ..Stroke::default() };
         let bg = paint(BACKGROUND, 1.0);
-        for piece in pattern.pieces.iter().filter(|p| !doc.garments.shows_piece(p.id)) {
+        for piece in pattern.pieces.iter().filter(|p| !doc.garments.shows(p.kind)) {
             for path in piece.polygons.iter().filter_map(|poly| polygon_path(poly, true)) {
                 pm.fill_path(&path, &bg, FillRule::Winding, Transform::identity(), None);
                 pm.stroke_path(&path, &bg, &cover, Transform::identity(), None);
@@ -83,14 +76,7 @@ impl Rasterizer {
     /// Like `render`, but while `moving` (a top-level object) is dragged,
     /// everything else is rendered once and reused. `generation` must change
     /// whenever anything but the moving object's transform changes.
-    pub fn frame(
-        &self,
-        pattern: &Pattern,
-        regions: &[Region],
-        doc: &Document,
-        mode: Mode,
-        moving: Option<(ObjectId, u64)>,
-    ) -> Pixmap {
+    pub fn frame(&self, pattern: &Pattern, regions: &[Region], doc: &Document, mode: Mode, moving: Option<(ObjectId, u64)>) -> Pixmap {
         let Some((id, generation)) = moving else {
             self.split.replace(None);
             return self.render(pattern, regions, doc, mode);
@@ -150,7 +136,7 @@ impl Rasterizer {
     /// sleeve), and anti-aliased edges would leave a line along that seam.
     fn mask(&self, pattern: &Pattern, pieces: &[PieceId]) -> Mask {
         let mut key = pieces.to_vec();
-        key.sort_by_key(|p| *p as u8);
+        key.sort();
         if let Some(m) = self.masks.borrow().get(&key) {
             return m.clone();
         }
@@ -159,7 +145,7 @@ impl Rasterizer {
         let mut bleed = Pixmap::new(w, h).expect("template size is non-zero");
         let stroke = Stroke { width: BLEED * 2.0, line_join: LineJoin::Round, ..Stroke::default() };
         for &id in &key {
-            for poly in &pattern.piece(id).polygons {
+            for poly in pattern.get(id).iter().flat_map(|p| &p.polygons) {
                 if let Some(path) = polygon_path(poly, true) {
                     mask.fill_path(&path, FillRule::Winding, false, Transform::identity());
                     bleed.stroke_path(&path, &paint([0, 0, 0], 1.0), &stroke, Transform::identity(), None);
@@ -277,7 +263,7 @@ impl Rasterizer {
                 let mask = area_mask.as_ref().or(mask);
                 // world bounds to cover with rows
                 let world_pts: Vec<Pt> = if area.is_empty() {
-                    obj.clip.iter().flat_map(|&id| pattern.piece(id).polygons.iter().flatten().copied()).collect()
+                    obj.clip.iter().flat_map(|&id| pattern.get(id).into_iter().flat_map(|p| p.polygons.iter().flatten().copied())).collect()
                 } else {
                     area.iter().flatten().map(|&p| crate::document::map(&m, p)).collect()
                 };
@@ -294,11 +280,7 @@ impl Rasterizer {
                 let path = PathBuilder::from_rect(rect);
                 pm.fill_path(&path, &paint([0x80, 0x80, 0x88], 0.35 * opacity), FillRule::Winding, m, mask);
                 let unit = size[0].min(size[1]) / 10.0;
-                let st = Stroke {
-                    width: (unit * 0.35).max(1.5),
-                    dash: StrokeDash::new(vec![unit, unit * 0.7], 0.0),
-                    ..Stroke::default()
-                };
+                let st = Stroke { width: (unit * 0.35).max(1.5), dash: StrokeDash::new(vec![unit, unit * 0.7], 0.0), ..Stroke::default() };
                 pm.stroke_path(&path, &paint([0xf0, 0xf0, 0xf0], 0.9 * opacity), &st, m, mask);
                 let (w, h) = self.fonts.text_size(label, 1.0);
                 let font = (size[1] * 0.45).min(size[0] * 0.8 / w.max(0.01)).min(size[1] * 0.8 / h.max(0.01));
@@ -378,9 +360,10 @@ fn draw_inside(pm: &mut Pixmap, pattern: &Pattern, doc: &Document, mode: Mode) {
     if mode == Mode::Print {
         return;
     }
-    let [x, y, w, h] = pattern.inside;
-    if let Some(rect) = tiny_skia::Rect::from_xywh(x, y, w, h) {
-        pm.fill_rect(rect, &paint(doc.inside_color(), 1.0), Transform::identity(), None);
+    for &[x, y, w, h] in &pattern.insides {
+        if let Some(rect) = tiny_skia::Rect::from_xywh(x, y, w, h) {
+            pm.fill_rect(rect, &paint(doc.inside_color(), 1.0), Transform::identity(), None);
+        }
     }
 }
 
@@ -415,13 +398,21 @@ mod tests {
         let r = Rasterizer::new();
         let mut doc = Document::new(BaseColors { primary: [255; 3], accent: [1, 2, 3], trim: [9; 3], overrides: vec![] });
         let at = p.place(Panel::Front, [0.0, 1.1]);
-        doc.add(None, Object::shape(
-            "box",
-            vec![[at[0] - 20.0, at[1] - 20.0], [at[0] + 20.0, at[1] - 20.0], [at[0] + 20.0, at[1] + 20.0], [at[0] - 20.0, at[1] + 20.0]],
-            true,
-            Some([200, 10, 10]),
+        doc.add(
             None,
-        ));
+            Object::shape(
+                "box",
+                vec![
+                    [at[0] - 20.0, at[1] - 20.0],
+                    [at[0] + 20.0, at[1] - 20.0],
+                    [at[0] + 20.0, at[1] + 20.0],
+                    [at[0] - 20.0, at[1] + 20.0],
+                ],
+                true,
+                Some([200, 10, 10]),
+                None,
+            ),
+        );
         let below = p.place(Panel::Front, [0.0, 1.0]);
         doc.add(None, Object::new("A", Xf::at(below), ObjectKind::Placeholder { label: "A".into(), size: [100.0, 40.0] }));
         let regions = regions(&p);

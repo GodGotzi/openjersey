@@ -1,6 +1,7 @@
 //! Saving and loading designs as JSON (graphics embedded), including designs
 //! saved in the old flat format.
 
+use crate::i18n::{pick, tr};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -9,8 +10,8 @@ use super::legacy::{self, LayerKind};
 use super::{Asset, BaseColors, Document, Object, ObjectKind, StrokeStyle, Xf};
 
 /// 3: the portrait sheet layout. 4: raglan seams bowed out (taller front
-/// and back).
-const VERSION: u32 = 4;
+/// and back). 5: top and bottom chosen separately, each with its own atlas.
+const VERSION: u32 = 5;
 
 #[derive(Serialize, Deserialize)]
 struct File {
@@ -26,33 +27,34 @@ pub fn from_json(bytes: &[u8]) -> Result<Document, String> {
     let (mut doc, version) = match serde_json::from_slice::<File>(bytes) {
         Ok(file) => (file.document, file.openjersey),
         Err(_) => {
-            let old: legacy::Design = serde_json::from_slice(bytes).map_err(|e| format!("kein OpenJersey-Design: {e}"))?;
+            let old: legacy::Design = serde_json::from_slice(bytes)
+                .map_err(|e| pick(format!("not an OpenJersey design: {e}"), format!("kein OpenJersey-Design: {e}")))?;
             (migrate(old), 1)
         }
     };
-    use super::relayout::{from_layout, LANDSCAPE, PORTRAIT_STRAIGHT_RAGLAN};
-    match version {
-        0..3 => from_layout(&mut doc, &LANDSCAPE, &crate::template::pattern::Pattern::load()),
-        3 => from_layout(&mut doc, &PORTRAIT_STRAIGHT_RAGLAN, &crate::template::pattern::Pattern::load()),
-        _ => {}
+    use super::relayout::{JERSEY_AND_SHORTS, LANDSCAPE, PORTRAIT_STRAIGHT_RAGLAN, from_layout};
+    let old = match version {
+        0..3 => Some(&LANDSCAPE),
+        3 => Some(&PORTRAIT_STRAIGHT_RAGLAN),
+        4 => Some(&JERSEY_AND_SHORTS),
+        _ => None,
+    };
+    if let Some(old) = old {
+        let sheet = doc.sheet();
+        from_layout(&mut doc, old, &sheet);
     }
     Ok(doc)
 }
 
 /// Old flat layers become top-level objects, bottom to top.
 fn migrate(old: legacy::Design) -> Document {
-    let mut doc = Document::new(BaseColors {
-        primary: old.primary,
-        accent: old.accent,
-        trim: old.trim,
-        overrides: old.region_colors,
-    });
+    let mut doc = Document::new(BaseColors { primary: old.primary, accent: old.accent, trim: old.trim, overrides: old.region_colors });
     for layer in old.layers {
         let obj = match layer.kind {
             LayerKind::Stroke { points, width, color } => {
-                Object::shape("Pinselstrich", points, false, None, Some(StrokeStyle { color, width }))
+                Object::shape(tr("Brush stroke", "Pinselstrich"), points, false, None, Some(StrokeStyle { color, width }))
             }
-            LayerKind::Shape { points, color } => Object::shape("Form", points, true, Some(color), None),
+            LayerKind::Shape { points, color } => Object::shape(tr("Shape", "Form"), points, true, Some(color), None),
             LayerKind::Text { text, pos, height, rotation, color, fatten } => Object::new(
                 text.clone(),
                 Xf { pos, rotation, scale: [1.0, 1.0] },
@@ -62,13 +64,13 @@ fn migrate(old: legacy::Design) -> Document {
                 let Ok(asset) = Asset::new("logo.png", logo.file) else { continue };
                 let [nw, nh] = asset.natural_size();
                 Object::new(
-                    "Logo",
+                    tr("Logo", "Logo"),
                     Xf { pos, rotation, scale: [1.0, 1.0] },
                     ObjectKind::Graphic { asset: Arc::new(asset), size: [width, width * nh / nw], tint: None },
                 )
             }
             LayerKind::Pattern { text, height, line_spacing, angle, skew, color, opacity, area } => Object::new(
-                "Muster",
+                tr("Pattern", "Muster"),
                 Xf::default(),
                 ObjectKind::Pattern { text, size: height, line_spacing, angle, italic: skew, color, area },
             )
