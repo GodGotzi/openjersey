@@ -16,7 +16,7 @@ pub fn show(ui: &mut egui::Ui, log: &mut Log) {
     header(ui, log);
     ui.add_space(4.0);
     if log.is_empty() {
-        connect_help(ui);
+        egui::ScrollArea::vertical().id_salt("agent-help").auto_shrink([false, false]).show(ui, connect_help);
         return;
     }
     egui::ScrollArea::vertical().id_salt("agent-log").auto_shrink([false, false]).stick_to_bottom(true).show(ui, |ui| {

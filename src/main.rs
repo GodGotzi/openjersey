@@ -562,8 +562,11 @@ impl JerseyApp {
             // Agent mode: the agent's log below the editor
             let frame =
                 egui::Frame::new().fill(ui.visuals().panel_fill).inner_margin(egui::Margin { top: 8, bottom: 2, left: 0, right: 0 });
+            // at most two fifths of the height, so the editor's tools are never squeezed
+            let most = (ui.available_height() * 0.4).max(140.0);
+            let least = 240.0_f32.min(most);
             #[allow(deprecated)]
-            egui::Panel::bottom("agent_log").frame(frame).resizable(true).size_range(260.0..=600.0).show_inside(ui, |ui| {
+            egui::Panel::bottom("agent_log").frame(frame).resizable(true).size_range(least..=most).show_inside(ui, |ui| {
                 ui::agent_panel::show(ui, &mut self.agent_log);
             });
         }
