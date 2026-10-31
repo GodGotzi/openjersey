@@ -1,22 +1,82 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- OpenJersey app icon: a jersey with raglan sleeves in the accent colour
-       and a number, on a dark tile -->
+  <!-- OpenJersey app icon: a jersey cut into bright panels, on a deep indigo
+       tile, with the anchor points and handles of a vector path on its collar -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2a2d34"/>
-      <stop offset="1" stop-color="#111216"/>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#262a55"/>
+      <stop offset="0.55" stop-color="#14162e"/>
+      <stop offset="1" stop-color="#090a15"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5b9bff"/>
-      <stop offset="1" stop-color="#2f6ee6"/>
+    <radialGradient id="glow" cx="0.22" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#6d5dfc" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6d5dfc" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c9d0ec"/>
+    </linearGradient>
+    <linearGradient id="sleeveL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#4f7cff"/>
+    </linearGradient>
+    <linearGradient id="sleeveR" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.5" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+    <clipPath id="shape">
+      <path d="M204,110 Q256,152 308,110 L374,130 L446,198 L404,256 L358,226 L360,404 Q256,418 152,404 L154,226 L108,256 L66,198 L138,130 Z"/>
+    </clipPath>
   </defs>
-  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
-  <path d="M204,110 Q256,152 308,110 L374,130 L446,198 L404,256 L358,226 L360,404 Q256,418 152,404 L154,226 L108,256 L66,198 L138,130 Z" fill="#f3f4f6" stroke="#f3f4f6" stroke-width="14" stroke-linejoin="round"/>
-  <g fill="url(#accent)" stroke="url(#accent)" stroke-width="16" stroke-linejoin="round">
-    <path d="M306,110 L374,130 L446,198 L404,256 L358,226 Z"/>
-    <path d="M206,110 L138,130 L66,198 L108,256 L154,226 Z"/>
+
+  <!-- tile -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#tile)"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#glow)"/>
+  <rect x="17.5" y="17.5" width="477" height="477" rx="110.5" fill="none" stroke="url(#rim)" stroke-width="3"/>
+
+  <g transform="translate(256,258) scale(1.1) translate(-256,-258)">
+  <!-- soft shadow under the jersey -->
+  <ellipse cx="256" cy="418" rx="124" ry="10" fill="#000000" opacity="0.4"/>
+
+  <!-- the jersey, cut into panels -->
+  <g clip-path="url(#shape)">
+    <rect x="40" y="90" width="432" height="340" fill="url(#body)"/>
+    <!-- sleeves -->
+    <path d="M138,130 L66,198 L108,256 L154,226 L158,110 Z" fill="url(#sleeveL)"/>
+    <path d="M374,130 L446,198 L404,256 L358,226 L354,110 Z" fill="url(#sleeveR)"/>
+    <!-- a slanted band across the chest -->
+    <path d="M140,330 L372,246 L372,288 L140,372 Z" fill="url(#band)"/>
+    <!-- a thin line above and below it -->
+    <path d="M160,307 L358,235" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3" fill="none"/>
+    <path d="M160,379 L358,307" stroke="#8a93bd" stroke-opacity="0.55" stroke-width="3" fill="none"/>
+    <!-- light along the left of the body -->
+    <path d="M158,110 L160,404 L184,406 L182,110 Z" fill="#ffffff" opacity="0.35"/>
   </g>
-  <path d="M204,110 Q256,152 308,110" fill="none" stroke="url(#accent)" stroke-width="16" stroke-linecap="round"/>
-  <path d="M216,236 H296 V258 L254,356 H226 L266,260 H216 Z" fill="#262a33" stroke="#262a33" stroke-width="4" stroke-linejoin="round"/>
+  <!-- seams -->
+  <path d="M154,226 L157,124 M358,226 L355,124" stroke="#0b0d1c" stroke-opacity="0.35" stroke-width="3" fill="none"/>
+
+  <!-- collar -->
+  <path d="M204,110 Q256,152 308,110" fill="none" stroke="#0e1124" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- anchor points and handles, as in a vector editor -->
+  <g stroke="#22d3ee" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M222,131 H290"/>
+  </g>
+  <g fill="#22d3ee">
+    <circle cx="222" cy="131" r="6"/>
+    <circle cx="290" cy="131" r="6"/>
+  </g>
+  <g fill="#ffffff" stroke="#22d3ee" stroke-width="4" stroke-linejoin="round">
+    <rect x="248" y="123" width="16" height="16" rx="3"/>
+  </g>
+  </g>
 </svg>

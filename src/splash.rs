@@ -172,7 +172,7 @@ struct Art {
 }
 
 /// The icon's accent gradient.
-const ACCENT: [[u8; 3]; 2] = [[0x5b, 0x9b, 0xff], [0x2f, 0x6e, 0xe6]];
+const ACCENT: [[u8; 3]; 2] = [[0x22, 0xd3, 0xee], [0x8b, 0x5c, 0xf6]];
 /// The progress bar, logical pixels: x, y, width, height.
 const BAR: [f32; 4] = [110.0, 246.0, 220.0, 4.0];
 
@@ -184,7 +184,7 @@ impl Art {
         let gradient = LinearGradient::new(
             Point::from_xy(0.0, 0.0),
             Point::from_xy(0.0, h as f32),
-            vec![GradientStop::new(0.0, rgb([0x2a, 0x2d, 0x34])), GradientStop::new(1.0, rgb([0x11, 0x12, 0x16]))],
+            vec![GradientStop::new(0.0, rgb([0x1e, 0x21, 0x40])), GradientStop::new(1.0, rgb([0x0a, 0x0b, 0x16]))],
             SpreadMode::Pad,
             Transform::identity(),
         )?;
@@ -205,12 +205,12 @@ impl Art {
         }
         let fonts = Fonts::new();
         text(&mut bg, &fonts, "OpenJersey", 30.0 * s, [w as f32 / 2.0, 156.0 * s], [0xf3, 0xf4, 0xf6]);
-        text(&mut bg, &fonts, tr("splash.subtitle"), 10.5 * s, [w as f32 / 2.0, 182.0 * s], [0x6b, 0x72, 0x7e]);
+        text(&mut bg, &fonts, tr("splash.subtitle"), 10.5 * s, [w as f32 / 2.0, 182.0 * s], [0x7a, 0x80, 0xa6]);
 
         // the bar's track
         let [x, y, bw, bh] = BAR.map(|v| v * s);
         if let Some(path) = rounded_bar(x, y, bw, bh) {
-            bg.fill_path(&path, &solid([0x30, 0x34, 0x3c], 1.0), FillRule::Winding, Transform::identity(), None);
+            bg.fill_path(&path, &solid([0x2a, 0x2d, 0x4a], 1.0), FillRule::Winding, Transform::identity(), None);
         }
         Some(Self { scale, background: bg, fonts })
     }
@@ -222,7 +222,7 @@ impl Art {
             pm = Pixmap::new(w, h).unwrap_or(pm);
             pm.draw_pixmap(0, 0, self.background.as_ref(), &PixmapPaint::default(), Transform::identity(), None);
         }
-        text(&mut pm, &self.fonts, status, 12.5 * s, [w as f32 / 2.0, 222.0 * s], [0x9a, 0xa0, 0xa8]);
+        text(&mut pm, &self.fonts, status, 12.5 * s, [w as f32 / 2.0, 222.0 * s], [0xa5, 0xab, 0xc9]);
 
         // indeterminate progress: a segment glides across the track, easing
         // in and out, clipped to the track
