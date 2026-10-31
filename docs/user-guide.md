@@ -70,7 +70,7 @@ With **Snap** on, a dragged object's edges and centre snap to the centre lines o
 | File → New / Open / Save / Save as | Designs are `.json` files with their graphics embedded |
 | File → Template | Start from a ready-made design |
 | File → Export print template | The sheet as a PNG for the printer; logo placeholders are left out |
-| Settings | Language (English, Deutsch), the colour theme from a dropdown (the bundled ones and your own, see [Themes](themes.md)) and VSync |
+| Settings | Opens a small window: language (English, Deutsch), the colour theme from a dropdown (the bundled ones and your own, see [Themes](themes.md)) and VSync. The choices are remembered |
 
 Older save files open too; they are moved onto the current sheet layout.
 

@@ -15,11 +15,11 @@ OpenJersey comes with six colour themes, and you can add your own. Pick one from
 
 A theme changes everything the app draws: the panels, buttons and menus, the selection and the active tool, the 2D editor's canvas and rulers, and the background of the 3D view.
 
-`OJ_THEME=nord openjersey` starts with a theme for one run (the file name without `.toml`). Otherwise the saved choice is used (`~/.config/openjersey/theme`), and Graphite if there is none.
+`OJ_THEME=nord openjersey` starts with a theme for one run (the file name without `.toml`). Otherwise the saved choice is used (`theme` in `~/.config/openjersey/settings.toml`), and Graphite if there is none.
 
 ## Your own themes
 
-Put a theme file in your configuration folder and it shows up in the dropdown, under *Your themes*:
+Themes that are not bundled with the app go in the `themes/` folder of your configuration folder. The app creates the folder at its first start, next to `settings.toml`. A file you put there shows up in the dropdown, under *Your themes*:
 
 ```
 ~/.config/openjersey/themes/ocean.toml        (or $XDG_CONFIG_HOME/openjersey/themes/)

@@ -50,13 +50,32 @@ openjersey --export-template sheet.png --preset example --top "polo shirt" --bot
 | --- | --- |
 | `OJ_LANG=en\|de` | The interface language (otherwise the saved choice, then the system locale) |
 | `OJ_THEME=graphite\|midnight\|nord\|forest\|daylight\|paper` | The colour theme (otherwise the saved choice; see [Themes](themes.md)) |
-| `OJ_VSYNC=1` | Turn VSync on at start (also in Settings) |
+| `OJ_VSYNC=1\|0` | VSync on or off at start (also in Settings) |
 | `OJ_PATH=basic` | Use the basic render path instead of the HDR pipeline |
 | `OJ_AA=none\|fxaa\|msaa\|msaa-fxaa` | Anti-aliasing mode |
 | `OJ_SHADOWS=0` | Turn shadows off |
 | `OJ_VIEW=front\|left\|back\|right` | The 3D view's starting side |
 | `OJ_LOG_FPS=1` | Print the frame rate to stderr |
 | `OJ_PREVIEW_HEIGHT`, `OJ_PREVIEW_YAW` | Height and camera angle (degrees) of the software preview |
+
+## Settings files
+
+The app keeps what it remembers in `~/.config/openjersey/` (or `$XDG_CONFIG_HOME/openjersey/`), created at the first start:
+
+```
+settings.toml     language, theme and VSync, changed in the Settings window
+themes/           your own colour themes (see Themes)
+```
+
+`settings.toml` is plain TOML and fine to edit by hand:
+
+```toml
+language = "de"        # "en" or "de"; without it the system language is used
+theme = "graphite"     # a bundled theme, or the name of a file in themes/
+vsync = false
+```
+
+The environment variables below win over it for one run. Older versions kept the language and theme as one-line files named `language` and `theme`; they are moved into `settings.toml` at the next start.
 
 ## Tests
 
