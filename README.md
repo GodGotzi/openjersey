@@ -1,140 +1,110 @@
-# OpenJersey
+<p align="center">
+  <img src="assets/icon.png" alt="OpenJersey" width="120">
+</p>
 
-Volleyball jersey designer in Rust: an object tree on the left, the 3D model
-in the middle (Myth engine, wgpu), the print template on the right (egui).
-The template shows every garment piece laid out like a sublimation print
-sheet; objects can be picked and moved on the template and
-directly on the 3D model.
+<h1 align="center">OpenJersey</h1>
 
-    cargo run --release            # or: openjersey --top "tank top" --bottom "bikini bottom" / openjersey design.json
+<p align="center">
+  Design sports kits in 3D and as print-ready templates, by hand or with an AI assistant.
+</p>
 
-## Install (Linux)
-    ./install/install-linux.sh            # build, add to the app launcher with icon
-    ./install/install-linux.sh --remove   # remove the launcher entry and icons
+<p align="center">
+  <a href="https://github.com/GodGotzi/openjersey/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/GodGotzi/openjersey/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-blue.svg"></a>
+</p>
 
-The launcher runs `target/release/openjersey` in this checkout, so after
-`git pull && cargo build --release` it starts the new version.
+<p align="center">
+  <img src="docs/images/hero.png" alt="Five example kits: Alpine Night, Summit Teal, Neon Court, a black and white contrast kit and Sunset Retro" width="100%">
+</p>
 
-## Editor
-- **Layers** (left): every object (text, graphic/logo, shape, line, watermark
-  pattern, logo placeholder, group) with visibility, lock, rename
-  (double-click), drag-and-drop to reorder or move into groups, and a context
-  menu (duplicate, delete, group, ungroup, restack, centre on piece, mirror
-  front ↔ back). **Pattern pieces** at the bottom holds the pieces' base colours.
-- **Properties**: position in mm, rotation, scale, opacity, "only on"
-  pieces, and the settings of the object's kind (text, size, colour, tint,
-  placeholder size, "Insert logo…" to turn a placeholder into a logo).
-- **Editor** (right): a toolbox on the left (grouped tools; hover for names
-  and shortcuts), an options bar on top (the colour picker, quick swatches and the options
-  of the current tool; the picker has an HSV square, a hex field, the design's
-  own colours, recent colours, a palette and a shortcut to the eyedropper), rulers in millimetres with a cursor marker, and a status
-  bar with the cursor position, the selection's size and zoom controls (scroll
-  to zoom, middle/right drag or Space to pan). Tools: Select/transform (V; corner handles
-  scale, the round handle rotates, Shift = free/15°), Hand (H), Brush (B),
-  Eraser (E), Outline shape (O) and Filled shape (S) (each button shows its current shape; clicking it opens a flyout beside it to choose rectangle, ellipse, rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross or, for outlines, line; then drag it out; a filled shape can also get an outline, switched on in the options bar), Polygon (P), Text (T), Image/SVG (I),
-  Logo placeholder (L), Fill (F, pieces or objects), Eyedropper (Y).
-- 3D view: click an object on the model to select it, drag to move it;
-  dragging elsewhere orbits.
-- Ctrl+Z/Y undo/redo, Ctrl+D duplicate, Ctrl+G / Ctrl+Shift+G group/ungroup,
-  Ctrl+C/V, Ctrl+A, Del, arrow keys nudge (Shift = 10 mm), snapping of a
-  dragged object's edges and centre to the centre lines, pieces and the edges
-  and centres of all other objects, images and logos included, in both views
-  (the Snap toggle in the 3D toolbar). Clicking a group selects it; once a
-  member is selected, clicks pick its siblings, so group members can be moved
-  one by one with the mouse (Ctrl+click or double-click selects a member
-  directly).
-- **Garment browser** (the Top and Bottom buttons in the sidebar's Model block, which also switches Men / Women): a searchable grid of
-  garments with an outline of each print template, filtered by body (Men /
-  Women) and tops / bottoms. A design wears one top and one bottom on one
-  body; the sheet holds the top's pieces with the bottom's below. Switching
-  keeps the design where it is on the body; objects on pieces the new garment
-  doesn't have (sleeves on a tank top) are hidden. Top and bottom are saved
-  with the design.
-- **3D toolbar** (floating at the top of the 3D view): camera views (front,
-  left, back, right), show/hide the top and the bottom (a hidden garment is
-  also left off the print sheet), and snapping.
-- **Settings** (menu bar): language and VSync. Language is English or German; it follows the system
-  locale at first; `OJ_LANG=en|de` overrides it.
-- **File**: presets (example), open/save
-  (`.json`, graphics embedded), export the print PNG (placeholders left out).
-  Without a window: `openjersey --export-template out.png [design.json |
-  --preset <name>] [--top <name>] [--bottom <name>] [--garment preview.png]`.
+OpenJersey is a jersey designer written in Rust. You put a design on a 3D garment and edit it in two places at once: on the model itself, and on the flat **print sheet** that a sublimation printer needs, with every piece of the garment laid out. What you change in one shows in the other.
 
-## AI assistants (MCP)
-`openjersey mcp` is a stdio [MCP](https://modelcontextprotocol.io) server that
-forwards to the running app (and starts it if needed), so Codex, Claude Code
-or any other MCP client edits the design you see. Each change is one undo
-step in the editor.
+It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code, Codex or any other MCP client can design in your open window: add shapes and lettering, set colours, switch garments, look at renders of its work and fix what it sees. The kits above were made that way.
 
-    claude mcp add openjersey -- /path/to/openjersey mcp
+## Highlights
 
-    # ~/.codex/config.toml
-    [mcp_servers.openjersey]
-    command = "/path/to/openjersey"
-    args = ["mcp"]
+- **19 garments in 32 variants** for men and women: T-shirts, polo, tank tops, jackets, shorts, pants, tights, a beach set. Every top fits every bottom.
+- **A 2D editor** with text, brush, shapes (rounded rectangle, star, arrow, hexagon and more, outlined or filled), polygons, images and SVG, logo placeholders, fill and eyedropper, a proper colour picker, rulers in millimetres, layers and groups.
+- **A lit 3D view** with front, left, back and right views, in which you can select and drag objects directly on the garment, with snapping to everything else on the design.
+- **Print-ready export**: the sheet as a PNG, logo placeholders left out.
+- **An AI-friendly interface**: 34 tools, `batch` calls that undo as one step, renders the assistant can look at. See [Working with AI assistants](docs/ai-assistants.md).
+- English and German, with a translation system that makes adding a language a single file.
 
-Tools:
+![The OpenJersey editor](docs/images/editor.png)
 
-| Area | Tools |
+## Examples
+
+Ten designs, all in [`docs/examples`](docs/examples/README.md) as files you can open. Eight were designed through MCP; the last two are VBC Stainach's own kits.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/alpine-night.png" width="440"><br><b>Alpine Night</b><br>layered mountains, contour lines</td>
+    <td align="center"><img src="docs/images/summit-teal.png" width="440"><br><b>Summit Teal</b><br>track suit, fading chevrons</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/neon-court.png" width="440"><br><b>Neon Court</b><br>black with slanted neon stripes</td>
+    <td align="center"><img src="docs/images/coral-wave.png" width="440"><br><b>Coral Wave</b><br>beach set, waves and stars</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/mono-chevron.png" width="440"><br><b>Mono Chevron</b><br>black and white chevrons</td>
+    <td align="center"><img src="docs/images/rose-quartz.png" width="440"><br><b>Rose Quartz</b><br>pastel honeycomb</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/glacier-hood.png" width="440"><br><b>Glacier</b><br>hooded jacket, snow stars</td>
+    <td align="center"><img src="docs/images/sunset-retro.png" width="440"><br><b>Sunset Retro</b><br>retro stripes and a setting sun</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/vbc-stainach.png" width="440"><br><b>VBC Stainach</b><br>warm-up shirt with a mountain panel</td>
+    <td align="center"><img src="docs/images/vbc-contrast-lines.png" width="440"><br><b>VBC Stainach, contrast kit</b><br>black and white marble lines</td>
+  </tr>
+</table>
+
+## Quick start
+
+You need a recent stable [Rust](https://rustup.rs) toolchain and a GPU with a Vulkan, Metal or DX12 driver. Only Linux has been tried so far.
+
+```sh
+git clone https://github.com/GodGotzi/openjersey
+cd openjersey
+cargo run --release
+```
+
+On Linux, `./install/install-linux.sh` also adds OpenJersey to your app launcher. [Getting started](docs/getting-started.md) has the command line, the environment variables and the Linux packages.
+
+## Use it with an AI assistant
+
+```sh
+claude mcp add openjersey -- /path/to/openjersey mcp
+```
+
+Then ask for what you want: *"Design a navy and gold jersey for my club, number 7, with a mountain motif on the front, and check how it looks."* The assistant works in your open window; every change is one undo step. For Codex and other clients, and what a session looks like, see [Working with AI assistants](docs/ai-assistants.md). Every tool is in the [MCP tool reference](docs/mcp-tools.md).
+
+## Documentation
+
+| | |
 | --- | --- |
-| Look | `get_overview`, `list_objects`, `get_object`, `list_garments`, `list_presets`, `render_preview` (sheet, garment, or one piece zoomed) |
-| Add | `add_text`, `add_placeholder`, `add_rectangle`, `add_ellipse`, `add_preset_shape` (rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross, line), `add_shape`, `add_pattern` (watermark), `import_image` (also fills a logo placeholder) |
-| Change | `update_object`, `delete_object`, `duplicate_object`, `reorder_object`, `group_objects`, `ungroup`, `centre_on_piece`, `mirror_to_other_side`, `select` |
-| Colours and garments | `set_piece_color`, `set_garments`, `set_garment`, `load_preset` |
-| Files | `new_design`, `open_design`, `save_design`, `export_print_template` (only `.json` / `.png` paths are written) |
-| Workflow | `batch` (several tools, one undo step, optional all-or-nothing), `undo`, `redo` |
+| [Getting started](docs/getting-started.md) | Build, run, install, command line, environment variables |
+| [User guide](docs/user-guide.md) | The editor, the tools, shortcuts |
+| [Working with AI assistants](docs/ai-assistants.md) | MCP setup and how the examples were made |
+| [MCP tool reference](docs/mcp-tools.md) | All tools and prompts |
+| [Examples](docs/examples/README.md) | The designs and the scripts that built them |
+| [Garment library](docs/garments.md) | The garments and how they are built with Blender |
+| [Translations](docs/translations.md) | Adding a language |
+| [Architecture](docs/architecture.md) | How the code fits together |
 
-Two prompts, `design_jersey` and `review_design`, are offered to clients that
-list MCP prompts. The app listens on 127.0.0.1 only; the bridge authenticates
-with a token from `~/.cache/openjersey/session.json` (mode 600).
+## Contributing
 
-## Assets
-Every garment lives in `garments/<id>/`
-(`garment.json`, `model.glb`, `pattern.json`); `build.rs` picks the folders
-up at compile time. They are generated by the Blender scripts in
-`blender/` (see [blender/GARMENTS.md](blender/GARMENTS.md)) and only need
-rebuilding when a garment changes.
+```sh
+cargo test --release
+cargo clippy --release --all-targets
+```
 
-1. Download Blender Studio's CC0 *Human Base Meshes* bundle from
-   https://www.blender.org/download/demo-files/ and unzip it to
-   `assets-src/human-base-meshes/` (gitignored).
-2. Pose the mannequins:
+Code is formatted with `cargo fmt` (see `rustfmt.toml`). New garments are added with the Blender scripts, with no Rust change; see [blender/GARMENTS.md](blender/GARMENTS.md).
 
-       for body in man women; do
-           blender --background assets-src/human-base-meshes/human-base-meshes-bundle-v1.4.1/human_base_meshes_bundle.blend \
-               --python blender/prepare_mannequin.py -- --body $body
-       done
+## License and credits
 
-3. Build the garments:
-
-       blender --background --python blender/build.py -- --garment all [--render <dir>]
-
-The glTF exporter needs numpy; the script adds `~/.local/lib/python3.14/site-packages`
-to Blender's path. `studio.hdr` is Poly Haven's CC0 "Studio Small 09" (1k),
-the font is DejaVu Sans Condensed Bold.
-
-## Translations
-Every UI text is a key such as `menu.file.save` in `locales/<language>.toml`
-(nested tables become dotted keys, `{}` marks a value filled in at run time).
-Code asks for it with `tr("menu.file.save")` or `tr_args(...)`. `build.rs`
-refuses to build when `en.toml` and `de.toml` differ in keys or placeholders,
-and a test fails when the code uses a key that has no text, or a text is unused
-(garment piece names are keyed by their pattern name, `piece.left_sleeve`).
-
-To add a language: copy `locales/en.toml` to `locales/<code>.toml`, translate
-the values, list the code in `LANGUAGES` in `build.rs` and add it to `Language`
-in `src/i18n.rs`.
-
-## Benchmarking
-Environment variables: `OJ_VSYNC=1`, `OJ_PATH=basic` (instead of the HDR
-pipeline), `OJ_AA=none|fxaa|msaa|msaa-fxaa`, `OJ_SHADOWS=0`, `OJ_VIEW=front|left|back|right` (start view), `OJ_LOG_FPS=1`
-(prints the frame rate to stderr).
-
-## License and notices
 OpenJersey is free software under the [GNU GPL v3](LICENSE) (or later).
 
-The garments are generic cuts of common sports apparel, built by the Blender
-scripts in `blender/`.
-Bundled third-party assets: Blender Studio *Human Base Meshes* (CC0,
-mannequins used only to fit garments), Poly Haven "Studio Small 09" HDRI
-(CC0), DejaVu Sans (free license).
+The garments are generic cuts of common sports apparel, built by the Blender scripts in `blender/`. Third-party assets: Blender Studio's *Human Base Meshes* (CC0; mannequins used only to fit the garments), Poly Haven's "Studio Small 09" HDRI (CC0) and DejaVu Sans (free license). The 3D view is built on the [Myth](https://crates.io/crates/myth-engine) engine and [egui](https://github.com/emilk/egui).
+
+The two VBC Stainach examples are that club's own designs.
