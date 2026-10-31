@@ -3,6 +3,8 @@
 //! tools can look at. Myth has no raycasting, so this is our own; it loads the
 //! same model the 3D view shows.
 
+use std::collections::HashMap;
+
 use myth::math::{Mat3, Mat4, Vec2, Vec3, Vec4};
 use tiny_skia::Pixmap;
 
@@ -10,8 +12,17 @@ use crate::document::Garments;
 use crate::garments::Kind;
 use crate::template::pattern::{Pattern, Pt};
 
+/// Preview shading: two key lights, one from the upper left of the front and
+/// its mirror image at the back, so both sides are lit alike.
+const KEY_FRONT: Vec3 = Vec3::new(-0.45, 0.65, 0.62);
+const KEY_BACK: Vec3 = Vec3::new(-0.45, 0.65, -0.62);
+/// The preview is drawn this many times larger and scaled down, for smooth edges.
+const SUPERSAMPLE: u32 = 2;
+
 pub struct GarmentMesh {
     tris: Vec<[Vec3; 3]>,
+    /// smooth (vertex) normals of each triangle's corners, for shading
+    normals: Vec<[Vec3; 3]>,
     uvs: Vec<[Vec2; 3]>,
     /// which garment each triangle belongs to
     garment: Vec<Kind>,
@@ -51,7 +62,8 @@ impl GarmentMesh {
                 }
             }
         }
-        Self { tris, uvs, garment, atlas: [sw, sh] }
+        let normals = smooth_normals(&tris);
+        Self { tris, normals, uvs, garment, atlas: [sw, sh] }
     }
 
     /// Nearest hit of a ray: (distance, template point).
@@ -73,6 +85,17 @@ impl GarmentMesh {
         self.tris.iter().zip(&self.uvs).zip(&self.garment).filter(|(_, g)| shown.shows(**g)).map(|(t, _)| t)
     }
 
+    /// The triangles of the garments that are shown, with their corner normals and UVs.
+    fn shown_shaded<'a>(&'a self, shown: &'a Garments) -> impl Iterator<Item = (&'a [Vec3; 3], &'a [Vec3; 3], &'a [Vec2; 3])> {
+        self.tris
+            .iter()
+            .zip(&self.normals)
+            .zip(&self.uvs)
+            .zip(&self.garment)
+            .filter(|(_, g)| shown.shows(**g))
+            .map(|(((tri, normals), uv), _)| (tri, normals, uv))
+    }
+
     /// A ray from window NDC through the camera (`inv_view_proj` is the
     /// inverse of the projection actually used, lens shift included).
     pub fn ray(inv_view_proj: &Mat4, ndc: [f32; 2]) -> (Vec3, Vec3) {
@@ -85,31 +108,36 @@ impl GarmentMesh {
     /// Software render of the garment with the print template, seen from the
     /// front and from the back, side by side (for AI previews).
     pub fn preview(&self, template: &Pixmap, height: u32, shown: &Garments) -> Pixmap {
-        let w = height * 3 / 4;
-        let mut out = Pixmap::new(w * 2, height).expect("non-zero");
-        out.fill(tiny_skia::Color::from_rgba8(0xe9, 0xe9, 0xeb, 255));
+        let background = tiny_skia::Color::from_rgba8(0xe9, 0xe9, 0xeb, 255);
+        let (big_h, big_w) = (height * SUPERSAMPLE, height * SUPERSAMPLE * 3 / 4);
+        let mut big = Pixmap::new(big_w * 2, big_h).expect("non-zero");
+        big.fill(background);
         // OJ_PREVIEW_YAW turns the camera around the body, e.g. 90 for both sides
         let yaw = std::env::var("OJ_PREVIEW_YAW").ok().and_then(|y| y.parse::<f32>().ok()).unwrap_or(0.0).to_radians();
         for (k, back) in [false, true].into_iter().enumerate() {
             let eye = Mat3::from_rotation_y(yaw) * Vec3::new(0.0, 1.1, if back { -2.4 } else { 2.4 });
             let view = Mat4::look_at_rh(eye, Vec3::new(0.0, 1.02, 0.0), Vec3::Y);
-            let proj = Mat4::perspective_rh(30f32.to_radians(), w as f32 / height as f32, 0.1, 10.0);
-            self.raster_view(&mut out, template, proj * view, k as u32 * w, w, height, eye, shown);
+            let proj = Mat4::perspective_rh(30f32.to_radians(), big_w as f32 / big_h as f32, 0.1, 10.0);
+            self.raster_view(&mut big, template, proj * view, k as u32 * big_w, big_w, big_h, eye, shown);
         }
+        let mut out = Pixmap::new(height * 3 / 4 * 2, height).expect("non-zero");
+        out.fill(background);
+        let paint = tiny_skia::PixmapPaint { quality: tiny_skia::FilterQuality::Bilinear, ..Default::default() };
+        let scale = tiny_skia::Transform::from_scale(out.width() as f32 / big.width() as f32, height as f32 / big_h as f32);
+        out.draw_pixmap(0, 0, big.as_ref(), &paint, scale, None);
         out
     }
 
     #[allow(clippy::too_many_arguments)]
     fn raster_view(&self, out: &mut Pixmap, tex: &Pixmap, vp: Mat4, x0: u32, w: u32, h: u32, eye: Vec3, shown: &Garments) {
         let mut depth = vec![f32::MAX; (w * h) as usize];
-        let light = Vec3::new(-0.4, 0.6, 0.7).normalize();
         let stride = out.width();
         let data = out.data_mut();
-        for (tri, uv) in self.shown_tris(shown) {
-            let n = (tri[1] - tri[0]).cross(tri[2] - tri[0]).normalize_or_zero();
-            // two-sided: face the normal towards the viewer
-            let n = if n.dot(eye - tri[0]) < 0.0 { -n } else { n };
-            let shade = 0.55 + 0.45 * n.dot(light).max(0.0);
+        for (tri, normals, uv) in self.shown_shaded(shown) {
+            let to_eye = (eye - (tri[0] + tri[1] + tri[2]) / 3.0).normalize_or_zero();
+            // two-sided: turn the corner normals towards the viewer
+            let facing = (tri[1] - tri[0]).cross(tri[2] - tri[0]).dot(to_eye) < 0.0;
+            let normals = normals.map(|n| if facing { -n } else { n });
             let s: Vec<Vec4> = tri.iter().map(|p| vp * p.extend(1.0)).collect();
             if s.iter().any(|c| c.w <= 0.0) {
                 continue;
@@ -139,15 +167,47 @@ impl GarmentMesh {
                     let tx = (st.x * tex.width() as f32).clamp(0.0, tex.width() as f32 - 1.0) as u32;
                     let ty = (st.y * tex.height() as f32).clamp(0.0, tex.height() as f32 - 1.0) as u32;
                     let c = tex.pixel(tx, ty).expect("clamped");
+                    let n = (normals[0] * b0 + normals[1] * b1 + normals[2] * b2).normalize_or_zero();
+                    let (lit, shine) = shade(n, to_eye);
                     let o = (((y * stride) + x0 + x) * 4) as usize;
-                    data[o] = (c.red() as f32 * shade) as u8;
-                    data[o + 1] = (c.green() as f32 * shade) as u8;
-                    data[o + 2] = (c.blue() as f32 * shade) as u8;
+                    data[o] = (c.red() as f32 * lit + shine).min(255.0) as u8;
+                    data[o + 1] = (c.green() as f32 * lit + shine).min(255.0) as u8;
+                    data[o + 2] = (c.blue() as f32 * lit + shine).min(255.0) as u8;
                     data[o + 3] = 255;
                 }
             }
         }
     }
+}
+
+/// Vertex normals: every triangle's normal (weighted by its area) added to the
+/// vertices at its corners, vertices at the same spot sharing one normal.
+fn smooth_normals(tris: &[[Vec3; 3]]) -> Vec<[Vec3; 3]> {
+    let key = |p: Vec3| ((p.x * 1e4).round() as i32, (p.y * 1e4).round() as i32, (p.z * 1e4).round() as i32);
+    let mut sums: HashMap<(i32, i32, i32), Vec3> = HashMap::new();
+    for tri in tris {
+        let face = (tri[1] - tri[0]).cross(tri[2] - tri[0]);
+        for &corner in tri {
+            *sums.entry(key(corner)).or_insert(Vec3::ZERO) += face;
+        }
+    }
+    tris.iter().map(|tri| tri.map(|corner| sums[&key(corner)].normalize_or_zero())).collect()
+}
+
+/// How much of the fabric's colour shows (light) and how much white is added
+/// (a soft highlight and a sheen towards the silhouette, so dark fabric shows
+/// its form) for a surface with normal `n` seen along `to_eye`.
+fn shade(n: Vec3, to_eye: Vec3) -> (f32, f32) {
+    const AMBIENT: f32 = 0.46;
+    const KEY: f32 = 0.62;
+    let (front, back) = (KEY_FRONT.normalize(), KEY_BACK.normalize());
+    let diffuse = n.dot(front).max(n.dot(back)).max(0.0);
+    let lit = AMBIENT + 0.10 * n.y + KEY * diffuse;
+    // the highlight of whichever key light is on the viewer's side
+    let key = if to_eye.z >= 0.0 { front } else { back };
+    let highlight = n.dot((key + to_eye).normalize_or_zero()).max(0.0).powi(28) * 0.10;
+    let sheen = (1.0 - n.dot(to_eye).abs()).powi(3) * 0.10;
+    (lit, 255.0 * (highlight + sheen))
 }
 
 fn edge(a: Vec3, b: Vec3, c: Vec3) -> f32 {
@@ -182,6 +242,34 @@ fn intersect(origin: Vec3, dir: Vec3, tri: &[Vec3; 3]) -> Option<(f32, f32, f32)
 mod tests {
     use super::*;
     use crate::template::pattern::PieceId;
+
+    #[test]
+    fn the_back_of_the_preview_is_lit_like_the_front() {
+        let bottom = crate::garments::default(Kind::Bottom, crate::garments::Body::Man);
+        let top = crate::garments::default(Kind::Top, crate::garments::Body::Man);
+        let pattern = Pattern::of(top, bottom);
+        let mesh = GarmentMesh::load(&pattern);
+        let mut white = Pixmap::new(64, 64).unwrap();
+        white.fill(tiny_skia::Color::WHITE);
+        let image = mesh.preview(&white, 300, &Garments::default());
+        // mean brightness of the garment's pixels (the background is 0xe9..) in each half
+        let mean = |x_from: u32, x_to: u32| {
+            let (mut sum, mut count) = (0.0, 0.0);
+            for y in 0..image.height() {
+                for x in x_from..x_to {
+                    let c = image.pixel(x, y).unwrap();
+                    if (c.red(), c.green(), c.blue()) != (0xe9, 0xe9, 0xeb) {
+                        sum += c.red() as f32;
+                        count += 1.0;
+                    }
+                }
+            }
+            sum / count
+        };
+        let (front, back) = (mean(0, image.width() / 2), mean(image.width() / 2, image.width()));
+        assert!(back > 0.85 * front, "front {front:.0}, back {back:.0}: the back is unlit");
+        assert!(front > 120.0 && front < 250.0, "front {front:.0}");
+    }
 
     #[test]
     fn a_ray_at_the_chest_lands_on_the_front_piece() {
