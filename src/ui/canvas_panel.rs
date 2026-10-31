@@ -107,13 +107,13 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
     match e.tool {
         Tool::Brush | Tool::Eraser => {
             ui.separator();
-            ui.label(tr("Size", "Größe"));
+            ui.label(tr("options.size"));
             ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=80.0).suffix(" mm"));
         }
         Tool::Rect | Tool::Ellipse | Tool::Polygon => {
             ui.separator();
-            ui.checkbox(&mut e.fill_shapes, tr("Fill", "Füllung"));
-            ui.checkbox(&mut e.stroke_shapes, tr("Outline", "Kontur"));
+            ui.checkbox(&mut e.fill_shapes, tr("options.fill"));
+            ui.checkbox(&mut e.stroke_shapes, tr("options.outline"));
             if e.stroke_shapes {
                 if color_picker::button(ui, "stroke-colour", &mut e.stroke_color, swatches).committed {
                     e.remember(e.stroke_color);
@@ -124,21 +124,21 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
         Tool::Text => {
             ui.separator();
             ui.add(egui::TextEdit::singleline(&mut e.text_input).desired_width(120.0));
-            ui.label(tr("Cap height", "Versalhöhe"));
+            ui.label(tr("options.cap_height"));
             ui.add(egui::Slider::new(&mut e.text_mm, 5.0..=250.0).suffix(" mm"));
         }
         Tool::Placeholder => {
             ui.separator();
-            ui.label(tr("Text", "Beschriftung"));
+            ui.label(tr("options.label"));
             ui.add(egui::TextEdit::singleline(&mut e.placeholder_label).desired_width(80.0));
         }
         Tool::Image => {
             ui.separator();
-            if ui.button(tr("Choose file…", "Datei wählen…")).clicked() {
+            if ui.button(tr("options.choose_file")).clicked() {
                 e.choose_image();
             }
             if let Some(a) = &e.pending_image {
-                ui.weak(format!("{} – {}", a.name, tr("click to place", "klicken zum Platzieren")));
+                ui.weak(format!("{} – {}", a.name, tr("options.click_to_place")));
             }
         }
         Tool::Select | Tool::Hand | Tool::Fill | Tool::Eyedropper => {}
@@ -156,10 +156,10 @@ fn status_bar(ui: &mut egui::Ui, editor: &mut Editor, ws: &Workspace) {
             ui.add_sized([150.0, STATUS_HEIGHT], egui::Label::new(RichText::new(cursor).monospace().weak()));
             if let Some([x0, y0, x1, y1]) = geom::world_bounds(&ws.raster.fonts, &ws.doc, &ws.selection) {
                 let mm = ws.px_per_mm();
-                ui.weak(format!("{} {:.1} × {:.1} mm", tr("Selection", "Auswahl"), (x1 - x0) / mm, (y1 - y0) / mm));
+                ui.weak(format!("{} {:.1} × {:.1} mm", tr("status.selection"), (x1 - x0) / mm, (y1 - y0) / mm));
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button(tr("Fit", "Einpassen")).on_hover_text(tr("Fit the garment to the view", "Modell einpassen")).clicked() {
+                if ui.small_button(tr("status.fit")).on_hover_text(tr("status.fit_hint")).clicked() {
                     editor.fit_view();
                 }
                 if ui.small_button("+").clicked() {

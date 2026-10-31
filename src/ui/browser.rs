@@ -83,7 +83,7 @@ impl GarmentBrowser {
     /// the browser on its kind.
     pub fn sidebar(&mut self, ui: &mut egui::Ui, ws: &mut Workspace) {
         ui.horizontal(|ui| {
-            ui.strong(tr("Model", "Modell"));
+            ui.strong(tr("browser.model"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 for body in Body::ALL.into_iter().rev() {
                     if ui.selectable_label(ws.body() == body, body.label()).clicked() {
@@ -92,10 +92,7 @@ impl GarmentBrowser {
                 }
             });
         });
-        let rows = [
-            (Kind::Top, tr("Top", "Oberteil"), ws.pattern.top().name),
-            (Kind::Bottom, tr("Bottom", "Unterteil"), ws.pattern.bottom().name),
-        ];
+        let rows = [(Kind::Top, tr("garment.top"), ws.pattern.top().name), (Kind::Bottom, tr("garment.bottom"), ws.pattern.bottom().name)];
         for (kind, label, name) in rows {
             ui.horizontal(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2::new(52.0, 20.0), Sense::hover());
@@ -106,7 +103,7 @@ impl GarmentBrowser {
                 if selected {
                     button = button.fill(ui.visuals().selection.bg_fill);
                 }
-                if ui.add(button).on_hover_text(tr("Browse garments", "Modelle durchsuchen")).clicked() {
+                if ui.add(button).on_hover_text(tr("browser.browse")).clicked() {
                     self.kind = kind;
                     self.open = !selected;
                 }
@@ -116,7 +113,7 @@ impl GarmentBrowser {
 
     pub fn show(&mut self, ctx: &egui::Context, ws: &mut Workspace) {
         let mut open = self.open;
-        egui::Window::new(tr("Garments", "Modelle"))
+        egui::Window::new(tr("browser.title"))
             .open(&mut open)
             .default_size([5.0 * CARD.x + 40.0, 520.0])
             .min_width(CARD.x + 40.0)
@@ -132,19 +129,13 @@ impl GarmentBrowser {
                 }
             }
             ui.separator();
-            for (kind, label) in [(Kind::Top, tr("Tops", "Oberteile")), (Kind::Bottom, tr("Bottoms", "Unterteile"))] {
+            for (kind, label) in [(Kind::Top, tr("garment.tops")), (Kind::Bottom, tr("garment.bottoms"))] {
                 ui.selectable_value(&mut self.kind, kind, label);
             }
             ui.separator();
-            ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("Search…", "Suchen…")).desired_width(140.0));
+            ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("browser.search")).desired_width(140.0));
         });
-        ui.weak(format!(
-            "{}: {} · {}: {}",
-            tr("Top", "Oberteil"),
-            ws.pattern.top().name,
-            tr("Bottom", "Unterteil"),
-            ws.pattern.bottom().name
-        ));
+        ui.weak(format!("{}: {} · {}: {}", tr("garment.top"), ws.pattern.top().name, tr("garment.bottom"), ws.pattern.bottom().name));
         ui.separator();
 
         let query = self.query.trim().to_lowercase();
@@ -154,7 +145,7 @@ impl GarmentBrowser {
             .filter(|g| query.split_whitespace().all(|w| g.name.to_lowercase().contains(w)))
             .collect();
         if wanted.is_empty() {
-            ui.weak(tr("No garment matches.", "Kein Modell gefunden."));
+            ui.weak(tr("browser.no_match"));
             return;
         }
         let current = if self.kind == Kind::Top { ws.pattern.top().id } else { ws.pattern.bottom().id };
@@ -195,7 +186,7 @@ fn card(ui: &mut egui::Ui, g: &Garment, outline: &Outline, selected: bool) -> eg
     let name = painter.layout(g.name.to_string(), egui::FontId::proportional(13.0), text, CARD.x - 12.0);
     painter.galley(Pos2::new(rect.center().x - name.size().x / 2.0, rect.max.y - 40.0), name, text);
     if g.unisex {
-        let tag = painter.layout_no_wrap(tr("Unisex", "Unisex").to_string(), egui::FontId::proportional(11.0), Color32::GRAY);
+        let tag = painter.layout_no_wrap(tr("browser.unisex").to_string(), egui::FontId::proportional(11.0), Color32::GRAY);
         painter.galley(Pos2::new(rect.center().x - tag.size().x / 2.0, rect.max.y - 18.0), tag, Color32::GRAY);
     }
     response.on_hover_text(g.name)

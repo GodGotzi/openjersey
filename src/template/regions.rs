@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::pattern::{Pattern, PieceId, Pt, piece_name, point_in_polygon};
-use crate::i18n::{Language, current};
+use crate::i18n::tr;
 
 const LEG_HEM_BAND: f32 = 0.018;
 
@@ -24,25 +24,17 @@ pub enum RegionId {
     LegHem(Side),
 }
 
-fn side_label(s: Side) -> &'static str {
-    if s == Side::Left { "links" } else { "rechts" }
-}
-
-fn region_label(en: &str, de: &str, side: Side) -> String {
-    match current() {
-        Language::English => format!("{} {en}", if side == Side::Left { "Left" } else { "Right" }),
-        Language::German => format!("{de} {}", side_label(side)),
-    }
-}
-
 impl RegionId {
     /// Display name in the current language; pieces are named by their pattern.
     pub fn label(self, pattern: &Pattern) -> String {
         match self {
             RegionId::Piece(p) => pattern.get(p).map_or_else(|| p.as_str().to_string(), piece_name),
-            RegionId::Cuff(s) => region_label("cuff", "Bündchen", s),
-            RegionId::LegStripe(s) => region_label("leg stripe", "Hosenstreifen", s),
-            RegionId::LegHem(s) => region_label("leg hem", "Hosensaum", s),
+            RegionId::Cuff(Side::Left) => tr("region.cuff_left").to_string(),
+            RegionId::Cuff(Side::Right) => tr("region.cuff_right").to_string(),
+            RegionId::LegStripe(Side::Left) => tr("region.leg_stripe_left").to_string(),
+            RegionId::LegStripe(Side::Right) => tr("region.leg_stripe_right").to_string(),
+            RegionId::LegHem(Side::Left) => tr("region.leg_hem_left").to_string(),
+            RegionId::LegHem(Side::Right) => tr("region.leg_hem_right").to_string(),
         }
     }
 }

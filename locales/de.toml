@@ -1,0 +1,245 @@
+# Deutsche Texte. Die Schlüssel entsprechen en.toml; `{}` steht für einen eingesetzten Wert.
+
+[asset]
+default_name = "bild"
+
+[body]
+men = "Herren"
+women = "Damen"
+
+[browser]
+browse = "Modelle durchsuchen"
+model = "Modell"
+no_match = "Kein Modell gefunden."
+search = "Suchen…"
+title = "Modelle"
+unisex = "Unisex"
+
+[color]
+choose = "Farbe wählen"
+design = "Farben im Design"
+palette = "Palette"
+pick_from_sheet = "Vom Blatt aufnehmen"
+recent = "Zuletzt verwendet"
+
+[dialog.filter]
+design = "OpenJersey-Design"
+image = "Bild / Logo"
+
+[editor]
+click_to_place = "Klicken zum Platzieren"
+
+[error]
+not_a_design = "kein OpenJersey-Design: {}"
+unreadable_image = "{} konnte nicht gelesen werden"
+
+[garment]
+bottom = "Unterteil"
+bottoms = "Unterteile"
+top = "Oberteil"
+tops = "Oberteile"
+
+[layers]
+accent = "Akzent"
+base = "Grund"
+bring_forward = "Nach vorne"
+centre = "Auf Teil zentrieren"
+delete = "Löschen (Entf)"
+duplicate = "Duplizieren (Strg+D)"
+empty = "Noch keine Objekte. Werkzeug rechts wählen oder Vorlage laden."
+group = "Gruppieren (Strg+G)"
+inside = "Innen"
+inside_hint = "Farbe der Innenseite am Modell"
+lock = "Sperren"
+mirror = "Auf andere Seite spiegeln (vorne ↔ hinten)"
+pieces = "Schnittteile (Grundfarben)"
+send_backward = "Nach hinten"
+title = "Ebenen"
+trim = "Besatz"
+ungroup = "Gruppe auflösen (Strg+Shift+G)"
+visible = "Sichtbar"
+
+[menu.edit]
+redo = "Wiederholen (Strg+Y)"
+title = "Bearbeiten"
+undo = "Rückgängig (Strg+Z)"
+
+[menu.file]
+export = "Druckvorlage exportieren…"
+new = "Neu"
+open = "Öffnen… (Strg+O)"
+save = "Speichern (Strg+S)"
+save_as = "Speichern unter…"
+template = "Vorlage"
+title = "Datei"
+
+[menu.settings]
+language = "Sprache"
+title = "Einstellungen"
+
+[object]
+brush_stroke = "Pinselstrich"
+copy = "Kopie"
+graphic = "Grafik"
+group = "Gruppe"
+line = "Linie"
+logo = "Logo"
+pattern = "Muster"
+placeholder = "Platzhalter"
+shape = "Form"
+suffix_back = "hinten"
+suffix_front = "vorne"
+
+[options]
+cap_height = "Versalhöhe"
+choose_file = "Datei wählen…"
+click_to_place = "klicken zum Platzieren"
+fill = "Füllung"
+label = "Beschriftung"
+outline = "Kontur"
+size = "Größe"
+
+[piece]
+back = "Rückenteil"
+back_panel = "Rückenpanel"
+bottom_back = "Slip hinten"
+bottom_front = "Slip vorne"
+collar = "Kragen"
+front = "Vorderteil"
+hood = "Kapuze"
+left_armhole = "Armausschnitt links"
+left_leg = "Hosenbein links"
+left_shoulder = "Schulterteil links"
+left_side = "Seitenteil links"
+left_sleeve = "Ärmel links"
+neck_band = "Halsblende"
+neck_binding = "Halsblende"
+placket = "Knopfleiste"
+right_armhole = "Armausschnitt rechts"
+right_leg = "Hosenbein rechts"
+right_shoulder = "Schulterteil rechts"
+right_side = "Seitenteil rechts"
+right_sleeve = "Ärmel rechts"
+stand_collar = "Stehkragen"
+underbust_band = "Unterbrustband"
+waistband = "Bund"
+zip = "Reißverschluss"
+
+[preset]
+back_number = "Nummer Rücken"
+chest_number = "Nummer Brust"
+leg_number = "Nummer Hose"
+
+[properties]
+all_pieces = "allen Teilen"
+angle = "° Winkel"
+auto_colour = "automatische Farbe"
+bolder = "fetter"
+cap_height_mm = "mm Versalhöhe"
+closed = "geschlossen"
+colour = "Farbe"
+file = "Datei:"
+group = "Gruppieren"
+insert_logo = "Logo einsetzen…"
+insert_logo_hint = "Ersetzt den Platzhalter durch eine Grafik in seiner Größe"
+italic = "kursiv"
+line_spacing_mm = "mm Zeilenabstand"
+locked = "gesperrt"
+many_selected = "Objekte ausgewählt."
+max_width = "max. Breite"
+max_width_hint = "Längerer Text wird schmaler gesetzt, damit er hineinpasst (z. B. lange Spielernamen)"
+mm_wide = " mm breit"
+nothing = "Nichts ausgewählt."
+objects = "Objekte"
+only_on = "Nur auf"
+opacity = "Deckkraft"
+replace_image = "Bild ersetzen…"
+rotation = "Drehung"
+scale = "Skalierung"
+tint = "einfärben"
+title = "Eigenschaften"
+type = "Typ"
+visible = "sichtbar"
+
+[region]
+cuff_left = "Bündchen links"
+cuff_right = "Bündchen rechts"
+leg_hem_left = "Hosensaum links"
+leg_hem_right = "Hosensaum rechts"
+leg_stripe_left = "Hosenstreifen links"
+leg_stripe_right = "Hosenstreifen rechts"
+
+[splash]
+starting = "Wird gestartet …"
+subtitle = "TRIKOT-DESIGNER"
+
+[status]
+export_failed = "Export fehlgeschlagen"
+exported = "Exportiert"
+fit = "Einpassen"
+fit_hint = "Modell einpassen"
+loading_design = "Design wird geladen …"
+open_failed = "Öffnen fehlgeschlagen"
+opened = "Geöffnet"
+preparing_3d = "3D-Ansicht wird vorbereitet …"
+save_failed = "Speichern fehlgeschlagen"
+saved = "Gespeichert"
+selection = "Auswahl"
+
+[tool.brush]
+hint = "Pinsel (B)"
+name = "Pinsel"
+
+[tool.ellipse]
+hint = "Ellipse (O)"
+name = "Ellipse"
+
+[tool.eraser]
+hint = "Radierer: Pinselstriche löschen (E)"
+name = "Radierer"
+
+[tool.eyedropper]
+hint = "Pipette (Y)"
+name = "Pipette"
+
+[tool.fill]
+hint = "Füllen: Teil oder Objekt einfärben (F)"
+name = "Füllen"
+
+[tool.hand]
+hint = "Hand: Ansicht verschieben (H)"
+name = "Hand"
+
+[tool.image]
+hint = "Bild / SVG importieren (I)"
+name = "Bild"
+
+[tool.placeholder]
+hint = "Logo-Platzhalter aufziehen (L)"
+name = "Logo-Platzhalter"
+
+[tool.polygon]
+hint = "Polygon: klicken, Doppelklick/Enter schließt (P)"
+name = "Polygon"
+
+[tool.rect]
+hint = "Rechteck (R)"
+name = "Rechteck"
+
+[tool.select]
+hint = "Auswahl / Transformieren (V)"
+name = "Auswahl"
+
+[tool.text]
+hint = "Text (T)"
+name = "Text"
+
+[viewport]
+back = "Hinten"
+front = "Vorne"
+left = "Links"
+right = "Rechts"
+snap = "Einrasten"
+snap_hint = "Einrasten an Mittellinien, Teilen und anderen Objekten"
+view_hint = "Modell von dieser Seite ansehen"
+visibility_hint = "Ein- oder ausblenden (ausgeblendete Teile fehlen auf der Druckvorlage)"

@@ -188,44 +188,24 @@ pub struct Pattern {
     pub parts: [Part; 2],
 }
 
-/// The piece's display name in the current language. The pattern file holds
-/// the English name; German names are looked up by the printed label (which
-/// tells apart the different collars), then by piece id.
-pub fn piece_name(piece: &Piece) -> String {
-    use crate::i18n::{Language, current};
-    if current() == Language::English {
-        return piece.name.clone();
+/// The key of a piece's name in `locales/` (`Left Sleeve` is `left_sleeve`
+/// under `piece.`).
+pub fn piece_key(name: &str) -> String {
+    let mut key = String::new();
+    for c in name.chars() {
+        if c.is_ascii_alphanumeric() {
+            key.push(c.to_ascii_lowercase());
+        } else if !key.ends_with('_') {
+            key.push('_');
+        }
     }
-    let by_label = match piece.label.as_str() {
-        "NECK BAND" | "NECK BINDING" => Some("Halsblende"),
-        "COLLAR" if piece.name.to_lowercase().contains("stand") || piece.name.contains("Stehkragen") => Some("Stehkragen"),
-        _ => None,
-    };
-    let german = by_label.or(match piece.id.as_str() {
-        "waistband" => Some("Bund"),
-        "back_panel" => Some("Rückenpanel"),
-        "leg_r" => Some("Hosenbein rechts"),
-        "leg_l" => Some("Hosenbein links"),
-        "bottom_front" => Some("Slip vorne"),
-        "bottom_back" => Some("Slip hinten"),
-        "front" => Some("Vorderteil"),
-        "back" => Some("Rückenteil"),
-        "sleeve_r" => Some("Ärmel rechts"),
-        "sleeve_l" => Some("Ärmel links"),
-        "side_r" => Some("Seitenteil rechts"),
-        "side_l" => Some("Seitenteil links"),
-        "shoulder_r" => Some("Schulterteil rechts"),
-        "shoulder_l" => Some("Schulterteil links"),
-        "collar" => Some("Kragen"),
-        "hood" => Some("Kapuze"),
-        "zipper" => Some("Reißverschluss"),
-        "placket" => Some("Knopfleiste"),
-        "underbust_band" => Some("Unterbrustband"),
-        "armhole_r" => Some("Armausschnitt rechts"),
-        "armhole_l" => Some("Armausschnitt links"),
-        _ => None,
-    });
-    german.map_or_else(|| piece.name.clone(), str::to_string)
+    key.trim_matches('_').to_string()
+}
+
+/// A piece's name in the current language: the pattern's own name when the
+/// locale has none.
+pub fn piece_name(piece: &Piece) -> String {
+    crate::i18n::lookup(&format!("piece.{}", piece_key(&piece.name))).map_or_else(|| piece.name.clone(), str::to_string)
 }
 
 impl Pattern {

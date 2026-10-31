@@ -1,0 +1,246 @@
+# English texts. Keys are dotted paths (section.key); every key must also be in de.toml.
+# `{}` marks where a value is filled in.
+
+[asset]
+default_name = "image"
+
+[body]
+men = "Men"
+women = "Women"
+
+[browser]
+browse = "Browse garments"
+model = "Model"
+no_match = "No garment matches."
+search = "Search…"
+title = "Garments"
+unisex = "Unisex"
+
+[color]
+choose = "Choose a colour"
+design = "Design colours"
+palette = "Palette"
+pick_from_sheet = "Pick from sheet"
+recent = "Recent"
+
+[dialog.filter]
+design = "OpenJersey design"
+image = "Image / logo"
+
+[editor]
+click_to_place = "Click to place"
+
+[error]
+not_a_design = "not an OpenJersey design: {}"
+unreadable_image = "{} could not be read"
+
+[garment]
+bottom = "Bottom"
+bottoms = "Bottoms"
+top = "Top"
+tops = "Tops"
+
+[layers]
+accent = "Accent"
+base = "Base"
+bring_forward = "Bring forward"
+centre = "Centre on piece"
+delete = "Delete (Del)"
+duplicate = "Duplicate (Ctrl+D)"
+empty = "No objects yet. Pick a tool on the right or load a template."
+group = "Group (Ctrl+G)"
+inside = "Inside"
+inside_hint = "Colour of the inside on the model"
+lock = "Lock"
+mirror = "Mirror to the other side (front ↔ back)"
+pieces = "Pattern pieces (base colours)"
+send_backward = "Send backward"
+title = "Layers"
+trim = "Trim"
+ungroup = "Ungroup (Ctrl+Shift+G)"
+visible = "Visible"
+
+[menu.edit]
+redo = "Redo (Ctrl+Y)"
+title = "Edit"
+undo = "Undo (Ctrl+Z)"
+
+[menu.file]
+export = "Export print template…"
+new = "New"
+open = "Open… (Ctrl+O)"
+save = "Save (Ctrl+S)"
+save_as = "Save as…"
+template = "Template"
+title = "File"
+
+[menu.settings]
+language = "Language"
+title = "Settings"
+
+[object]
+brush_stroke = "Brush stroke"
+copy = "copy"
+graphic = "Graphic"
+group = "Group"
+line = "Line"
+logo = "Logo"
+pattern = "Pattern"
+placeholder = "Placeholder"
+shape = "Shape"
+suffix_back = "back"
+suffix_front = "front"
+
+[options]
+cap_height = "Cap height"
+choose_file = "Choose file…"
+click_to_place = "click to place"
+fill = "Fill"
+label = "Label"
+outline = "Outline"
+size = "Size"
+
+[piece]
+back = "Back"
+back_panel = "Back Panel"
+bottom_back = "Bottom Back"
+bottom_front = "Bottom Front"
+collar = "Collar"
+front = "Front"
+hood = "Hood"
+left_armhole = "Left Armhole"
+left_leg = "Left Leg"
+left_shoulder = "Left Shoulder"
+left_side = "Left Side"
+left_sleeve = "Left Sleeve"
+neck_band = "Neck Band"
+neck_binding = "Neck Binding"
+placket = "Placket"
+right_armhole = "Right Armhole"
+right_leg = "Right Leg"
+right_shoulder = "Right Shoulder"
+right_side = "Right Side"
+right_sleeve = "Right Sleeve"
+stand_collar = "Stand Collar"
+underbust_band = "Underbust Band"
+waistband = "Waistband"
+zip = "Zip"
+
+[preset]
+back_number = "Back number"
+chest_number = "Chest number"
+leg_number = "Leg number"
+
+[properties]
+all_pieces = "all pieces"
+angle = "° angle"
+auto_colour = "automatic colour"
+bolder = "bolder"
+cap_height_mm = "mm cap height"
+closed = "closed"
+colour = "Colour"
+file = "File:"
+group = "Group objects"
+insert_logo = "Insert logo…"
+insert_logo_hint = "Replaces the placeholder with a graphic of the same size"
+italic = "italic"
+line_spacing_mm = "mm line spacing"
+locked = "locked"
+many_selected = "objects selected."
+max_width = "max. width"
+max_width_hint = "Longer text is set narrower so that it fits (e.g. long player names)"
+mm_wide = " mm wide"
+nothing = "Nothing selected."
+objects = "objects"
+only_on = "Only on"
+opacity = "Opacity"
+replace_image = "Replace image…"
+rotation = "Rotation"
+scale = "Scale"
+tint = "tint"
+title = "Properties"
+type = "Type"
+visible = "visible"
+
+[region]
+cuff_left = "Left cuff"
+cuff_right = "Right cuff"
+leg_hem_left = "Left leg hem"
+leg_hem_right = "Right leg hem"
+leg_stripe_left = "Left leg stripe"
+leg_stripe_right = "Right leg stripe"
+
+[splash]
+starting = "Starting …"
+subtitle = "JERSEY DESIGNER"
+
+[status]
+export_failed = "Export failed"
+exported = "Exported"
+fit = "Fit"
+fit_hint = "Fit the garment to the view"
+loading_design = "Loading design …"
+open_failed = "Opening failed"
+opened = "Opened"
+preparing_3d = "Preparing 3D view …"
+save_failed = "Saving failed"
+saved = "Saved"
+selection = "Selection"
+
+[tool.brush]
+hint = "Brush (B)"
+name = "Brush"
+
+[tool.ellipse]
+hint = "Ellipse (O)"
+name = "Ellipse"
+
+[tool.eraser]
+hint = "Eraser: delete brush strokes (E)"
+name = "Eraser"
+
+[tool.eyedropper]
+hint = "Eyedropper (Y)"
+name = "Eyedropper"
+
+[tool.fill]
+hint = "Fill: colour a piece or object (F)"
+name = "Bucket fill"
+
+[tool.hand]
+hint = "Hand: pan the view (H)"
+name = "Hand"
+
+[tool.image]
+hint = "Import image / SVG (I)"
+name = "Image"
+
+[tool.placeholder]
+hint = "Drag out a logo placeholder (L)"
+name = "Logo placeholder"
+
+[tool.polygon]
+hint = "Polygon: click to add points, double-click/Enter closes (P)"
+name = "Polygon"
+
+[tool.rect]
+hint = "Rectangle (R)"
+name = "Rectangle"
+
+[tool.select]
+hint = "Select / transform (V)"
+name = "Select"
+
+[tool.text]
+hint = "Text (T)"
+name = "Text"
+
+[viewport]
+back = "Back"
+front = "Front"
+left = "Left"
+right = "Right"
+snap = "Snap"
+snap_hint = "Snap to centre lines, pieces and other objects"
+view_hint = "Look at the model from this side"
+visibility_hint = "Show or hide (hidden garments are left off the print sheet)"

@@ -113,6 +113,18 @@ The glTF exporter needs numpy; the script adds `~/.local/lib/python3.14/site-pac
 to Blender's path. `studio.hdr` is Poly Haven's CC0 "Studio Small 09" (1k),
 the font is DejaVu Sans Condensed Bold.
 
+## Translations
+Every UI text is a key such as `menu.file.save` in `locales/<language>.toml`
+(nested tables become dotted keys, `{}` marks a value filled in at run time).
+Code asks for it with `tr("menu.file.save")` or `tr_args(...)`. `build.rs`
+refuses to build when `en.toml` and `de.toml` differ in keys or placeholders,
+and a test fails when the code uses a key that has no text, or a text is unused
+(garment piece names are keyed by their pattern name, `piece.left_sleeve`).
+
+To add a language: copy `locales/en.toml` to `locales/<code>.toml`, translate
+the values, list the code in `LANGUAGES` in `build.rs` and add it to `Language`
+in `src/i18n.rs`.
+
 ## Benchmarking
 Environment variables: `OJ_VSYNC=1`, `OJ_PATH=basic` (instead of the HDR
 pipeline), `OJ_AA=none|fxaa|msaa|msaa-fxaa`, `OJ_SHADOWS=0`, `OJ_VIEW=front|left|back|right` (start view), `OJ_LOG_FPS=1`

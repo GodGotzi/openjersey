@@ -92,7 +92,7 @@ pub fn button(ui: &mut egui::Ui, id: impl Hash, color: &mut Rgb, swatches: &Swat
         egui::FontId::monospace(12.0),
         visuals.text_color(),
     );
-    let response = response.on_hover_text(tr("Choose a colour", "Farbe wählen"));
+    let response = response.on_hover_text(tr("color.choose"));
 
     let mut out = Outcome::default();
     let shown = Popup::from_toggle_button_response(&response)
@@ -137,13 +137,13 @@ fn picker(ui: &mut egui::Ui, id: egui::Id, color: &mut Rgb, swatches: &Swatches)
             out.changed = true;
         }
     });
-    if ui.button(tr("Pick from sheet", "Vom Blatt aufnehmen")).clicked() {
+    if ui.button(tr("color.pick_from_sheet")).clicked() {
         out.eyedropper = true;
         ui.close();
     }
-    section(ui, tr("Design colours", "Farben im Design"), swatches.design, color, &mut out);
-    section(ui, tr("Recent", "Zuletzt verwendet"), swatches.recent, color, &mut out);
-    section(ui, tr("Palette", "Palette"), &PALETTE, color, &mut out);
+    section(ui, tr("color.design"), swatches.design, color, &mut out);
+    section(ui, tr("color.recent"), swatches.recent, color, &mut out);
+    section(ui, tr("color.palette"), &PALETTE, color, &mut out);
     out
 }
 

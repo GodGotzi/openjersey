@@ -68,10 +68,7 @@ pub fn run() {
     let Ok(event_loop) = EventLoop::<Message>::with_user_event().build() else { return };
     let proxy = event_loop.create_proxy();
     std::thread::spawn(move || read_stdin(proxy));
-    let mut app =
-        SplashApp {
-            window: None, surface: None, art: None, status: tr("Starting …", "Wird gestartet …").into(), start: Instant::now()
-        };
+    let mut app = SplashApp { window: None, surface: None, art: None, status: tr("splash.starting").into(), start: Instant::now() };
     let _ = event_loop.run_app(&mut app);
 }
 
@@ -208,7 +205,7 @@ impl Art {
         }
         let fonts = Fonts::new();
         text(&mut bg, &fonts, "OpenJersey", 30.0 * s, [w as f32 / 2.0, 156.0 * s], [0xf3, 0xf4, 0xf6]);
-        text(&mut bg, &fonts, tr("JERSEY DESIGNER", "TRIKOT-DESIGNER"), 10.5 * s, [w as f32 / 2.0, 182.0 * s], [0x6b, 0x72, 0x7e]);
+        text(&mut bg, &fonts, tr("splash.subtitle"), 10.5 * s, [w as f32 / 2.0, 182.0 * s], [0x6b, 0x72, 0x7e]);
 
         // the bar's track
         let [x, y, bw, bh] = BAR.map(|v| v * s);

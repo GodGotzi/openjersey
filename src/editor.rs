@@ -65,37 +65,35 @@ impl Tool {
     /// The short name shown in the tool options bar.
     pub fn name(self) -> &'static str {
         match self {
-            Tool::Select => tr("Select", "Auswahl"),
-            Tool::Hand => tr("Hand", "Hand"),
-            Tool::Brush => tr("Brush", "Pinsel"),
-            Tool::Eraser => tr("Eraser", "Radierer"),
-            Tool::Rect => tr("Rectangle", "Rechteck"),
-            Tool::Ellipse => tr("Ellipse", "Ellipse"),
-            Tool::Polygon => tr("Polygon", "Polygon"),
-            Tool::Text => tr("Text", "Text"),
-            Tool::Image => tr("Image", "Bild"),
-            Tool::Placeholder => tr("Logo placeholder", "Logo-Platzhalter"),
-            Tool::Fill => tr("Fill", "Füllen"),
-            Tool::Eyedropper => tr("Eyedropper", "Pipette"),
+            Tool::Select => tr("tool.select.name"),
+            Tool::Hand => tr("tool.hand.name"),
+            Tool::Brush => tr("tool.brush.name"),
+            Tool::Eraser => tr("tool.eraser.name"),
+            Tool::Rect => tr("tool.rect.name"),
+            Tool::Ellipse => tr("tool.ellipse.name"),
+            Tool::Polygon => tr("tool.polygon.name"),
+            Tool::Text => tr("tool.text.name"),
+            Tool::Image => tr("tool.image.name"),
+            Tool::Placeholder => tr("tool.placeholder.name"),
+            Tool::Fill => tr("tool.fill.name"),
+            Tool::Eyedropper => tr("tool.eyedropper.name"),
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Tool::Select => tr("Select / transform (V)", "Auswahl / Transformieren (V)"),
-            Tool::Hand => tr("Hand: pan the view (H)", "Hand: Ansicht verschieben (H)"),
-            Tool::Brush => tr("Brush (B)", "Pinsel (B)"),
-            Tool::Eraser => tr("Eraser: delete brush strokes (E)", "Radierer: Pinselstriche löschen (E)"),
-            Tool::Rect => tr("Rectangle (R)", "Rechteck (R)"),
-            Tool::Ellipse => tr("Ellipse (O)", "Ellipse (O)"),
-            Tool::Polygon => {
-                tr("Polygon: click to add points, double-click/Enter closes (P)", "Polygon: klicken, Doppelklick/Enter schließt (P)")
-            }
-            Tool::Text => tr("Text (T)", "Text (T)"),
-            Tool::Image => tr("Import image / SVG (I)", "Bild / SVG importieren (I)"),
-            Tool::Placeholder => tr("Drag out a logo placeholder (L)", "Logo-Platzhalter aufziehen (L)"),
-            Tool::Fill => tr("Fill: colour a piece or object (F)", "Füllen: Teil oder Objekt einfärben (F)"),
-            Tool::Eyedropper => tr("Eyedropper (Y)", "Pipette (Y)"),
+            Tool::Select => tr("tool.select.hint"),
+            Tool::Hand => tr("tool.hand.hint"),
+            Tool::Brush => tr("tool.brush.hint"),
+            Tool::Eraser => tr("tool.eraser.hint"),
+            Tool::Rect => tr("tool.rect.hint"),
+            Tool::Ellipse => tr("tool.ellipse.hint"),
+            Tool::Polygon => tr("tool.polygon.hint"),
+            Tool::Text => tr("tool.text.hint"),
+            Tool::Image => tr("tool.image.hint"),
+            Tool::Placeholder => tr("tool.placeholder.hint"),
+            Tool::Fill => tr("tool.fill.hint"),
+            Tool::Eyedropper => tr("tool.eyedropper.hint"),
         }
     }
 
@@ -231,8 +229,7 @@ impl Editor {
     }
 
     pub fn choose_image(&mut self) {
-        if let Some(path) = rfd::FileDialog::new().add_filter(tr("Image / logo", "Bild / Logo"), &["svg", "png", "jpg", "jpeg"]).pick_file()
-        {
+        if let Some(path) = rfd::FileDialog::new().add_filter(tr("dialog.filter.image"), &["svg", "png", "jpg", "jpeg"]).pick_file() {
             match Asset::from_file(&path) {
                 Ok(asset) => self.pending_image = Some(Arc::new(asset)),
                 Err(err) => eprintln!("{err}"),
@@ -350,7 +347,7 @@ impl Editor {
                         tooltip(&painter, hover, &name);
                     }
                 }
-                Tool::Image if self.pending_image.is_some() => tooltip(&painter, hover, tr("Click to place", "Klicken zum Platzieren")),
+                Tool::Image if self.pending_image.is_some() => tooltip(&painter, hover, tr("editor.click_to_place")),
                 _ => {}
             }
         }
@@ -476,7 +473,7 @@ impl Editor {
                     let id = ws.add(
                         None,
                         Object::new(
-                            tr("Brush stroke", "Pinselstrich"),
+                            tr("object.brush_stroke"),
                             Xf::default(),
                             ObjectKind::Shape { points: vec![p], closed: false, fill: None, stroke },
                         ),
@@ -603,7 +600,7 @@ impl Editor {
             return;
         }
         let px = ws.px_per_mm();
-        ws.add(None, self.shape_object(tr("Polygon", "Polygon"), points, px));
+        ws.add(None, self.shape_object(tr("tool.polygon.name"), points, px));
         self.tool = Tool::Select;
     }
 
@@ -637,7 +634,7 @@ impl Editor {
                 // re-centre the stroke on its points
                 let replacement = ws.doc.find(id).map(|o| {
                     let ObjectKind::Shape { stroke, .. } = &o.kind else { return o.clone() };
-                    let mut new = Object::shape(tr("Brush stroke", "Pinselstrich"), points.clone(), false, None, *stroke);
+                    let mut new = Object::shape(tr("object.brush_stroke"), points.clone(), false, None, *stroke);
                     new.id = o.id;
                     new
                 });
@@ -659,7 +656,7 @@ impl Editor {
                 let px = ws.px_per_mm();
                 match tool {
                     Tool::Rect => {
-                        ws.add(None, self.shape_object(tr("Rectangle", "Rechteck"), vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], px));
+                        ws.add(None, self.shape_object(tr("tool.rect.name"), vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], px));
                     }
                     Tool::Ellipse => {
                         let (rx, ry) = ((x1 - x0) / 2.0, (y1 - y0) / 2.0);
@@ -669,14 +666,14 @@ impl Editor {
                                 [centre[0] + rx * a.cos(), centre[1] + ry * a.sin()]
                             })
                             .collect();
-                        ws.add(None, self.shape_object(tr("Ellipse", "Ellipse"), pts, px));
+                        ws.add(None, self.shape_object(tr("tool.ellipse.name"), pts, px));
                     }
                     _ => {
                         let label = self.placeholder_label.clone();
                         ws.add(
                             None,
                             Object::new(
-                                format!("{} {label}", tr("Placeholder", "Platzhalter")),
+                                format!("{} {label}", tr("object.placeholder")),
                                 Xf::at(centre),
                                 ObjectKind::Placeholder { label, size: [x1 - x0, y1 - y0] },
                             ),

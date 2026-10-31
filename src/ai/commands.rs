@@ -459,7 +459,7 @@ fn add_styled_shape(ws: &mut Workspace, args: &Value, points: Vec<Pt>, closed: b
     let fill = parse_color(args.get("fill"))?;
     let stroke =
         parse_color(args.get("stroke"))?.map(|color| StrokeStyle { color, width: num(args, "stroke_width_mm").unwrap_or(3.0) * mm });
-    let name = args.get("name").and_then(Value::as_str).unwrap_or(tr("Shape", "Form"));
+    let name = args.get("name").and_then(Value::as_str).unwrap_or(tr("object.shape"));
     // a shape with neither fill nor stroke would be invisible
     let fill = fill.or(if stroke.is_none() { Some([255, 255, 255]) } else { None });
     let obj = Object::shape(name, points, closed, fill, stroke).with_clip(&clip_arg(args).unwrap_or_default());
@@ -885,7 +885,7 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
         "add_pattern" => {
             let content = args.get("text").and_then(Value::as_str).ok_or("missing text")?.to_string();
             let cap = num(args, "cap_height_mm").unwrap_or(12.0);
-            let name = args.get("name").and_then(Value::as_str).unwrap_or(tr("Pattern", "Muster")).to_string();
+            let name = args.get("name").and_then(Value::as_str).unwrap_or(tr("object.pattern")).to_string();
             let mut obj = Object::new(
                 name,
                 Xf::at([0.0, 0.0]),
@@ -962,7 +962,7 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
             let path = write_target(args, ws, "json")?;
             let bytes = crate::document::io::to_json(&ws.doc)?;
             std::fs::write(&path, bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-            ws.status = format!("{}: {}", tr("Saved", "Gespeichert"), path.display());
+            ws.status = format!("{}: {}", tr("status.saved"), path.display());
             ws.file = Some(path.clone());
             text(json!({"saved": path}))
         }
@@ -971,7 +971,7 @@ pub fn execute(ws: &mut Workspace, mesh: &GarmentMesh, name: &str, args: &Value)
             let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
             let doc = crate::document::io::from_json(&bytes)?;
             ws.replace(doc);
-            ws.status = format!("{}: {}", tr("Opened", "Geöffnet"), path.display());
+            ws.status = format!("{}: {}", tr("status.opened"), path.display());
             ws.file = Some(path);
             text(json!({"ok": true, "top": ws.pattern.top().id, "bottom": ws.pattern.bottom().id}))
         }

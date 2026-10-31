@@ -1,7 +1,7 @@
 //! Imported images (PNG/JPG and SVG), kept as their original file bytes so a
 //! saved design is self-contained; decoded and rasterised on demand.
 
-use crate::i18n::{pick, tr};
+use crate::i18n::{tr, tr_args};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -52,14 +52,14 @@ impl Asset {
             cache: Mutex::new(HashMap::new()),
         };
         if asset.decoded().is_none() {
-            return Err(pick(format!("{} could not be read", asset.name), format!("{} konnte nicht gelesen werden", asset.name)));
+            return Err(tr_args("error.unreadable_image", &[&asset.name]));
         }
         Ok(asset)
     }
 
     pub fn from_file(path: &std::path::Path) -> Result<Self, String> {
         let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or(tr("image", "bild")).to_string();
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or(tr("asset.default_name")).to_string();
         Self::new(name, bytes)
     }
 

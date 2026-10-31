@@ -23,8 +23,8 @@ impl Body {
 
     pub fn label(self) -> &'static str {
         match self {
-            Body::Man => crate::i18n::tr("Men", "Herren"),
-            Body::Women => crate::i18n::tr("Women", "Damen"),
+            Body::Man => crate::i18n::tr("body.men"),
+            Body::Women => crate::i18n::tr("body.women"),
         }
     }
 }

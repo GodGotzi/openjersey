@@ -121,7 +121,7 @@ fn empty_document(pattern: &Pattern) -> Document {
 
 impl AppHandler for JerseyApp {
     fn init(engine: &mut Engine, window: &dyn Window) -> Self {
-        splash_status(tr("Loading design …", "Design wird geladen …"));
+        splash_status(tr("status.loading_design"));
         let wgpu_ctx = engine.renderer.wgpu_ctx().expect("renderer initialised");
         let ui_pass = UiPass::new(&wgpu_ctx.device, wgpu_ctx.surface_view_format, winit_window(window));
         let mut ws = Workspace::new(initial_document());
@@ -133,7 +133,7 @@ impl AppHandler for JerseyApp {
         let mesh = GarmentMesh::load(&ws.pattern);
         let studio = Studio::new(engine, &ws.pattern);
         let shown = ws.pattern.parts.clone().map(|p| p.garment.id);
-        splash_status(tr("Preparing 3D view …", "3D-Ansicht wird vorbereitet …"));
+        splash_status(tr("status.preparing_3d"));
         Self {
             ui_pass,
             studio,
@@ -385,13 +385,13 @@ impl JerseyApp {
         #[allow(deprecated)]
         let bar = egui::Panel::top("menu").show(ctx, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
-                ui.menu_button(tr("File", "Datei"), |ui| {
-                    if ui.button(tr("New", "Neu")).clicked() {
+                ui.menu_button(tr("menu.file.title"), |ui| {
+                    if ui.button(tr("menu.file.new")).clicked() {
                         self.ws.replace(empty_document(&self.ws.pattern));
                         self.ws.file = None;
                         ui.close();
                     }
-                    ui.menu_button(tr("Template", "Vorlage"), |ui| {
+                    ui.menu_button(tr("menu.file.template"), |ui| {
                         for (name, build) in presets::PRESETS {
                             if ui.button(name).clicked() {
                                 let doc = build(&self.ws.pattern);
@@ -402,38 +402,38 @@ impl JerseyApp {
                         }
                     });
                     ui.separator();
-                    if ui.button(tr("Open… (Ctrl+O)", "Öffnen… (Strg+O)")).clicked() {
+                    if ui.button(tr("menu.file.open")).clicked() {
                         self.open();
                         ui.close();
                     }
-                    if ui.button(tr("Save (Ctrl+S)", "Speichern (Strg+S)")).clicked() {
+                    if ui.button(tr("menu.file.save")).clicked() {
                         self.save(false);
                         ui.close();
                     }
-                    if ui.button(tr("Save as…", "Speichern unter…")).clicked() {
+                    if ui.button(tr("menu.file.save_as")).clicked() {
                         self.save(true);
                         ui.close();
                     }
                     ui.separator();
-                    if ui.button(tr("Export print template…", "Druckvorlage exportieren…")).clicked() {
+                    if ui.button(tr("menu.file.export")).clicked() {
                         self.export();
                         ui.close();
                     }
                 });
-                ui.menu_button(tr("Edit", "Bearbeiten"), |ui| {
-                    if ui.button(tr("Undo (Ctrl+Z)", "Rückgängig (Strg+Z)")).clicked() {
+                ui.menu_button(tr("menu.edit.title"), |ui| {
+                    if ui.button(tr("menu.edit.undo")).clicked() {
                         self.ws.undo();
                         ui.close();
                     }
-                    if ui.button(tr("Redo (Ctrl+Y)", "Wiederholen (Strg+Y)")).clicked() {
+                    if ui.button(tr("menu.edit.redo")).clicked() {
                         self.ws.redo();
                         ui.close();
                     }
                     ui.separator();
                     ui::layers::context_menu(ui, &mut self.ws);
                 });
-                ui.menu_button(tr("Settings", "Einstellungen"), |ui| {
-                    ui.weak(tr("Language", "Sprache"));
+                ui.menu_button(tr("menu.settings.title"), |ui| {
+                    ui.weak(tr("menu.settings.language"));
                     for lang in i18n::Language::ALL {
                         if ui.radio(i18n::current() == lang, lang.name()).clicked() {
                             i18n::set(lang);
@@ -470,32 +470,29 @@ impl JerseyApp {
     fn save(&mut self, choose: bool) {
         let path = match (&self.ws.file, choose) {
             (Some(p), false) => Some(p.clone()),
-            _ => rfd::FileDialog::new()
-                .add_filter(tr("OpenJersey design", "OpenJersey-Design"), &["json"])
-                .set_file_name("jersey.json")
-                .save_file(),
+            _ => rfd::FileDialog::new().add_filter(tr("dialog.filter.design"), &["json"]).set_file_name("jersey.json").save_file(),
         };
         let Some(path) = path else { return };
         self.ws.status = match io::to_json(&self.ws.doc).and_then(|b| std::fs::write(&path, b).map_err(|e| e.to_string())) {
             Ok(()) => {
                 self.ws.file = Some(path.clone());
-                format!("{}: {}", tr("Saved", "Gespeichert"), path.display())
+                format!("{}: {}", tr("status.saved"), path.display())
             }
-            Err(e) => format!("{}: {e}", tr("Saving failed", "Speichern fehlgeschlagen")),
+            Err(e) => format!("{}: {e}", tr("status.save_failed")),
         };
     }
 
     fn open(&mut self) {
-        let Some(path) = rfd::FileDialog::new().add_filter(tr("OpenJersey design", "OpenJersey-Design"), &["json"]).pick_file() else {
+        let Some(path) = rfd::FileDialog::new().add_filter(tr("dialog.filter.design"), &["json"]).pick_file() else {
             return;
         };
         match std::fs::read(&path).map_err(|e| e.to_string()).and_then(|b| io::from_json(&b)) {
             Ok(doc) => {
                 self.ws.replace(doc);
-                self.ws.status = format!("{}: {}", tr("Opened", "Geöffnet"), path.display());
+                self.ws.status = format!("{}: {}", tr("status.opened"), path.display());
                 self.ws.file = Some(path);
             }
-            Err(e) => self.ws.status = format!("{}: {e}", tr("Opening failed", "Öffnen fehlgeschlagen")),
+            Err(e) => self.ws.status = format!("{}: {e}", tr("status.open_failed")),
         }
     }
 
@@ -505,8 +502,8 @@ impl JerseyApp {
         };
         let pm = self.ws.raster.render(&self.ws.pattern, &self.ws.regions, &self.ws.doc, Mode::Print);
         self.ws.status = match pm.save_png(&path) {
-            Ok(()) => format!("{}: {}", tr("Exported", "Exportiert"), path.display()),
-            Err(e) => format!("{}: {e}", tr("Export failed", "Export fehlgeschlagen")),
+            Ok(()) => format!("{}: {}", tr("status.exported"), path.display()),
+            Err(e) => format!("{}: {e}", tr("status.export_failed")),
         };
     }
 }

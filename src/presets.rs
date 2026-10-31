@@ -73,12 +73,12 @@ pub fn example(pattern: &Pattern) -> Document {
     );
     let front = |p| on_fabric(pattern, Panel::Front, p);
     let back = |p| on_fabric(pattern, Panel::Back, p);
-    doc.add(None, text(m, tr("Chest number", "Nummer Brust"), "7", front([0.075, 1.235]), 0.095 * 0.73, None, 0.08));
+    doc.add(None, text(m, tr("preset.chest_number"), "7", front([0.075, 1.235]), 0.095 * 0.73, None, 0.08));
     doc.add(None, sponsor(pattern, m));
     doc.add(None, fitted(text(m, "Name", "PLAYER", back([0.0, 1.335]), 0.04 * 0.73, None, 0.03), NAME_WIDTH_M, m));
-    doc.add(None, text(m, tr("Back number", "Nummer Rücken"), "7", back([0.0, 1.17]), 0.19 * 0.73, None, 0.08));
+    doc.add(None, text(m, tr("preset.back_number"), "7", back([0.0, 1.17]), 0.19 * 0.73, None, 0.08));
     if let Some(right_leg) = pattern.legs.iter().find(|l| l.piece == PieceId::LEG_R) {
-        doc.add(None, text(m, tr("Leg number", "Nummer Hose"), "7", pattern.place_on_leg(right_leg, 0.17, 0.075), 0.07 * 0.73, None, 0.08));
+        doc.add(None, text(m, tr("preset.leg_number"), "7", pattern.place_on_leg(right_leg, 0.17, 0.075), 0.07 * 0.73, None, 0.08));
     }
     doc
 }

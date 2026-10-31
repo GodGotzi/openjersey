@@ -2,10 +2,16 @@
 //! and writes the library `garments.rs`, embedding each garment's model and
 //! pattern.
 
+use std::collections::BTreeMap;
 use std::fmt::Write;
 use std::path::Path;
 
 fn main() {
+    translations();
+    garments();
+}
+
+fn garments() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("garments");
     println!("cargo:rerun-if-changed={}", root.display());
     let mut garments = Vec::new();
@@ -52,4 +58,58 @@ fn main() {
     out.push_str("];\n");
     let dest = Path::new(&std::env::var("OUT_DIR").unwrap()).join("garments.rs");
     std::fs::write(dest, out).unwrap();
+}
+
+/// The UI languages: (name of the generated table, locale file).
+const LANGUAGES: [(&str, &str); 2] = [("EN", "en"), ("DE", "de")];
+
+/// Reads `locales/<code>.toml` and writes `translations.rs`, one sorted
+/// `(key, text)` table per language. Every language must have the same keys
+/// and the same number of `{}` placeholders in each text.
+fn translations() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
+    let mut tables: Vec<(&str, &str, BTreeMap<String, String>)> = Vec::new();
+    for (name, code) in LANGUAGES {
+        let path = dir.join(format!("{code}.toml"));
+        println!("cargo:rerun-if-changed={}", path.display());
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        let table: toml::Table = text.parse().unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        let mut flat = BTreeMap::new();
+        flatten("", &table, &mut flat, &path);
+        tables.push((name, code, flat));
+    }
+    let (_, base_code, base) = &tables[0];
+    for (_, code, other) in &tables[1..] {
+        for (key, text) in base {
+            let Some(translated) = other.get(key) else { panic!("locales/{code}.toml has no `{key}` (it is in {base_code}.toml)") };
+            let holes = |t: &str| t.matches("{}").count();
+            assert_eq!(holes(text), holes(translated), "`{key}` has a different number of {{}} in {base_code}.toml and {code}.toml");
+        }
+        for key in other.keys() {
+            assert!(base.contains_key(key), "locales/{code}.toml has `{key}`, which {base_code}.toml lacks");
+        }
+    }
+    let mut out = String::new();
+    for (name, _, table) in &tables {
+        writeln!(out, "pub static {name}: &[(&str, &str)] = &[").unwrap();
+        for (key, text) in table {
+            writeln!(out, "    ({key:?}, {text:?}),").unwrap();
+        }
+        out.push_str("];\n");
+    }
+    std::fs::write(Path::new(&std::env::var("OUT_DIR").unwrap()).join("translations.rs"), out).unwrap();
+}
+
+/// Nested tables become dotted keys: `[menu.file] save = "…"` is `menu.file.save`.
+fn flatten(prefix: &str, table: &toml::Table, out: &mut BTreeMap<String, String>, path: &Path) {
+    for (key, value) in table {
+        let full = if prefix.is_empty() { key.clone() } else { format!("{prefix}.{key}") };
+        match value {
+            toml::Value::String(text) => {
+                out.insert(full, text.clone());
+            }
+            toml::Value::Table(inner) => flatten(&full, inner, out, path),
+            other => panic!("{}: `{full}` must be a string or a table, not {}", path.display(), other.type_str()),
+        }
+    }
 }

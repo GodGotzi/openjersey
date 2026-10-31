@@ -40,9 +40,8 @@ pub fn toolbar(ctx: &egui::Context, pane: egui::Rect, ws: &mut Workspace, studio
                     ui.separator();
                     garments(ui, ws);
                     ui.separator();
-                    let hint =
-                        tr("Snap to centre lines, pieces and other objects", "Einrasten an Mittellinien, Teilen und anderen Objekten");
-                    ui.toggle_value(&mut ws.snap, tr("Snap", "Einrasten")).on_hover_text(hint);
+                    let hint = tr("viewport.snap_hint");
+                    ui.toggle_value(&mut ws.snap, tr("viewport.snap")).on_hover_text(hint);
                 });
             });
         });
@@ -51,17 +50,13 @@ pub fn toolbar(ctx: &egui::Context, pane: egui::Rect, ws: &mut Workspace, studio
 
 fn views(ui: &mut egui::Ui, studio: &mut Studio) {
     let buttons = [
-        (View::Front, tr("Front", "Vorne")),
-        (View::Left, tr("Left", "Links")),
-        (View::Back, tr("Back", "Hinten")),
-        (View::Right, tr("Right", "Rechts")),
+        (View::Front, tr("viewport.front")),
+        (View::Left, tr("viewport.left")),
+        (View::Back, tr("viewport.back")),
+        (View::Right, tr("viewport.right")),
     ];
     for (view, label) in buttons {
-        if ui
-            .button(RichText::new(label))
-            .on_hover_text(tr("Look at the model from this side", "Modell von dieser Seite ansehen"))
-            .clicked()
-        {
+        if ui.button(RichText::new(label)).on_hover_text(tr("viewport.view_hint")).clicked() {
             studio.set_view(view);
         }
     }
@@ -71,12 +66,9 @@ fn views(ui: &mut egui::Ui, studio: &mut Studio) {
 /// print sheet).
 fn garments(ui: &mut egui::Ui, ws: &mut Workspace) {
     let mut shown = ws.doc.garments;
-    let hint = tr(
-        "Show or hide (hidden garments are left off the print sheet)",
-        "Ein- oder ausblenden (ausgeblendete Teile fehlen auf der Druckvorlage)",
-    );
-    ui.toggle_value(&mut shown.shirt, tr("Top", "Oberteil")).on_hover_text(hint);
-    ui.toggle_value(&mut shown.shorts, tr("Bottom", "Unterteil")).on_hover_text(hint);
+    let hint = tr("viewport.visibility_hint");
+    ui.toggle_value(&mut shown.shirt, tr("garment.top")).on_hover_text(hint);
+    ui.toggle_value(&mut shown.shorts, tr("garment.bottom")).on_hover_text(hint);
     if shown != ws.doc.garments {
         ws.checkpoint();
         ws.doc.garments = shown;

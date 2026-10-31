@@ -1,7 +1,7 @@
 //! Saving and loading designs as JSON (graphics embedded), including designs
 //! saved in the old flat format.
 
-use crate::i18n::{pick, tr};
+use crate::i18n::{tr, tr_args};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -27,8 +27,7 @@ pub fn from_json(bytes: &[u8]) -> Result<Document, String> {
     let (mut doc, version) = match serde_json::from_slice::<File>(bytes) {
         Ok(file) => (file.document, file.openjersey),
         Err(_) => {
-            let old: legacy::Design = serde_json::from_slice(bytes)
-                .map_err(|e| pick(format!("not an OpenJersey design: {e}"), format!("kein OpenJersey-Design: {e}")))?;
+            let old: legacy::Design = serde_json::from_slice(bytes).map_err(|e| tr_args("error.not_a_design", &[&e]))?;
             (migrate(old), 1)
         }
     };
@@ -52,9 +51,9 @@ fn migrate(old: legacy::Design) -> Document {
     for layer in old.layers {
         let obj = match layer.kind {
             LayerKind::Stroke { points, width, color } => {
-                Object::shape(tr("Brush stroke", "Pinselstrich"), points, false, None, Some(StrokeStyle { color, width }))
+                Object::shape(tr("object.brush_stroke"), points, false, None, Some(StrokeStyle { color, width }))
             }
-            LayerKind::Shape { points, color } => Object::shape(tr("Shape", "Form"), points, true, Some(color), None),
+            LayerKind::Shape { points, color } => Object::shape(tr("object.shape"), points, true, Some(color), None),
             LayerKind::Text { text, pos, height, rotation, color, fatten } => Object::new(
                 text.clone(),
                 Xf { pos, rotation, scale: [1.0, 1.0] },
@@ -64,13 +63,13 @@ fn migrate(old: legacy::Design) -> Document {
                 let Ok(asset) = Asset::new("logo.png", logo.file) else { continue };
                 let [nw, nh] = asset.natural_size();
                 Object::new(
-                    tr("Logo", "Logo"),
+                    tr("object.logo"),
                     Xf { pos, rotation, scale: [1.0, 1.0] },
                     ObjectKind::Graphic { asset: Arc::new(asset), size: [width, width * nh / nw], tint: None },
                 )
             }
             LayerKind::Pattern { text, height, line_spacing, angle, skew, color, opacity, area } => Object::new(
-                tr("Pattern", "Muster"),
+                tr("object.pattern"),
                 Xf::default(),
                 ObjectKind::Pattern { text, size: height, line_spacing, angle, italic: skew, color, area },
             )

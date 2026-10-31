@@ -196,7 +196,7 @@ impl Workspace {
         let centre = [(x0 + x1) / 2.0, (y0 + y1) / 2.0];
         let centre = parent.and_then(|p| unmap(&self.doc.world_matrix(p), centre)).unwrap_or(centre);
         self.checkpoint();
-        if let Some(id) = self.doc.group(&self.selection.clone(), centre, tr("Group", "Gruppe")) {
+        if let Some(id) = self.doc.group(&self.selection.clone(), centre, tr("object.group")) {
             self.selection = vec![id];
         }
         self.changed();
@@ -257,7 +257,7 @@ impl Workspace {
                     other => other,
                 };
             }
-            copy.name = format!("{} ({})", obj.name, if to == Panel::Back { tr("back", "hinten") } else { tr("front", "vorne") });
+            copy.name = format!("{} ({})", obj.name, if to == Panel::Back { tr("object.suffix_back") } else { tr("object.suffix_front") });
             new.push(self.doc.add(None, copy));
         }
         if !new.is_empty() {

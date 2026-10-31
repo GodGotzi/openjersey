@@ -118,12 +118,12 @@ impl ObjectKind {
     pub fn type_name(&self) -> &'static str {
         match self {
             ObjectKind::Text { .. } => "Text",
-            ObjectKind::Graphic { .. } => tr("Graphic", "Grafik"),
-            ObjectKind::Shape { closed: true, .. } => tr("Shape", "Form"),
-            ObjectKind::Shape { closed: false, .. } => tr("Line", "Linie"),
-            ObjectKind::Pattern { .. } => tr("Pattern", "Muster"),
-            ObjectKind::Placeholder { .. } => tr("Logo placeholder", "Logo-Platzhalter"),
-            ObjectKind::Group { .. } => tr("Group", "Gruppe"),
+            ObjectKind::Graphic { .. } => tr("object.graphic"),
+            ObjectKind::Shape { closed: true, .. } => tr("object.shape"),
+            ObjectKind::Shape { closed: false, .. } => tr("object.line"),
+            ObjectKind::Pattern { .. } => tr("object.pattern"),
+            ObjectKind::Placeholder { .. } => tr("tool.placeholder.name"),
+            ObjectKind::Group { .. } => tr("object.group"),
         }
     }
 }
@@ -520,7 +520,7 @@ impl Document {
         let (parent, index) = self.locate(id)?;
         let mut copy = self.find(id)?.clone();
         copy.xf.pos = [copy.xf.pos[0] + offset[0], copy.xf.pos[1] + offset[1]];
-        copy.name = format!("{} {}", copy.name, tr("copy", "Kopie"));
+        copy.name = format!("{} {}", copy.name, tr("object.copy"));
         self.assign_ids(&mut copy);
         let new_id = copy.id;
         self.insert(parent, index + 1, copy);
