@@ -63,7 +63,7 @@ openjersey --export-template sheet.png --preset example --top "polo shirt" --bot
 The app keeps what it remembers in `~/.config/openjersey/` (or `$XDG_CONFIG_HOME/openjersey/`), created at the first start:
 
 ```
-settings.toml     language, theme and VSync, changed in the Settings window
+settings.toml     language, theme and VSync, changed in the Settings menu
 themes/           your own colour themes (see Themes)
 ```
 

@@ -18,7 +18,7 @@ Garment piece names come from the garments' `pattern.json`; their texts are keye
 
 ## Which language is used
 
-`OJ_LANG` (`en` or `de`), otherwise the choice saved from the Settings window (`language` in `~/.config/openjersey/settings.toml`), otherwise the system locale, otherwise English.
+`OJ_LANG` (`en` or `de`), otherwise the choice saved from the Settings menu (`language` in `~/.config/openjersey/settings.toml`), otherwise the system locale, otherwise English.
 
 ## Add a language
 

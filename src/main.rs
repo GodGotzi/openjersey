@@ -94,7 +94,6 @@ struct JerseyApp {
     editor: Editor,
     layers: LayersPanel,
     browser: GarmentBrowser,
-    settings: ui::settings::SettingsWindow,
     mesh: GarmentMesh,
     /// ids of the top and bottom the 3D view and `mesh` show
     shown: [&'static str; 2],
@@ -152,7 +151,6 @@ impl AppHandler for JerseyApp {
             editor: Editor::new(),
             layers: LayersPanel::new(),
             browser: GarmentBrowser::new(),
-            settings: ui::settings::SettingsWindow::default(),
             mesh,
             shown,
             textures,
@@ -207,7 +205,18 @@ impl AppHandler for JerseyApp {
         }
         self.shortcuts(&ctx);
         self.editor.shortcuts(&ctx);
-        self.top_bar(&ctx);
+        let changes = self.top_bar(&ctx);
+        if let Some(language) = changes.language {
+            i18n::set(language);
+        }
+        if let Some(index) = changes.theme {
+            theme::set(index);
+        }
+        if let Some(vsync) = changes.vsync {
+            self.vsync = vsync;
+            config::set("vsync", vsync);
+            engine.renderer.update_settings(RendererSettings { vsync, ..engine.renderer.settings().clone() });
+        }
         let status_top = self.status_bar(&ctx);
         let screen = ctx.content_rect();
         let panel_fill = ctx.global_style().visuals.panel_fill;
@@ -244,18 +253,6 @@ impl AppHandler for JerseyApp {
         );
         self.pane_centre_ndc = 2.0 * (pane.center().x - screen.min.x) / screen.width() - 1.0;
         self.browser.show(&ctx, &mut self.ws);
-        let changes = self.settings.show(&ctx, self.vsync);
-        if let Some(language) = changes.language {
-            i18n::set(language);
-        }
-        if let Some(index) = changes.theme {
-            theme::set(index);
-        }
-        if let Some(vsync) = changes.vsync {
-            self.vsync = vsync;
-            config::set("vsync", vsync);
-            engine.renderer.update_settings(RendererSettings { vsync, ..engine.renderer.settings().clone() });
-        }
         ui::viewport::toolbar(&ctx, pane, &mut self.ws, &mut self.studio);
 
         self.interact_3d(&ctx, pane, screen);
@@ -420,7 +417,9 @@ impl JerseyApp {
         }
     }
 
-    fn top_bar(&mut self, ctx: &egui::Context) {
+    /// The title bar; returns what the user changed in the Settings menu.
+    fn top_bar(&mut self, ctx: &egui::Context) -> ui::settings::Changes {
+        let mut changes = ui::settings::Changes::default();
         let frame = egui::Frame::new().fill(ctx.global_style().visuals.panel_fill).inner_margin(egui::Margin::symmetric(12, 6));
         #[allow(deprecated)]
         let bar = egui::Panel::top("menu").frame(frame).show(ctx, |ui| {
@@ -475,10 +474,7 @@ impl JerseyApp {
                     ui.separator();
                     ui::layers::context_menu(ui, &mut self.ws);
                 });
-                // a window, not a menu: a dropdown inside a menu closes the menu
-                if ui.add(egui::Button::new(tr("menu.settings.title")).frame(false)).clicked() {
-                    self.settings.open = !self.settings.open;
-                }
+                ui.menu_button(tr("menu.settings.title"), |ui| changes = ui::settings::menu(ui, self.vsync));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // right to left: redo comes first so that undo ends up on its left
                     if ui.add_enabled(self.ws.history.can_redo(), egui::Button::new("↪")).on_hover_text(tr("menu.edit.redo")).clicked() {
@@ -495,6 +491,7 @@ impl JerseyApp {
             ui.painter().text(bar_rect.center(), egui::Align2::CENTER_CENTER, title, egui::TextStyle::Body.resolve(ui.style()), ink);
         });
         self.menu_bottom = bar.response.rect.bottom();
+        changes
     }
 
     /// The bar along the bottom: the last message on the left, the garments

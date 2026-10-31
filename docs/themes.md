@@ -2,7 +2,7 @@
 
 ![The six themes](images/themes.png)
 
-OpenJersey comes with six colour themes, and you can add your own. Pick one from the dropdown under **Settings → Theme**; it applies at once and is remembered for the next start.
+OpenJersey comes with six colour themes, and you can add your own. Pick one under **Settings → Theme**; it applies at once and is remembered for the next start.
 
 | Theme | Look |
 | --- | --- |
@@ -19,7 +19,7 @@ A theme changes everything the app draws: the panels, buttons and menus, the sel
 
 ## Your own themes
 
-Themes that are not bundled with the app go in the `themes/` folder of your configuration folder. The app creates the folder at its first start, next to `settings.toml`. A file you put there shows up in the dropdown, under *Your themes*:
+Themes that are not bundled with the app go in the `themes/` folder of your configuration folder. The app creates the folder at its first start, next to `settings.toml`. A file you put there shows up in the Theme submenu, under *Your themes*:
 
 ```
 ~/.config/openjersey/themes/ocean.toml        (or $XDG_CONFIG_HOME/openjersey/themes/)
@@ -29,7 +29,7 @@ The format is the one described below; the quickest start is a copy of one of th
 
 - The file name (without `.toml`) is the theme's id, which `OJ_THEME` takes too.
 - A file that can't be used does not break anything: it is listed in the Settings menu in the warning colour with the reason (a colour that isn't `#rrggbb`, a missing key, or a name that a bundled theme already has).
-- Hovering the dropdown shows the folder.
+- The Theme submenu shows the folder at its bottom.
 - Only the bundled themes are checked for readability. Pick colours with enough contrast between `text` and the backgrounds yourself.
 
 ## How themes are stored
