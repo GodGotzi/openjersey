@@ -70,7 +70,7 @@ cd openjersey
 cargo run --release
 ```
 
-On Linux, `./install/install-linux.sh` also adds OpenJersey to your app launcher. [Getting started](docs/getting-started.md) has the command line, the environment variables and the Linux packages.
+`./install/install-linux.sh`, `install-macos.sh` or `install-windows.ps1` also adds OpenJersey to your launcher and sets up its settings with a few example themes. [Getting started](docs/getting-started.md) has the command line, the environment variables and the Linux packages.
 
 ## Use it with an AI assistant
 

@@ -680,6 +680,15 @@ fn main() -> myth::Result<()> {
     i18n::init();
     theme::init();
     let args: Vec<String> = std::env::args().collect();
+    // `openjersey --config-dir`: prints the configuration folder (created, with its
+    // settings.toml and themes/ folder) and exits; the install scripts use it
+    if args.get(1).map(String::as_str) == Some("--config-dir") {
+        match config::dir() {
+            Some(dir) => println!("{}", dir.display()),
+            None => std::process::exit(1),
+        }
+        return Ok(());
+    }
     // `openjersey mcp`: stdio MCP server for Codex / Claude Code
     if args.get(1).map(String::as_str) == Some("mcp") {
         ai::mcp::run();

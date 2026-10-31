@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# Builds OpenJersey and adds it to the app launcher, with its icon. The
-# launcher runs the binary in this checkout's target/ folder, so after
-# `git pull && cargo build --release` it starts the new version.
+# Builds OpenJersey, adds it to the app launcher with its icon, and sets up
+# its configuration folder (~/.config/openjersey): settings.toml if there is
+# none, and the example themes in themes/. Files that already exist there are
+# never overwritten. The launcher runs the binary in this checkout's target/
+# folder, so after `git pull && cargo build --release` it starts the new version.
 #
-#   ./install/install-linux.sh            install (or update)
-#   ./install/install-linux.sh --remove   remove the launcher entry and icons
+#   ./install/install-linux.sh                install (or update)
+#   ./install/install-linux.sh --no-themes    the same, without the example themes
+#   ./install/install-linux.sh --remove       remove the launcher entry and icons
+#                                             (your configuration stays)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,11 +23,19 @@ refresh() {
     command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -f -t "$ICONS" >/dev/null 2>&1 || true
 }
 
+THEMES=1
+case "${1:-}" in
+    --no-themes) THEMES=0 ;;
+    --remove) ;;
+    "") ;;
+    *) echo "Unknown option: $1 (see the top of this script)" >&2; exit 2 ;;
+esac
+
 if [[ "${1:-}" == "--remove" ]]; then
     rm -f "$DESKTOP" "$ICONS/scalable/apps/openjersey.svg"
     for s in $SIZES; do rm -f "$ICONS/${s}x${s}/apps/openjersey.png"; done
     refresh
-    echo "OpenJersey removed from the launcher (the checkout and its build are untouched)."
+    echo "OpenJersey removed from the launcher (the checkout, its build and your settings are untouched)."
     exit 0
 fi
 
@@ -31,6 +43,21 @@ command -v cargo >/dev/null || { echo "Rust is missing: install it from https://
 
 echo "Building OpenJersey (the first build takes a few minutes) ..."
 (cd "$REPO" && cargo build --release)
+
+echo "Setting up the configuration ..."
+# the program makes the folder, settings.toml and themes/ and tells us where they are
+CONFIG="$("$BIN" --config-dir)"
+if [[ "$THEMES" == 1 ]]; then
+    for theme in "$REPO"/examples/themes/*.toml; do
+        target="$CONFIG/themes/$(basename "$theme")"
+        if [[ -e "$target" ]]; then
+            echo "  keeping your $(basename "$theme")"
+        else
+            cp "$theme" "$target"
+            echo "  added theme $(basename "$theme" .toml)"
+        fi
+    done
+fi
 
 echo "Installing the icon ..."
 mkdir -p "$ICONS/scalable/apps"
@@ -65,3 +92,4 @@ EOF
 refresh
 
 echo "Done. OpenJersey is in your app launcher; it runs $BIN."
+echo "Settings and your own themes live in $CONFIG."

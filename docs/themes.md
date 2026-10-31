@@ -25,7 +25,7 @@ Themes that are not bundled with the app go in the `themes/` folder of your conf
 ~/.config/openjersey/themes/ocean.toml        (or $XDG_CONFIG_HOME/openjersey/themes/)
 ```
 
-Three ready-made ones to copy, [`ocean`, `dusk` and `rose`](../examples/themes), are in the examples. The format is the one described below; the quickest start is a copy of one of the files in [`themes/`](../themes) with a new `name`. `order` can be left out. Themes are read when the app starts, so restart it after adding or changing a file.
+Three ready-made ones to copy, [`ocean`, `dusk` and `rose`](../examples/themes), are in the examples. The install scripts copy them into the folder for you. The format is the one described below; the quickest start is a copy of one of the files in [`themes/`](../themes) with a new `name`. `order` can be left out. Themes are read when the app starts, so restart it after adding or changing a file.
 
 - The file name (without `.toml`) is the theme's id, which `OJ_THEME` takes too.
 - A file that can't be used does not break anything: it is listed in the Settings menu in the warning colour with the reason (a colour that isn't `#rrggbb`, a missing key, or a name that a bundled theme already has).

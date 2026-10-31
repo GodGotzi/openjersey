@@ -23,11 +23,13 @@ const TEMPLATE: &str = "\
 # agent_mode = false  # show the Agent panel, a log of what an AI assistant does
 ";
 
-/// The app's configuration folder.
+/// The app's configuration folder: `$XDG_CONFIG_HOME/openjersey`, on Windows
+/// `%APPDATA%\openjersey`, otherwise `~/.config/openjersey` (macOS too).
 pub fn dir() -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
+    let base = std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| {
+        let appdata = if cfg!(windows) { std::env::var_os("APPDATA").map(PathBuf::from) } else { None };
+        appdata.or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
+    })?;
     Some(base.join("openjersey"))
 }
 

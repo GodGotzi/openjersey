@@ -24,14 +24,24 @@ cargo run --release -- examples/alpine-night.json
 
 `--top` and `--bottom` take a garment's id or any words of its name (`polo` is enough for the polo shirt; the garment for the other body is picked to match).
 
-## Install on Linux
+## Install
 
-```sh
-./install/install-linux.sh            # build, add to the app launcher with its icon
-./install/install-linux.sh --remove   # remove the launcher entry and icons
-```
+An install script builds the app, adds it to your launcher with its icon and sets up the [settings folder](#settings-files). It needs [Rust](https://rustup.rs).
 
-The launcher runs `target/release/openjersey` in your checkout, so after `git pull && cargo build --release` it starts the new version.
+| System | Run | Adds |
+| --- | --- | --- |
+| Linux | `./install/install-linux.sh` | An entry in the app launcher |
+| macOS | `./install/install-macos.sh` | `OpenJersey.app` in `~/Applications` |
+| Windows | `.\install\install-windows.ps1` | A Start menu shortcut |
+
+What every script does:
+
+- builds `target/release/openjersey`, which the launcher entry starts, so after `git pull && cargo build --release` it starts the new version;
+- creates the settings folder with `settings.toml` if you have none;
+- copies the three [example themes](../examples/themes) (Ocean, Dusk, Rose) into its `themes/` folder, so they show up under *Settings → Theme*. A file that is already there is kept, and `--no-themes` (`-NoThemes` on Windows) skips this;
+- can be run again to update, and `--remove` (`-Remove`) takes the launcher entry away again. Your settings and themes are never touched.
+
+If PowerShell refuses to run the Windows script, start it with `powershell -ExecutionPolicy Bypass -File .\install\install-windows.ps1`. The macOS and Windows scripts are newer and have had less testing than the Linux one. On Windows the program starts with a console window, which the shortcut keeps minimised.
 
 ## Without a window
 
@@ -60,7 +70,7 @@ openjersey --export-template sheet.png --preset example --top "polo shirt" --bot
 
 ## Settings files
 
-The app keeps what it remembers in `~/.config/openjersey/` (or `$XDG_CONFIG_HOME/openjersey/`), created at the first start:
+The app keeps what it remembers in `~/.config/openjersey/` (or `$XDG_CONFIG_HOME/openjersey/`; on Windows `%APPDATA%\openjersey\`), created at the first start. `openjersey --config-dir` prints where it is:
 
 ```
 settings.toml     language, theme, VSync and Agent mode, changed in the Settings menu
