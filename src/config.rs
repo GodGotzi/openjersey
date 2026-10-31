@@ -8,9 +8,6 @@
 //! vsync = true
 //! ```
 //!
-//! Older versions kept `language` and `theme` as plain one-line files; those
-//! are read once and folded into `settings.toml` the next time something is saved.
-
 use std::path::{Path, PathBuf};
 
 use toml::{Table, Value};
@@ -24,8 +21,6 @@ const TEMPLATE: &str = "\
 # theme = \"graphite\"     # a bundled theme, or the name of a file in the themes/ folder
 # vsync = false
 ";
-/// Settings that used to be plain files named after them.
-const LEGACY_KEYS: [&str; 2] = ["language", "theme"];
 
 /// The app's configuration folder.
 pub fn dir() -> Option<PathBuf> {
@@ -41,8 +36,7 @@ pub fn themes_dir() -> Option<PathBuf> {
 }
 
 /// Run once at start: makes sure the configuration folder, its `themes/`
-/// folder and `settings.toml` exist, so there is something to find and edit.
-/// Settings still in the older plain files are moved into `settings.toml`
+/// folder and `settings.toml` exist, so there is something to find and edit
 /// (best effort).
 pub fn init() {
     if let Some(dir) = dir() {
@@ -53,11 +47,10 @@ pub fn init() {
 fn init_in(dir: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dir.join("themes"))?;
     let file = dir.join(FILE);
-    if file.exists() {
-        return Ok(());
+    if !file.exists() {
+        std::fs::write(&file, format!("{HEADER}{TEMPLATE}"))?;
     }
-    let table = load(dir);
-    if table.is_empty() { std::fs::write(&file, format!("{HEADER}{TEMPLATE}")) } else { write_table(dir, &table) }
+    Ok(())
 }
 
 /// A saved text setting.
@@ -77,19 +70,10 @@ pub fn set(key: &str, value: impl Into<Value>) {
     }
 }
 
-/// The settings in `dir`: the TOML file, plus values still in plain legacy files.
-/// An unreadable file counts as empty here; `set_in` keeps it from being lost.
+/// The settings in `dir`. An unreadable file counts as empty here; `set_in`
+/// keeps it from being lost.
 fn load(dir: &Path) -> Table {
-    let mut table = std::fs::read_to_string(dir.join(FILE)).ok().and_then(|text| text.parse::<Table>().ok()).unwrap_or_default();
-    for key in LEGACY_KEYS {
-        if !table.contains_key(key)
-            && let Ok(text) = std::fs::read_to_string(dir.join(key))
-            && !text.trim().is_empty()
-        {
-            table.insert(key.to_string(), Value::String(text.trim().to_string()));
-        }
-    }
-    table
+    std::fs::read_to_string(dir.join(FILE)).ok().and_then(|text| text.parse::<Table>().ok()).unwrap_or_default()
 }
 
 fn get_in(dir: &Path, key: &str) -> Option<Value> {
@@ -110,14 +94,10 @@ fn set_in(dir: &Path, key: &str, value: Value) -> std::io::Result<()> {
     write_table(dir, &table)
 }
 
-/// Writes `settings.toml`; what was in the plain files is in it now, so they go.
+/// Writes `settings.toml`.
 fn write_table(dir: &Path, table: &Table) -> std::io::Result<()> {
     let body = toml::to_string(table).map_err(std::io::Error::other)?;
-    std::fs::write(dir.join(FILE), format!("{HEADER}{body}"))?;
-    for legacy in LEGACY_KEYS {
-        let _ = std::fs::remove_file(dir.join(legacy));
-    }
-    Ok(())
+    std::fs::write(dir.join(FILE), format!("{HEADER}{body}"))
 }
 
 #[cfg(test)]
@@ -175,31 +155,16 @@ mod tests {
     }
 
     #[test]
-    fn a_start_moves_the_old_plain_files_into_the_settings_file_at_once() {
-        let dir = temp_dir("startmove");
+    fn only_settings_toml_counts() {
+        let dir = temp_dir("only-toml");
+        // the one-line files that older versions kept are not read
         std::fs::write(dir.join("language"), "de").unwrap();
         std::fs::write(dir.join("theme"), "nord").unwrap();
-        init_in(&dir).unwrap();
-        assert!(!dir.join("language").exists() && !dir.join("theme").exists());
-        let text = std::fs::read_to_string(dir.join(FILE)).unwrap();
-        assert!(text.contains("language = \"de\"") && text.contains("theme = \"nord\""), "{text}");
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn the_old_plain_files_are_read_and_then_folded_into_the_toml_file() {
-        let dir = temp_dir("legacy");
-        std::fs::write(dir.join("language"), "de\n").unwrap();
-        std::fs::write(dir.join("theme"), "graphite").unwrap();
-        // read without touching anything
-        assert_eq!(get_in(&dir, "language"), Some(Value::String("de".into())));
-        assert!(dir.join("language").exists());
-        // the next save moves them
-        set_in(&dir, "vsync", false.into()).unwrap();
-        assert!(!dir.join("language").exists() && !dir.join("theme").exists(), "the plain files should be gone");
-        let table = load(&dir);
-        assert_eq!(table.get("language"), Some(&Value::String("de".into())));
-        assert_eq!(table.get("theme"), Some(&Value::String("graphite".into())));
+        assert_eq!(get_in(&dir, "language"), None);
+        assert_eq!(get_in(&dir, "theme"), None);
+        set_in(&dir, "theme", "paper".into()).unwrap();
+        assert_eq!(get_in(&dir, "theme"), Some(Value::String("paper".into())));
+        assert!(dir.join("language").exists(), "other files are left alone");
         let _ = std::fs::remove_dir_all(&dir);
     }
 

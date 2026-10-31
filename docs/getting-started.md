@@ -75,7 +75,7 @@ theme = "graphite"     # a bundled theme, or the name of a file in themes/
 vsync = false
 ```
 
-The environment variables below win over it for one run. Older versions kept the language and theme as one-line files named `language` and `theme`; they are moved into `settings.toml` at the next start.
+The environment variables below win over it for one run.
 
 ## Tests
 
