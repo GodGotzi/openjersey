@@ -1,0 +1,2718 @@
+{
+  "openjersey": 5,
+  "document": {
+    "top": "crew-shirt-man",
+    "bottom": "game-shorts-man",
+    "base": {
+      "primary": [
+        16,
+        16,
+        18
+      ],
+      "accent": [
+        242,
+        242,
+        242
+      ],
+      "trim": [
+        16,
+        16,
+        18
+      ],
+      "overrides": [
+        [
+          {
+            "LegStripe": "Left"
+          },
+          [
+            198,
+            244,
+            50
+          ]
+        ],
+        [
+          {
+            "LegStripe": "Right"
+          },
+          [
+            198,
+            244,
+            50
+          ]
+        ]
+      ]
+    },
+    "garments": {
+      "shirt": true,
+      "shorts": true,
+      "inside": null
+    },
+    "objects": [
+      {
+        "id": 54,
+        "name": "Chevrons · front",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            354.0,
+            466.5
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 1,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -160.73999
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.12001
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.2,
+                        -57.12001
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        242,
+                        242,
+                        242
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 2,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -125.03998
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.180023
+                      ],
+                      [
+                        0.0,
+                        57.180023
+                      ],
+                      [
+                        313.2,
+                        -57.180023
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        220,
+                        220,
+                        220
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 3,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -89.339966
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.119995
+                      ],
+                      [
+                        0.0,
+                        57.119965
+                      ],
+                      [
+                        313.2,
+                        -57.119995
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        198,
+                        198,
+                        199
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 4,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -53.579956
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.120026
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.2,
+                        -57.120026
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        175,
+                        175,
+                        177
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 5,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -17.879974
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.2,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        153,
+                        153,
+                        155
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 6,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    17.820038
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.120026
+                      ],
+                      [
+                        0.0,
+                        57.120026
+                      ],
+                      [
+                        313.2,
+                        -57.120026
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        131,
+                        131,
+                        134
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 7,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    53.580017
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.120026
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.2,
+                        -57.120026
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        109,
+                        109,
+                        112
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 8,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    89.28003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.180023
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.2,
+                        -57.180023
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        86,
+                        86,
+                        90
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 9,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    124.97998
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.119995
+                      ],
+                      [
+                        0.0,
+                        57.120056
+                      ],
+                      [
+                        313.2,
+                        -57.119995
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        64,
+                        64,
+                        69
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 10,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "front"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    160.73999
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.2,
+                        -57.119934
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.2,
+                        -57.119934
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        42,
+                        42,
+                        47
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 55,
+        "name": "Chevrons · back",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            1026.0,
+            580.8
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 11,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -160.73999
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.180023
+                      ],
+                      [
+                        313.20007,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        242,
+                        242,
+                        242
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 12,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -125.03998
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.119965
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.20007,
+                        -57.119965
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        220,
+                        220,
+                        220
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 13,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -89.339966
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.180023
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.180023
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        198,
+                        198,
+                        199
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 14,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -53.579956
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        175,
+                        175,
+                        177
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 15,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -17.879944
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.120026
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.20007,
+                        -57.120026
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        153,
+                        153,
+                        155
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 16,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    17.820068
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        131,
+                        131,
+                        134
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 17,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    53.580017
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        109,
+                        109,
+                        112
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 18,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    89.28003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.119995
+                      ],
+                      [
+                        0.0,
+                        57.119995
+                      ],
+                      [
+                        313.20007,
+                        -57.119995
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        86,
+                        86,
+                        90
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 19,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    124.98004
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.179993
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.179993
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        64,
+                        64,
+                        69
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 20,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "back"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    160.74005
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -313.19995,
+                        -57.180054
+                      ],
+                      [
+                        0.0,
+                        57.179993
+                      ],
+                      [
+                        313.20007,
+                        -57.180054
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        42,
+                        42,
+                        47
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 56,
+        "name": "Chevrons · sleeve_l",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            1007.94006,
+            1302.18
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 21,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -213.7201
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 22,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -128.16003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 23,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -42.720093
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 24,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    42.779907
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.47998
+                      ],
+                      [
+                        0.05999756,
+                        -30.479858
+                      ],
+                      [
+                        295.14,
+                        30.47998
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 25,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    128.2799
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 26,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    213.7201
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.539917
+                      ],
+                      [
+                        0.05999756,
+                        -30.54004
+                      ],
+                      [
+                        295.14,
+                        30.539917
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 57,
+        "name": "Chevrons · sleeve_r",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            372.06,
+            1302.18
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 27,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -213.7201
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        -0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 28,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -128.16003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        -0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 29,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -42.720093
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        -0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 30,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    42.779907
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.47998
+                      ],
+                      [
+                        -0.05999756,
+                        -30.479858
+                      ],
+                      [
+                        295.14,
+                        30.47998
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 31,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    128.2799
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.54004
+                      ],
+                      [
+                        -0.05999756,
+                        -30.539917
+                      ],
+                      [
+                        295.14,
+                        30.54004
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 32,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "sleeve_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    213.7201
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -295.14,
+                        30.539917
+                      ],
+                      [
+                        -0.05999756,
+                        -30.54004
+                      ],
+                      [
+                        295.14,
+                        30.539917
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        16,
+                        16,
+                        18
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 33,
+        "name": "5",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "front"
+        ],
+        "xf": {
+          "pos": [
+            480.0,
+            270.39
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "5",
+            "size": 108.49316,
+            "color": [
+              242,
+              242,
+              242
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": null
+          }
+        }
+      },
+      {
+        "id": 34,
+        "name": "Shape",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "front"
+        ],
+        "xf": {
+          "pos": [
+            354.0,
+            576.39
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Shape": {
+            "points": [
+              [
+                -180.0,
+                -30.0
+              ],
+              [
+                180.0,
+                -30.0
+              ],
+              [
+                180.0,
+                30.0
+              ],
+              [
+                -180.0,
+                30.0
+              ]
+            ],
+            "closed": true,
+            "fill": [
+              242,
+              242,
+              242
+            ],
+            "stroke": null
+          }
+        }
+      },
+      {
+        "id": 35,
+        "name": "SPONSOR",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "front"
+        ],
+        "xf": {
+          "pos": [
+            354.0,
+            576.39
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "SPONSOR",
+            "size": 39.452057,
+            "color": [
+              16,
+              16,
+              18
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": null
+          }
+        }
+      },
+      {
+        "id": 36,
+        "name": "PLAYER",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "back"
+        ],
+        "xf": {
+          "pos": [
+            1026.0,
+            336.39
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "PLAYER",
+            "size": 59.17808,
+            "color": [
+              242,
+              242,
+              242
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": 288.0
+          }
+        }
+      },
+      {
+        "id": 37,
+        "name": "5",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "back"
+        ],
+        "xf": {
+          "pos": [
+            1026.0,
+            534.39
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "5",
+            "size": 279.45206,
+            "color": [
+              242,
+              242,
+              242
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": null
+          }
+        }
+      },
+      {
+        "id": 38,
+        "name": "MONO VBC",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "back"
+        ],
+        "xf": {
+          "pos": [
+            1026.0,
+            681.99
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "MONO VBC",
+            "size": 27.945208,
+            "color": [
+              242,
+              242,
+              242
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": 228.00002
+          }
+        }
+      },
+      {
+        "id": 58,
+        "name": "Chevrons · leg_r",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            689.34,
+            2177.1602
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 39,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -98.28003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.440063
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        242,
+                        242,
+                        242
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 40,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -65.52002
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        220,
+                        220,
+                        220
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 41,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -32.76001
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        198,
+                        198,
+                        199
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 42,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    0.0
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.440186
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        175,
+                        175,
+                        177
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 43,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    32.76001
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        153,
+                        153,
+                        155
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 44,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    65.52002
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.440186
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        131,
+                        131,
+                        134
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 45,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_r"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    98.279785
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.440186
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.440186
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        109,
+                        109,
+                        112
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 59,
+        "name": "Chevrons · leg_l",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [],
+        "xf": {
+          "pos": [
+            689.34,
+            2777.16
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Group": {
+            "children": [
+              {
+                "id": 46,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -98.279785
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.440186
+                      ],
+                      [
+                        -0.05999756,
+                        -37.440186
+                      ],
+                      [
+                        439.50006,
+                        37.440186
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        242,
+                        242,
+                        242
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 47,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -65.519775
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        220,
+                        220,
+                        220
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 48,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    -32.759766
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        198,
+                        198,
+                        199
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 49,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    0.00024414062
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        175,
+                        175,
+                        177
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 50,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    32.76001
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.440186
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.440186
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        153,
+                        153,
+                        155
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 51,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    65.52026
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.440186
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        131,
+                        131,
+                        134
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              },
+              {
+                "id": 52,
+                "name": "Shape",
+                "visible": true,
+                "locked": false,
+                "opacity": 1.0,
+                "clip": [
+                  "leg_l"
+                ],
+                "xf": {
+                  "pos": [
+                    0.0,
+                    98.28003
+                  ],
+                  "rotation": 0.0,
+                  "scale": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "kind": {
+                  "Shape": {
+                    "points": [
+                      [
+                        -439.5,
+                        37.43994
+                      ],
+                      [
+                        -0.05999756,
+                        -37.43994
+                      ],
+                      [
+                        439.50006,
+                        37.43994
+                      ]
+                    ],
+                    "closed": false,
+                    "fill": null,
+                    "stroke": {
+                      "color": [
+                        109,
+                        109,
+                        112
+                      ],
+                      "width": 7.2000003
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 53,
+        "name": "5",
+        "visible": true,
+        "locked": false,
+        "opacity": 1.0,
+        "clip": [
+          "leg_r"
+        ],
+        "xf": {
+          "pos": [
+            948.72003,
+            2247.36
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "kind": {
+          "Text": {
+            "text": "5",
+            "size": 101.91781,
+            "color": [
+              242,
+              242,
+              242
+            ],
+            "fatten": 0.04,
+            "italic": 0.0,
+            "max_width": null
+          }
+        }
+      }
+    ],
+    "next_id": 60
+  }
+}
