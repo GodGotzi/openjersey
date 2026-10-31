@@ -6,19 +6,27 @@ OpenJersey has an [MCP](https://modelcontextprotocol.io) interface, so an AI ass
 
 `openjersey mcp` is a small bridge that speaks MCP over stdin/stdout and forwards every call to the running app. If the app isn't running, the bridge starts it.
 
-```sh
-# Claude Code
-claude mcp add openjersey -- /path/to/openjersey mcp
-```
+Replace `/path/to/openjersey` with where the program lives. The **Agent** panel shows both commands with the right path filled in and a button to copy each.
+
+| Client | How to add it |
+| --- | --- |
+| **Claude Code** | `claude mcp add openjersey -- /path/to/openjersey mcp` |
+| **Codex** | `codex mcp add openjersey -- /path/to/openjersey mcp` |
+| **Any other MCP client** | Launch `/path/to/openjersey mcp` as a stdio server |
+
+![The Agent panel before a client is connected, with the commands to copy](images/agent-connect.png)
+
+Prefer a config file? Codex reads `~/.codex/config.toml`:
 
 ```toml
-# Codex: ~/.codex/config.toml
 [mcp_servers.openjersey]
 command = "/path/to/openjersey"
 args = ["mcp"]
 ```
 
-Any other MCP client that can launch a stdio server works the same way. Then ask for something: *"Design a navy and gold jersey for my club, number 7, with a mountain motif on the front."*
+With Claude Code, add `--scope project` to share the server with a project (it lands in `.mcp.json`). `claude mcp list` and `codex mcp list` show whether it was added.
+
+Then ask for something: *"Design a navy and gold jersey for my club, number 7, with a mountain motif on the front."*
 
 What the assistant does happens in your open window. Each change is one undo step, and `Ctrl+Z` takes it back.
 

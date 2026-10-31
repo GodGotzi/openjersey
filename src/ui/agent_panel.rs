@@ -16,7 +16,7 @@ pub fn show(ui: &mut egui::Ui, log: &mut Log) {
     header(ui, log);
     ui.add_space(4.0);
     if log.is_empty() {
-        ui.add(egui::Label::new(RichText::new(tr("agent.empty")).weak()).wrap());
+        connect_help(ui);
         return;
     }
     egui::ScrollArea::vertical().id_salt("agent-log").auto_shrink([false, false]).stick_to_bottom(true).show(ui, |ui| {
@@ -24,6 +24,43 @@ pub fn show(ui: &mut egui::Ui, log: &mut Log) {
             row(ui, entry);
         }
     });
+}
+
+/// The command that starts the bridge, with the path of this program.
+fn exe_path() -> String {
+    let path = std::env::current_exe().map(|p| p.display().to_string()).unwrap_or_else(|_| "openjersey".into());
+    if path.contains(' ') { format!("\"{path}\"") } else { path }
+}
+
+/// The empty state: how to add OpenJersey's MCP server to an assistant.
+fn connect_help(ui: &mut egui::Ui) {
+    let exe = exe_path();
+    ui.add(egui::Label::new(RichText::new(tr("agent.connect_title")).strong()));
+    ui.add_space(2.0);
+    ui.add(egui::Label::new(RichText::new(tr("agent.connect_intro")).weak()).wrap());
+    ui.add_space(8.0);
+    command_card(ui, "Claude Code", &format!("claude mcp add openjersey -- {exe} mcp"));
+    ui.add_space(8.0);
+    command_card(ui, "Codex", &format!("codex mcp add openjersey -- {exe} mcp"));
+    ui.add_space(8.0);
+    ui.add(egui::Label::new(RichText::new(tr_args("agent.connect_other", &[&"openjersey"])).small().weak()).wrap());
+}
+
+/// A client's name above a command in a box, with a button that copies it.
+fn command_card(ui: &mut egui::Ui, name: &str, command: &str) {
+    let colors = theme::colors();
+    ui.label(RichText::new(name).small().color(*colors.text_weak));
+    egui::Frame::new().fill(*colors.input).stroke(egui::Stroke::new(1.0, *colors.border)).corner_radius(6.0).inner_margin(8.0).show(
+        ui,
+        |ui| {
+            ui.set_width(ui.available_width());
+            ui.add(egui::Label::new(RichText::new(command).monospace().size(11.5)).wrap());
+            ui.add_space(4.0);
+            if ui.add(egui::Button::new(tr("agent.copy_command")).small()).clicked() {
+                ui.ctx().copy_text(command.to_owned());
+            }
+        },
+    );
 }
 
 /// The title, the counts, and the buttons to copy or clear the log.
@@ -167,7 +204,7 @@ mod tests {
     #[test]
     fn an_empty_log_explains_itself() {
         let shown = texts(&mut Log::default());
-        assert!(shown.iter().any(|t| t == tr("agent.empty")), "{shown:?}");
+        assert!(shown.iter().any(|t| t == tr("agent.connect_title")), "{shown:?}");
     }
 
     #[test]
