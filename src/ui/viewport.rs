@@ -35,7 +35,12 @@ pub fn toolbar(ctx: &egui::Context, pane: egui::Rect, ws: &mut Workspace, studio
                 .shadow(Shadow { offset: [0, 2], blur: 10, spread: 0, color: Color32::from_black_alpha(40) });
             frame.show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 3.0;
+                    ui.spacing_mut().item_spacing.x = 2.0;
+                    // flat buttons on the pill: no fill or outline until the pointer is over them
+                    let widgets = &mut ui.visuals_mut().widgets;
+                    widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+                    widgets.inactive.bg_stroke = Stroke::NONE;
+                    widgets.hovered.bg_stroke = Stroke::NONE;
                     views(ui, studio);
                     ui.separator();
                     garments(ui, ws);

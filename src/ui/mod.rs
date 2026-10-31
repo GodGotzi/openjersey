@@ -4,6 +4,7 @@ pub mod color_picker;
 pub mod layers;
 pub mod properties;
 pub mod viewport;
+pub mod widgets;
 
 #[cfg(test)]
 mod tests {

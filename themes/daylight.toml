@@ -1,0 +1,26 @@
+# OpenJersey theme "Daylight". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Daylight"
+order = 5   # position in the Settings menu
+dark = false   # starts from egui's dark or light base
+
+[colors]
+window = "#ffffff"      # windows, menus and popups
+panel = "#f4f5f7"       # side panels and bars
+surface = "#ffffff"     # buttons, inputs and cards
+surface_hover = "#eceef2"# a button under the pointer
+surface_active = "#e0e3ea"# a pressed or open button
+border = "#d5d9e0"      # outlines and separators
+text = "#1d2026"        # normal text
+text_weak = "#6b7280"   # hints and secondary text
+accent = "#2563eb"      # the selection and the active tool
+accent_text = "#ffffff" # text on the accent colour
+input = "#ffffff"       # the inside of text fields
+canvas = "#d9dce2"      # behind the print sheet in the 2D editor
+viewport = "#e9e9eb"    # the background of the 3D view
+ruler = "#eceef2"       # the rulers of the 2D editor
+warn = "#b7791f"        # warnings
+error = "#c53030"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

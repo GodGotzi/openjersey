@@ -1,0 +1,26 @@
+# OpenJersey theme "Forest". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Forest"
+order = 4   # position in the Settings menu
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#141b17"      # windows, menus and popups
+panel = "#19211c"       # side panels and bars
+surface = "#222d26"     # buttons, inputs and cards
+surface_hover = "#2c3a31"# a button under the pointer
+surface_active = "#364639"# a pressed or open button
+border = "#2c3a31"      # outlines and separators
+text = "#e4efe7"        # normal text
+text_weak = "#8aa092"   # hints and secondary text
+accent = "#4fd18b"      # the selection and the active tool
+accent_text = "#08140d" # text on the accent colour
+input = "#111713"       # the inside of text fields
+canvas = "#0f1511"      # behind the print sheet in the 2D editor
+viewport = "#2a362e"    # the background of the 3D view
+ruler = "#161d19"       # the rulers of the 2D editor
+warn = "#e3b341"        # warnings
+error = "#ea6a5e"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

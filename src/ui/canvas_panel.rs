@@ -17,7 +17,6 @@ const TOOLTIP_WIDTH: f32 = 260.0;
 const SHAPE_ICON_INSET: f32 = 9.0;
 const SHAPE_MENU_WIDTH: f32 = 190.0;
 const SHAPE_ROW_HEIGHT: f32 = 30.0;
-const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
 
 /// Tools in the toolbox, grouped by what they do.
 const TOOL_GROUPS: [&[Tool]; 5] = [
@@ -65,14 +64,14 @@ fn toolbox(ui: &mut egui::Ui, editor: &mut Editor) {
 fn tool_button(ui: &mut egui::Ui, tool: Tool, selected: bool) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(TOOL_BUTTON), egui::Sense::click());
     paint_button_background(ui, rect, &response, selected);
-    let color = if selected { Color32::WHITE } else { ui.visuals().text_color() };
+    let color = if selected { crate::theme::on_accent() } else { ui.visuals().text_color() };
     ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, tool.icon(), egui::FontId::proportional(17.0), color);
     tool_tooltip(response, tool)
 }
 
 fn paint_button_background(ui: &egui::Ui, rect: egui::Rect, response: &egui::Response, selected: bool) {
     let fill = if selected {
-        ACCENT
+        crate::theme::accent()
     } else if response.hovered() {
         ui.visuals().widgets.hovered.weak_bg_fill
     } else {
@@ -98,7 +97,7 @@ fn shape_tool_button(ui: &mut egui::Ui, editor: &mut Editor, tool: Tool) {
     let filled = tool == Tool::FilledShape;
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(TOOL_BUTTON), egui::Sense::click());
     paint_button_background(ui, rect, &response, selected);
-    let color = if selected { Color32::WHITE } else { ui.visuals().text_color() };
+    let color = if selected { crate::theme::on_accent() } else { ui.visuals().text_color() };
     paint_shape_icon(ui.painter(), editor.shape_of(tool), rect.shrink(SHAPE_ICON_INSET), filled, color);
     // a small triangle in the corner says there is more to choose from
     let corner = rect.right_bottom() - Vec2::splat(4.0);
@@ -134,7 +133,7 @@ fn shape_row(ui: &mut egui::Ui, shape: ShapeKind, filled: bool, selected: bool) 
     let (rect, response) = ui.allocate_exact_size(Vec2::new(ui.available_width(), SHAPE_ROW_HEIGHT), egui::Sense::click());
     paint_button_background(ui, rect, &response, false);
     if selected {
-        ui.painter().rect_filled(rect, CornerRadius::same(5), ACCENT.gamma_multiply(0.4));
+        ui.painter().rect_filled(rect, CornerRadius::same(5), crate::theme::accent().gamma_multiply(0.4));
     }
     let icon =
         egui::Rect::from_center_size(rect.left_center() + Vec2::new(SHAPE_ROW_HEIGHT / 2.0, 0.0), Vec2::splat(SHAPE_ROW_HEIGHT - 12.0));

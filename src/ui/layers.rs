@@ -5,7 +5,7 @@
 use crate::i18n::tr;
 use std::collections::HashSet;
 
-use myth::egui::egui::{self, Color32, RichText, Sense};
+use myth::egui::egui::{self, RichText, Sense};
 
 use crate::document::{Object, ObjectId, ObjectKind};
 use crate::workspace::Workspace;
@@ -37,7 +37,7 @@ impl LayersPanel {
 
     pub fn ui(&mut self, ui: &mut egui::Ui, ws: &mut Workspace) {
         ui.horizontal(|ui| {
-            ui.strong(tr("layers.title"));
+            super::widgets::section_title(ui, tr("layers.title"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let any = !ws.selection.is_empty();
                 if ui.add_enabled(any, egui::Button::new("🗑").small()).on_hover_text(tr("layers.delete")).clicked() {
@@ -54,7 +54,7 @@ impl LayersPanel {
                 }
             });
         });
-        ui.separator();
+        ui.add_space(2.0);
 
         // keep the selection's groups open
         for &id in &ws.selection {
@@ -146,11 +146,15 @@ impl LayersPanel {
                 actions.push(Action::ToggleVisible(obj.id));
             }
             let lock = if obj.locked { "🔒" } else { "🔓" };
-            let lock_text = RichText::new(lock).color(if obj.locked { Color32::LIGHT_YELLOW } else { Color32::from_gray(90) });
+            let lock_text = RichText::new(lock).color(if obj.locked {
+                *crate::theme::colors().warn
+            } else {
+                ui.visuals().weak_text_color().gamma_multiply(0.6)
+            });
             if ui.add(egui::Button::new(lock_text).small().frame(false)).on_hover_text(tr("layers.lock")).clicked() {
                 actions.push(Action::ToggleLocked(obj.id));
             }
-            ui.label(RichText::new(kind_icon(&obj.kind)).color(Color32::from_gray(140)));
+            ui.label(RichText::new(kind_icon(&obj.kind)).color(ui.visuals().weak_text_color()));
 
             if let Some((id, name)) = &mut self.renaming
                 && *id == obj.id
@@ -191,7 +195,7 @@ impl LayersPanel {
                     DropPlace::Below => r.bottom(),
                     DropPlace::Into => r.center().y,
                 };
-                let color = Color32::from_rgb(70, 140, 255);
+                let color = crate::theme::accent();
                 if let DropPlace::Into = place {
                     ui.painter().rect_stroke(r, 2.0, egui::Stroke::new(1.5_f32, color), egui::StrokeKind::Inside);
                 } else {

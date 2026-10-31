@@ -1,0 +1,26 @@
+# OpenJersey theme "Paper". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Paper"
+order = 6   # position in the Settings menu
+dark = false   # starts from egui's dark or light base
+
+[colors]
+window = "#fbf8f3"      # windows, menus and popups
+panel = "#f3eee5"       # side panels and bars
+surface = "#fbf8f3"     # buttons, inputs and cards
+surface_hover = "#ebe4d6"# a button under the pointer
+surface_active = "#e0d7c4"# a pressed or open button
+border = "#d8cfbd"      # outlines and separators
+text = "#2b2620"        # normal text
+text_weak = "#7a7061"   # hints and secondary text
+accent = "#c2410c"      # the selection and the active tool
+accent_text = "#ffffff" # text on the accent colour
+input = "#fffdf8"       # the inside of text fields
+canvas = "#d8d1c1"      # behind the print sheet in the 2D editor
+viewport = "#ece6da"    # the background of the 3D view
+ruler = "#ebe4d6"       # the rulers of the 2D editor
+warn = "#a16207"        # warnings
+error = "#b91c1c"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

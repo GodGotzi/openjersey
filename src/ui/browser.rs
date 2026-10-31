@@ -82,20 +82,18 @@ impl GarmentBrowser {
     /// The sidebar block that names the current garments; each row opens
     /// the browser on its kind.
     pub fn sidebar(&mut self, ui: &mut egui::Ui, ws: &mut Workspace) {
-        ui.horizontal(|ui| {
-            ui.strong(tr("browser.model"));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                for body in Body::ALL.into_iter().rev() {
-                    if ui.selectable_label(ws.body() == body, body.label()).clicked() {
-                        ws.set_body(body);
-                    }
-                }
-            });
-        });
+        super::widgets::section_title(ui, tr("browser.model"));
+        ui.add_space(2.0);
+        let mut body = ws.body();
+        let choices = [(Body::Man, Body::Man.label()), (Body::Women, Body::Women.label())];
+        if super::widgets::segmented(ui, "body", &mut body, &choices, true) {
+            ws.set_body(body);
+        }
+        ui.add_space(4.0);
         let rows = [(Kind::Top, tr("garment.top"), ws.pattern.top().name), (Kind::Bottom, tr("garment.bottom"), ws.pattern.bottom().name)];
         for (kind, label, name) in rows {
             ui.horizontal(|ui| {
-                let (rect, _) = ui.allocate_exact_size(Vec2::new(52.0, 20.0), Sense::hover());
+                let (rect, _) = ui.allocate_exact_size(Vec2::new(56.0, 24.0), Sense::hover());
                 let font = egui::TextStyle::Body.resolve(ui.style());
                 ui.painter().text(rect.left_center(), egui::Align2::LEFT_CENTER, label, font, ui.visuals().weak_text_color());
                 let selected = self.open && self.kind == kind;

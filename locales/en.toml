@@ -75,6 +75,7 @@ template = "Template"
 title = "File"
 
 [menu.settings]
+theme = "Theme"
 language = "Language"
 title = "Settings"
 
@@ -175,6 +176,7 @@ starting = "Starting …"
 subtitle = "JERSEY DESIGNER"
 
 [status]
+untitled = "Untitled"
 zoom_in = "Zoom in"
 zoom_out = "Zoom out"
 export_failed = "Export failed"

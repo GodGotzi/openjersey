@@ -12,8 +12,8 @@ use crate::template::regions::RegionId;
 use crate::workspace::{Workspace, with_world_pos};
 
 pub fn ui(ui: &mut egui::Ui, ws: &mut Workspace) {
-    ui.strong(tr("properties.title"));
-    ui.separator();
+    super::widgets::section_title(ui, tr("properties.title"));
+    ui.add_space(4.0);
     let [id] = ws.selection.as_slice() else {
         if ws.selection.is_empty() {
             ui.weak(tr("properties.nothing"));

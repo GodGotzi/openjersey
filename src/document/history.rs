@@ -33,6 +33,14 @@ impl History {
         }
     }
 
+    pub fn can_undo(&self) -> bool {
+        !self.undo.is_empty()
+    }
+
+    pub fn can_redo(&self) -> bool {
+        !self.redo.is_empty()
+    }
+
     /// How many undo steps there are.
     pub fn depth(&self) -> usize {
         self.undo.len()

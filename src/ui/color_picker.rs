@@ -56,7 +56,6 @@ const SWATCH: f32 = 20.0;
 const POPUP_WIDTH: f32 = 280.0;
 const SQUARE_HEIGHT: f32 = 170.0;
 const HUE_BAR_HEIGHT: f32 = 20.0;
-const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
 
 /// Colours offered in the picker besides the palette.
 pub struct Swatches<'a> {
@@ -296,7 +295,7 @@ fn section(ui: &mut egui::Ui, title: &str, colors: &[Rgb], current: &mut Rgb, ou
 pub fn swatch(ui: &mut egui::Ui, color: Rgb, active: bool) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(SWATCH), egui::Sense::click());
     ui.painter().rect_filled(rect, CornerRadius::same(4), to_color32(color));
-    let stroke = if active { Stroke::new(2.0_f32, ACCENT) } else { Stroke::new(1.0_f32, Color32::from_gray(110)) };
+    let stroke = if active { Stroke::new(2.0_f32, crate::theme::accent()) } else { Stroke::new(1.0_f32, Color32::from_gray(110)) };
     ui.painter().rect_stroke(rect, CornerRadius::same(4), stroke, StrokeKind::Inside);
     response.on_hover_text(hex(color))
 }

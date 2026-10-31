@@ -179,7 +179,6 @@ const MAX_ZOOM: f32 = 16.0;
 const RULER: f32 = 24.0;
 const HANDLE: f32 = 5.0;
 const ROTATE_OFFSET: f32 = 26.0;
-const SELECTION: Color32 = Color32::from_rgb(70, 140, 255);
 
 impl Editor {
     pub fn new() -> Self {
@@ -329,7 +328,7 @@ impl Editor {
 
         // ---- drawing ----
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, Color32::from_gray(40));
+        painter.rect_filled(rect, 0.0, *crate::theme::colors().canvas);
         let image_rect = Rect::from_min_size(origin, template * scale);
         painter.rect_filled(image_rect.translate(Vec2::new(2.0, 4.0)).expand(1.0), 3.0, Color32::from_black_alpha(70));
         painter.image(view.texture, image_rect, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
@@ -345,10 +344,16 @@ impl Editor {
         self.draw_selection(&painter, ws, &to_s);
         if let Some(Drag::Marquee { start }) = &self.drag {
             let r = Rect::from_two_pos(to_s(*start), to_s(self.marquee_end));
-            painter.rect(r, 0.0, SELECTION.gamma_multiply(0.15), Stroke::new(1.0_f32, SELECTION), StrokeKind::Inside);
+            painter.rect(
+                r,
+                0.0,
+                crate::theme::accent().gamma_multiply(0.15),
+                Stroke::new(1.0_f32, crate::theme::accent()),
+                StrokeKind::Inside,
+            );
         }
         if let Some(Drag::Box { start, tool }) = &self.drag {
-            let outline = Stroke::new(1.0_f32, Color32::WHITE);
+            let outline = Stroke::new(1.5_f32, crate::theme::accent());
             if matches!(tool, Tool::OutlineShape | Tool::FilledShape) {
                 // the shape itself follows the drag
                 let shape = self.shape_of(*tool);
@@ -363,13 +368,13 @@ impl Editor {
             if let Some(h) = hover {
                 pts.push(h);
             }
-            painter.add(egui::Shape::line(pts, Stroke::new(1.5_f32, Color32::WHITE)));
+            painter.add(egui::Shape::line(pts, Stroke::new(1.5_f32, crate::theme::accent())));
         }
         if let Some(hover) = hover {
             match self.tool {
                 Tool::Brush | Tool::Eraser => {
                     let r = self.brush_mm * ws.px_per_mm() * scale / 2.0;
-                    painter.circle_stroke(hover, r.max(3.0), Stroke::new(1.0_f32, Color32::WHITE));
+                    painter.circle_stroke(hover, r.max(3.0), Stroke::new(1.5_f32, crate::theme::accent()));
                 }
                 Tool::Fill => {
                     if let Some(p) = at {
@@ -775,7 +780,7 @@ impl Editor {
         for &id in &ws.selection {
             let Some(quad) = geom::world_quad(&ws.raster.fonts, &ws.doc, id) else { continue };
             let q: Vec<Pos2> = quad.iter().map(|&p| to_s(p)).collect();
-            painter.add(egui::Shape::closed_line(q.clone(), Stroke::new(1.5_f32, SELECTION)));
+            painter.add(egui::Shape::closed_line(q.clone(), Stroke::new(1.5_f32, crate::theme::accent())));
             if ws.selection.len() == 1 && !ws.doc.find(id).is_some_and(|o| o.locked) {
                 let quad = [q[0], q[1], q[2], q[3]];
                 for c in quad {
@@ -783,14 +788,14 @@ impl Editor {
                         Rect::from_center_size(c, Vec2::splat(HANDLE * 2.0)),
                         1.0,
                         Color32::WHITE,
-                        Stroke::new(1.0_f32, SELECTION),
+                        Stroke::new(1.0_f32, crate::theme::accent()),
                         StrokeKind::Middle,
                     );
                 }
                 if let Some(r) = rotate_handle(&quad) {
                     let top = Pos2::new((quad[0].x + quad[1].x) / 2.0, (quad[0].y + quad[1].y) / 2.0);
-                    painter.line_segment([top, r], Stroke::new(1.0_f32, SELECTION));
-                    painter.circle(r, HANDLE, Color32::WHITE, Stroke::new(1.0_f32, SELECTION));
+                    painter.line_segment([top, r], Stroke::new(1.0_f32, crate::theme::accent()));
+                    painter.circle(r, HANDLE, Color32::WHITE, Stroke::new(1.0_f32, crate::theme::accent()));
                 }
             }
         }
@@ -801,16 +806,16 @@ impl Editor {
 /// Rulers along the top and left edge in millimetres from the sheet's
 /// corner, with a marker at the cursor. `scale_mm` is screen pixels per mm.
 fn draw_rulers(painter: &egui::Painter, full: Rect, view: Rect, origin: Pos2, scale_mm: f32, cursor: Option<Pos2>) {
-    const BACKGROUND: Color32 = Color32::from_gray(30);
-    const TICK: Color32 = Color32::from_gray(95);
-    const LABEL: Color32 = Color32::from_gray(165);
+    let colors = crate::theme::colors();
+    let (background, tick, ink, edge) =
+        (*colors.ruler, crate::theme::mix(*colors.text_weak, *colors.ruler, 0.45), *colors.text_weak, *colors.border);
     // a label about every 70 px, small ticks at a fifth of that step
     let major = [5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0, 1000.0].into_iter().find(|step| step * scale_mm >= 70.0).unwrap_or(1000.0);
     let minor = major / 5.0;
     let top = Rect::from_min_max(full.min, Pos2::new(full.max.x, view.min.y));
     let left = Rect::from_min_max(full.min, Pos2::new(view.min.x, full.max.y));
-    painter.rect_filled(top, 0.0, BACKGROUND);
-    painter.rect_filled(left, 0.0, BACKGROUND);
+    painter.rect_filled(top, 0.0, background);
+    painter.rect_filled(left, 0.0, background);
     let font = egui::FontId::proportional(9.0);
     for horizontal in [true, false] {
         let (from, to, origin_axis) = if horizontal { (view.min.x, view.max.x, origin.x) } else { (view.min.y, view.max.y, origin.y) };
@@ -828,20 +833,22 @@ fn draw_rulers(painter: &egui::Painter, full: Rect, view: Rect, origin: Pos2, sc
             } else {
                 (Pos2::new(view.min.x - length, screen), Pos2::new(view.min.x, screen))
             };
-            painter.line_segment([a, b], Stroke::new(1.0_f32, TICK));
+            painter.line_segment([a, b], Stroke::new(1.0_f32, tick));
             if is_major {
                 let label = format!("{}", (i as f32 * minor).round() as i64);
                 let at = if horizontal { Pos2::new(screen + 3.0, full.min.y + 2.0) } else { Pos2::new(full.min.x + 2.0, screen + 2.0) };
-                painter.text(at, Align2::LEFT_TOP, label, font.clone(), LABEL);
+                painter.text(at, Align2::LEFT_TOP, label, font.clone(), ink);
             }
         }
     }
-    painter.rect_stroke(top, 0.0, Stroke::new(1.0_f32, Color32::from_gray(20)), StrokeKind::Inside);
-    painter.rect_stroke(left, 0.0, Stroke::new(1.0_f32, Color32::from_gray(20)), StrokeKind::Inside);
-    painter.text(full.min + Vec2::splat(RULER / 2.0), Align2::CENTER_CENTER, "mm", egui::FontId::proportional(8.0), LABEL);
+    painter.rect_stroke(top, 0.0, Stroke::new(1.0_f32, edge), StrokeKind::Inside);
+    painter.rect_stroke(left, 0.0, Stroke::new(1.0_f32, edge), StrokeKind::Inside);
+    painter.text(full.min + Vec2::splat(RULER / 2.0), Align2::CENTER_CENTER, "mm", egui::FontId::proportional(8.0), ink);
     if let Some(c) = cursor {
-        painter.line_segment([Pos2::new(c.x, view.min.y - RULER), Pos2::new(c.x, view.min.y)], Stroke::new(1.0_f32, SELECTION));
-        painter.line_segment([Pos2::new(view.min.x - RULER, c.y), Pos2::new(view.min.x, c.y)], Stroke::new(1.0_f32, SELECTION));
+        painter
+            .line_segment([Pos2::new(c.x, view.min.y - RULER), Pos2::new(c.x, view.min.y)], Stroke::new(1.0_f32, crate::theme::accent()));
+        painter
+            .line_segment([Pos2::new(view.min.x - RULER, c.y), Pos2::new(view.min.x, c.y)], Stroke::new(1.0_f32, crate::theme::accent()));
     }
 }
 

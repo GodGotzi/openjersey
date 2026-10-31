@@ -19,7 +19,6 @@ const KEY_DISTANCE: Vec3 = Vec3::new(-2.5, 3.5, 4.0);
 /// Light levels: the environment only fills in; the key lights shape.
 const ENV_INTENSITY: f32 = 0.28;
 const KEY_INTENSITY: f32 = 2.3;
-const BACKGROUND: [f32; 3] = [0.913, 0.913, 0.922]; // #e9e9eb like the Tauri app
 
 /// One garment model (top or bottom) in the scene.
 struct Slot {
@@ -59,7 +58,7 @@ impl Studio {
         // plain colour and the fabric is matte, so small cubes look the same.
         scene.environment.set_base_cube_size(256);
         scene.environment.set_pmrem_size(128);
-        let [r, g, b] = BACKGROUND;
+        let [r, g, b] = crate::theme::viewport_background();
         scene.background.set_mode(BackgroundMode::color(r, g, b));
         scene.tone_mapping.set_mode(ToneMappingMode::Neutral);
 
@@ -93,6 +92,14 @@ impl Studio {
         controls.min_distance = 1.2;
         controls.max_distance = 6.0;
         Self { slots, camera, controls }
+    }
+
+    /// Changes the 3D view's background (a theme's `viewport` colour).
+    pub fn set_background(&self, engine: &mut Engine, color: [f32; 3]) {
+        if let Some(scene) = engine.scene_manager.active_scene_mut() {
+            let [r, g, b] = color;
+            scene.background.set_mode(BackgroundMode::color(r, g, b));
+        }
     }
 
     /// Both models are in the scene.

@@ -1,0 +1,26 @@
+# OpenJersey theme "Nord". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Nord"
+order = 3   # position in the Settings menu
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#2a2f3a"      # windows, menus and popups
+panel = "#2e3440"       # side panels and bars
+surface = "#3b4252"     # buttons, inputs and cards
+surface_hover = "#434c5e"# a button under the pointer
+surface_active = "#4c566a"# a pressed or open button
+border = "#434c5e"      # outlines and separators
+text = "#e5e9f0"        # normal text
+text_weak = "#9aa5b8"   # hints and secondary text
+accent = "#88c0d0"      # the selection and the active tool
+accent_text = "#2e3440" # text on the accent colour
+input = "#272c36"       # the inside of text fields
+canvas = "#262b34"      # behind the print sheet in the 2D editor
+viewport = "#3b4252"    # the background of the 3D view
+ruler = "#2a2f3a"       # the rulers of the 2D editor
+warn = "#ebcb8b"        # warnings
+error = "#bf616a"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

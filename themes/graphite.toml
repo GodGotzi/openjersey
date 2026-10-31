@@ -1,0 +1,26 @@
+# OpenJersey theme "Graphite". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Graphite"
+order = 1   # position in the Settings menu
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#1c1d21"      # windows, menus and popups
+panel = "#222328"       # side panels and bars
+surface = "#2c2e35"     # buttons, inputs and cards
+surface_hover = "#363943"# a button under the pointer
+surface_active = "#40444f"# a pressed or open button
+border = "#383b44"      # outlines and separators
+text = "#e9eaee"        # normal text
+text_weak = "#8e93a0"   # hints and secondary text
+accent = "#4a8cf7"      # the selection and the active tool
+accent_text = "#ffffff" # text on the accent colour
+input = "#17181c"       # the inside of text fields
+canvas = "#18191d"      # behind the print sheet in the 2D editor
+viewport = "#3b3e47"    # the background of the 3D view
+ruler = "#1e1f24"       # the rulers of the 2D editor
+warn = "#e3a93c"        # warnings
+error = "#ea5a52"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

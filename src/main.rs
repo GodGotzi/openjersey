@@ -5,6 +5,7 @@
 //! (`openjersey mcp`).
 
 mod ai;
+mod config;
 mod document;
 mod editor;
 mod garments;
@@ -16,6 +17,7 @@ mod scene;
 mod shapes;
 mod splash;
 mod template;
+mod theme;
 mod ui;
 mod workspace;
 
@@ -24,7 +26,7 @@ use std::sync::Mutex;
 use std::sync::mpsc::Receiver;
 use std::time::Instant;
 
-use myth::egui::egui::{self, Color32, ColorImage, Key, Pos2, TextureOptions};
+use myth::egui::egui::{self, ColorImage, Key, Pos2, TextureOptions};
 use myth::egui::{UiPass, UiPassNode};
 use myth::math::Mat4;
 use myth::prelude::*;
@@ -45,9 +47,6 @@ use workspace::Workspace;
 
 /// How close (in mm) a dragged object must come to a line to snap to it in the 3D view.
 const SNAP_3D_MM: f32 = 6.0;
-
-/// Room kept free beside the status message in the 3D view.
-const STATUS_MARGIN: f32 = 24.0;
 
 /// Seconds the pointer rests on a control before its tooltip shows (egui's default is 0.5).
 const TOOLTIP_DELAY_SECS: f32 = 0.25;
@@ -109,6 +108,8 @@ struct JerseyApp {
     clipboard: Vec<Object>,
     fps: Fps,
     vsync: bool,
+    /// The index of the theme egui and the 3D view currently show.
+    applied_theme: usize,
     /// Where the 3D pane's centre is, in window NDC (lens shift).
     pane_centre_ndc: f32,
     inv_view_proj: Mat4,
@@ -131,6 +132,7 @@ impl AppHandler for JerseyApp {
         splash_status(tr("status.loading_design"));
         let wgpu_ctx = engine.renderer.wgpu_ctx().expect("renderer initialised");
         let ui_pass = UiPass::new(&wgpu_ctx.device, wgpu_ctx.surface_view_format, winit_window(window));
+        theme::apply(ui_pass.context());
         ui_pass.context().global_style_mut(|style| style.interaction.tooltip_delay = TOOLTIP_DELAY_SECS);
         let mut ws = Workspace::new(initial_document());
         let pm = ws.raster.render(&ws.pattern, &ws.regions, &ws.doc, Mode::Display);
@@ -158,6 +160,7 @@ impl AppHandler for JerseyApp {
             clipboard: Vec::new(),
             fps: Fps { frames: 0, since: Instant::now(), fps: 0.0 },
             vsync: engine.renderer.settings().vsync,
+            applied_theme: theme::current_index(),
             pane_centre_ndc: 0.0,
             inv_view_proj: Mat4::IDENTITY,
             dragging_3d: false,
@@ -194,21 +197,40 @@ impl AppHandler for JerseyApp {
 
         self.ui_pass.begin_frame(winit_window(window));
         let ctx = self.ui_pass.context().clone();
+        if self.applied_theme != theme::current_index() {
+            // the theme was switched in Settings
+            theme::apply(&ctx);
+            self.studio.set_background(engine, theme::viewport_background());
+            self.applied_theme = theme::current_index();
+        }
         self.shortcuts(&ctx);
         self.editor.shortcuts(&ctx);
         self.top_bar(&ctx, engine);
+        let status_top = self.status_bar(&ctx);
         let screen = ctx.content_rect();
+        let panel_fill = ctx.global_style().visuals.panel_fill;
+        let side_frame = |margin: egui::Margin| egui::Frame::new().fill(panel_fill).inner_margin(margin);
 
         #[allow(deprecated)] // the top-level `show` is what fits UiPass's begin/end frame
-        let left = egui::Panel::left("layers").resizable(true).default_size(300.0).size_range(220.0..=520.0).show(&ctx, |ui| {
-            self.browser.sidebar(ui, &mut self.ws);
-            ui.separator();
-            self.layers.ui(ui, &mut self.ws);
-            ui.separator();
-            ui::properties::ui(ui, &mut self.ws);
-        });
+        let left = egui::Panel::left("layers")
+            .frame(side_frame(egui::Margin::symmetric(12, 10)))
+            .resizable(true)
+            .default_size(300.0)
+            .size_range(240.0..=520.0)
+            .show(&ctx, |ui| {
+                self.browser.sidebar(ui, &mut self.ws);
+                ui.add_space(8.0);
+                ui.separator();
+                ui.add_space(4.0);
+                self.layers.ui(ui, &mut self.ws);
+                ui.add_space(8.0);
+                ui.separator();
+                ui.add_space(4.0);
+                ui::properties::ui(ui, &mut self.ws);
+            });
         #[allow(deprecated)]
         let right = egui::Panel::right("editor")
+            .frame(side_frame(egui::Margin::symmetric(10, 8)))
             .resizable(true)
             .default_size(760.0)
             .size_range(360.0..=(screen.width() - 600.0).max(400.0))
@@ -216,7 +238,7 @@ impl AppHandler for JerseyApp {
         // the 3D view is what the panels leave free
         let pane = egui::Rect::from_min_max(
             egui::pos2(left.response.rect.right(), self.menu_bottom),
-            egui::pos2(right.response.rect.left(), screen.max.y),
+            egui::pos2(right.response.rect.left(), status_top),
         );
         self.pane_centre_ndc = 2.0 * (pane.center().x - screen.min.x) / screen.width() - 1.0;
         self.browser.show(&ctx, &mut self.ws);
@@ -225,13 +247,6 @@ impl AppHandler for JerseyApp {
         self.interact_3d(&ctx, pane, screen);
         if !self.dragging_3d {
             self.studio.update_camera(engine, frame.dt);
-        }
-        if !self.ws.status.is_empty() {
-            egui::Area::new(egui::Id::new("status")).fixed_pos(pane.left_bottom() + egui::vec2(10.0, -28.0)).show(&ctx, |ui| {
-                // one line, as wide as the 3D view leaves room for
-                ui.set_max_width((pane.width() - STATUS_MARGIN).max(100.0));
-                ui.add(egui::Label::new(egui::RichText::new(&self.ws.status).color(Color32::from_gray(80))).truncate());
-            });
         }
         self.ui_pass.end_frame(winit_window(window));
         self.sync_garments(engine);
@@ -392,9 +407,13 @@ impl JerseyApp {
     }
 
     fn top_bar(&mut self, ctx: &egui::Context, engine: &mut Engine) {
+        let frame = egui::Frame::new().fill(ctx.global_style().visuals.panel_fill).inner_margin(egui::Margin::symmetric(12, 6));
         #[allow(deprecated)]
-        let bar = egui::Panel::top("menu").show(ctx, |ui| {
+        let bar = egui::Panel::top("menu").frame(frame).show(ctx, |ui| {
+            let bar_rect = ui.max_rect();
             egui::MenuBar::new().ui(ui, |ui| {
+                ui.add(egui::Label::new(egui::RichText::new("OpenJersey").strong().color(theme::accent())).selectable(false));
+                ui.add_space(10.0);
                 ui.menu_button(tr("menu.file.title"), |ui| {
                     if ui.button(tr("menu.file.new")).clicked() {
                         self.ws.replace(empty_document(&self.ws.pattern));
@@ -451,21 +470,57 @@ impl JerseyApp {
                         }
                     }
                     ui.separator();
+                    ui.weak(tr("menu.settings.theme"));
+                    for (index, entry) in theme::all().iter().enumerate() {
+                        if ui.radio(theme::current_index() == index, &entry.theme.name).clicked() {
+                            theme::set(index);
+                        }
+                    }
+                    ui.separator();
                     if ui.checkbox(&mut self.vsync, "VSync").changed() {
                         let settings = RendererSettings { vsync: self.vsync, ..engine.renderer.settings().clone() };
                         engine.renderer.update_settings(settings);
                     }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let fps = self.fps.fps.max(0.001);
-                    ui.monospace(format!("{fps:>4.0} fps"));
-                    if let Some(f) = &self.ws.file {
-                        ui.weak(f.file_name().and_then(|n| n.to_str()).unwrap_or_default());
+                    // right to left: redo comes first so that undo ends up on its left
+                    if ui.add_enabled(self.ws.history.can_redo(), egui::Button::new("↪")).on_hover_text(tr("menu.edit.redo")).clicked() {
+                        self.ws.redo();
+                    }
+                    if ui.add_enabled(self.ws.history.can_undo(), egui::Button::new("↩")).on_hover_text(tr("menu.edit.undo")).clicked() {
+                        self.ws.undo();
                     }
                 });
             });
+            // the design's file name in the middle of the bar
+            let title = self.ws.file.as_deref().and_then(|f| f.file_name()).and_then(|n| n.to_str()).unwrap_or(tr("status.untitled"));
+            let ink = ui.visuals().weak_text_color();
+            ui.painter().text(bar_rect.center(), egui::Align2::CENTER_CENTER, title, egui::TextStyle::Body.resolve(ui.style()), ink);
         });
         self.menu_bottom = bar.response.rect.bottom();
+    }
+
+    /// The bar along the bottom: the last message on the left, the garments
+    /// and the frame rate on the right. Returns its top edge.
+    fn status_bar(&mut self, ctx: &egui::Context) -> f32 {
+        let frame = egui::Frame::new().fill(ctx.global_style().visuals.panel_fill).inner_margin(egui::Margin::symmetric(12, 4));
+        #[allow(deprecated)]
+        let bar = egui::Panel::bottom("status").frame(frame).show(ctx, |ui| {
+            let weak = ui.visuals().weak_text_color();
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 14.0;
+                ui.add(egui::Label::new(egui::RichText::new(&self.ws.status).small().color(weak)).truncate());
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(egui::RichText::new(format!("{:>4.0} fps", self.fps.fps.max(0.001))).small().monospace().color(weak));
+                    ui.label(
+                        egui::RichText::new(format!("{} · {}", self.ws.pattern.top().name, self.ws.pattern.bottom().name))
+                            .small()
+                            .color(weak),
+                    );
+                });
+            });
+        });
+        bar.response.rect.top()
     }
 
     fn editor_panel(&mut self, ui: &mut egui::Ui) {
@@ -576,6 +631,7 @@ fn initial_document() -> Document {
 
 fn main() -> myth::Result<()> {
     i18n::init();
+    theme::init();
     let args: Vec<String> = std::env::args().collect();
     // `openjersey mcp`: stdio MCP server for Codex / Claude Code
     if args.get(1).map(String::as_str) == Some("mcp") {

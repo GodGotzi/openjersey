@@ -74,6 +74,7 @@ template = "Vorlage"
 title = "Datei"
 
 [menu.settings]
+theme = "Farbschema"
 language = "Sprache"
 title = "Einstellungen"
 
@@ -174,6 +175,7 @@ starting = "Wird gestartet …"
 subtitle = "TRIKOT-DESIGNER"
 
 [status]
+untitled = "Unbenannt"
 zoom_in = "Vergrößern"
 zoom_out = "Verkleinern"
 export_failed = "Export fehlgeschlagen"

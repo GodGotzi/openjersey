@@ -1,0 +1,26 @@
+# OpenJersey theme "Midnight". Colours are #rrggbb; see src/theme.rs for how they are used.
+
+name = "Midnight"
+order = 2   # position in the Settings menu
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#0f1423"      # windows, menus and popups
+panel = "#141a2e"       # side panels and bars
+surface = "#1c2440"     # buttons, inputs and cards
+surface_hover = "#26305a"# a button under the pointer
+surface_active = "#303c70"# a pressed or open button
+border = "#2a3560"      # outlines and separators
+text = "#e6ebfa"        # normal text
+text_weak = "#8c97bb"   # hints and secondary text
+accent = "#4d8ef5"      # the selection and the active tool
+accent_text = "#ffffff" # text on the accent colour
+input = "#0d1220"       # the inside of text fields
+canvas = "#0c111f"      # behind the print sheet in the 2D editor
+viewport = "#222a45"    # the background of the 3D view
+ruler = "#111729"       # the rulers of the 2D editor
+warn = "#e3a93c"        # warnings
+error = "#ea5a52"       # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

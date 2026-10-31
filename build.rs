@@ -7,6 +7,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 fn main() {
+    themes();
     translations();
     garments();
 }
@@ -112,4 +113,27 @@ fn flatten(prefix: &str, table: &toml::Table, out: &mut BTreeMap<String, String>
             other => panic!("{}: `{full}` must be a string or a table, not {}", path.display(), other.type_str()),
         }
     }
+}
+
+/// Embeds every `themes/*.toml` (checked to be valid TOML here; `src/theme.rs`
+/// reads their contents) as `(id, text)`, the id being the file name.
+fn themes() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("themes");
+    println!("cargo:rerun-if-changed={}", dir.display());
+    let mut files: Vec<_> = std::fs::read_dir(&dir)
+        .expect("the themes/ folder exists")
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "toml"))
+        .collect();
+    files.sort();
+    let mut out = String::from("pub static THEME_FILES: &[(&str, &str)] = &[\n");
+    for path in files {
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        text.parse::<toml::Table>().unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        let id = path.file_stem().and_then(|s| s.to_str()).expect("a theme file name");
+        writeln!(out, "    ({id:?}, include_str!({:?})),", path.display().to_string()).unwrap();
+    }
+    out.push_str("];\n");
+    std::fs::write(Path::new(&std::env::var("OUT_DIR").unwrap()).join("themes.rs"), out).unwrap();
 }
