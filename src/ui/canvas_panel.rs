@@ -219,6 +219,8 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
             if e.tool == Tool::OutlineShape {
                 ui.label(tr("options.size"));
                 ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
+            } else {
+                outline_options(ui, e, swatches);
             }
         }
         Tool::Text => {
@@ -245,8 +247,14 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
     }
 }
 
+/// The fill switch and the outline options, as a polygon has them.
 fn fill_and_outline(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
     ui.checkbox(&mut e.fill_shapes, tr("options.fill"));
+    outline_options(ui, e, swatches);
+}
+
+/// The outline switch and, when it is on, the outline's colour and width.
+fn outline_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
     ui.checkbox(&mut e.stroke_shapes, tr("options.outline"));
     if e.stroke_shapes {
         if color_picker::button(ui, "stroke-colour", &mut e.stroke_color, swatches).committed {

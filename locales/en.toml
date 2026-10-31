@@ -261,5 +261,5 @@ hint = "Drag out an unfilled shape. Click the button to choose which: rectangle,
 name = "Outline shape"
 
 [tool.filled_shape]
-hint = "Drag out a filled shape. Click the button to choose which: rectangle, ellipse, triangle, star, arrow and more."
+hint = "Drag out a filled shape, with an outline if you switch it on in the options bar. Click the button to choose which: rectangle, ellipse, triangle, star, arrow and more."
 name = "Filled shape"

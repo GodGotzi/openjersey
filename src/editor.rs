@@ -643,12 +643,14 @@ impl Editor {
         Object::shape(name, points, true, fill, stroke)
     }
 
-    /// What a shape tool draws: the outline tool strokes the shape (a line is
-    /// open), the filled tool fills it; both in the paint colour.
+    /// What a shape tool draws: the outline tool strokes the shape in the paint
+    /// colour (a line is open); the filled tool fills it with the paint colour
+    /// and, when switched on, also outlines it in the outline colour.
     fn shape_tool_object(&self, tool: Tool, points: Vec<Pt>, px_per_mm: f32) -> Object {
         let shape = self.shape_of(tool);
         if tool == Tool::FilledShape {
-            Object::shape(shape.name(), points, true, Some(self.color), None)
+            let outline = self.stroke_shapes.then_some(StrokeStyle { color: self.stroke_color, width: self.brush_mm * px_per_mm });
+            Object::shape(shape.name(), points, true, Some(self.color), outline)
         } else {
             let stroke = StrokeStyle { color: self.color, width: self.brush_mm * px_per_mm };
             Object::shape(shape.name(), points, shape.closed(), None, Some(stroke))
@@ -903,5 +905,39 @@ fn draw_labels(painter: &egui::Painter, pattern: &Pattern, garments: &Garments, 
             }
             None => label([x + w / 2.0, y - 8.0], &piece.label),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn shape_parts(object: &Object) -> (Option<Rgb>, Option<StrokeStyle>) {
+        match &object.kind {
+            ObjectKind::Shape { fill, stroke, .. } => (*fill, *stroke),
+            other => panic!("not a shape: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_filled_shape_gets_an_outline_only_when_asked() {
+        let mut editor = Editor::new();
+        editor.color = [10, 20, 30];
+        editor.stroke_color = [200, 100, 0];
+        editor.brush_mm = 4.0;
+        let points = ShapeKind::Star.outline([0.0, 0.0], [50.0, 50.0]);
+
+        let plain = editor.shape_tool_object(Tool::FilledShape, points.clone(), 2.0);
+        assert_eq!(shape_parts(&plain), (Some([10, 20, 30]), None));
+
+        editor.stroke_shapes = true;
+        let outlined = editor.shape_tool_object(Tool::FilledShape, points.clone(), 2.0);
+        let (fill, stroke) = shape_parts(&outlined);
+        assert_eq!(fill, Some([10, 20, 30]));
+        assert_eq!(stroke, Some(StrokeStyle { color: [200, 100, 0], width: 8.0 }));
+
+        // the outline tool never fills, whatever that switch says
+        let contour = editor.shape_tool_object(Tool::OutlineShape, points, 2.0);
+        assert_eq!(shape_parts(&contour), (None, Some(StrokeStyle { color: [10, 20, 30], width: 8.0 })));
     }
 }

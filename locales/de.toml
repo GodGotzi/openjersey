@@ -260,5 +260,5 @@ hint = "Eine ungefüllte Form aufziehen. Auf den Knopf klicken, um sie zu wähle
 name = "Konturform"
 
 [tool.filled_shape]
-hint = "Eine gefüllte Form aufziehen. Auf den Knopf klicken, um sie zu wählen: Rechteck, Ellipse, Dreieck, Stern, Pfeil und mehr."
+hint = "Eine gefüllte Form aufziehen, auf Wunsch mit Kontur (in der Optionsleiste einschaltbar). Auf den Knopf klicken, um sie zu wählen: Rechteck, Ellipse, Dreieck, Stern, Pfeil und mehr."
 name = "Gefüllte Form"

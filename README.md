@@ -31,7 +31,7 @@ The launcher runs `target/release/openjersey` in this checkout, so after
   bar with the cursor position, the selection's size and zoom controls (scroll
   to zoom, middle/right drag or Space to pan). Tools: Select/transform (V; corner handles
   scale, the round handle rotates, Shift = free/15°), Hand (H), Brush (B),
-  Eraser (E), Outline shape (O) and Filled shape (S) (each button shows its current shape; clicking it opens a flyout beside it to choose rectangle, ellipse, rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross or, for outlines, line; then drag it out), Polygon (P), Text (T), Image/SVG (I),
+  Eraser (E), Outline shape (O) and Filled shape (S) (each button shows its current shape; clicking it opens a flyout beside it to choose rectangle, ellipse, rounded rectangle, triangle, diamond, pentagon, hexagon, star, arrow, chevron, cross or, for outlines, line; then drag it out; a filled shape can also get an outline, switched on in the options bar), Polygon (P), Text (T), Image/SVG (I),
   Logo placeholder (L), Fill (F, pieces or objects), Eyedropper (Y).
 - 3D view: click an object on the model to select it, drag to move it;
   dragging elsewhere orbits.
