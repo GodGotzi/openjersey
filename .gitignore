@@ -25,3 +25,7 @@ rustc-ice-*.txt
 
 # Blender source assets (downloaded bundle, posed mannequin), see README.md
 assets-src/
+
+# Python caches
+__pycache__/
+*.pyc
