@@ -74,6 +74,8 @@ template = "Vorlage"
 title = "Datei"
 
 [menu.settings]
+your_themes = "Eigene Themes"
+theme_folder = "Eigene Themes gehören in {}"
 theme = "Farbschema"
 language = "Sprache"
 title = "Einstellungen"

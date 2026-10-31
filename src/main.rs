@@ -36,7 +36,7 @@ use ai::server::Request;
 use document::{BaseColors, Document, Object, io};
 use editor::{CanvasView, Editor, Tool};
 use garments::Kind;
-use i18n::tr;
+use i18n::{tr, tr_args};
 use pick3d::GarmentMesh;
 use render::Mode;
 use scene::Studio;
@@ -471,10 +471,16 @@ impl JerseyApp {
                     }
                     ui.separator();
                     ui.weak(tr("menu.settings.theme"));
-                    for (index, entry) in theme::all().iter().enumerate() {
-                        if ui.radio(theme::current_index() == index, &entry.theme.name).clicked() {
-                            theme::set(index);
-                        }
+                    let mut chosen = theme::current_index();
+                    let dropdown = ui::widgets::theme_dropdown(ui, &mut chosen);
+                    if let Some(folder) = config::file("themes") {
+                        dropdown.on_hover_text(tr_args("menu.settings.theme_folder", &[&folder.display()]));
+                    }
+                    if chosen != theme::current_index() {
+                        theme::set(chosen);
+                    }
+                    for problem in theme::problems() {
+                        ui.add(egui::Label::new(egui::RichText::new(problem).small().color(*theme::colors().warn)).wrap());
                     }
                     ui.separator();
                     if ui.checkbox(&mut self.vsync, "VSync").changed() {

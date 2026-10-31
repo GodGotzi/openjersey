@@ -59,6 +59,29 @@ pub fn segmented<T: Copy + PartialEq>(ui: &mut egui::Ui, id: impl Hash, value: &
     changed
 }
 
+/// A dropdown of the themes: the bundled ones, then the user's own under a
+/// heading of their own. It changes `chosen`; the caller applies the theme.
+pub fn theme_dropdown(ui: &mut egui::Ui, chosen: &mut usize) -> egui::Response {
+    let entries = theme::all();
+    let selected = entries[(*chosen).min(entries.len() - 1)].theme.name.clone();
+    egui::ComboBox::from_id_salt("theme")
+        .width(180.0)
+        .selected_text(selected)
+        .show_ui(ui, |ui| {
+            for (index, entry) in entries.iter().enumerate().filter(|(_, e)| e.builtin) {
+                ui.selectable_value(chosen, index, &entry.theme.name);
+            }
+            if entries.iter().any(|e| !e.builtin) {
+                ui.separator();
+                ui.weak(crate::i18n::tr("menu.settings.your_themes"));
+                for (index, entry) in entries.iter().enumerate().filter(|(_, e)| !e.builtin) {
+                    ui.selectable_value(chosen, index, &entry.theme.name);
+                }
+            }
+        })
+        .response
+}
+
 fn id_hash(id: &impl Hash) -> u64 {
     use std::hash::Hasher;
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -93,6 +116,57 @@ mod tests {
             });
         });
         (rect, changed)
+    }
+
+    /// One frame of the theme dropdown: its rectangle and every text drawn, with where.
+    #[allow(deprecated)]
+    fn dropdown_frame(ctx: &egui::Context, events: Vec<egui::Event>, chosen: &mut usize) -> (egui::Rect, Vec<(String, egui::Rect)>) {
+        let raw = egui::RawInput {
+            events,
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, Vec2::new(500.0, 500.0))),
+            ..Default::default()
+        };
+        let mut rect = egui::Rect::NOTHING;
+        let output = ctx.run(raw, |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| rect = theme_dropdown(ui, chosen).rect);
+        });
+        let texts = output
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(text) => Some((text.galley.text().to_string(), text.galley.rect.translate(text.pos.to_vec2()))),
+                _ => None,
+            })
+            .collect();
+        (rect, texts)
+    }
+
+    #[test]
+    fn the_theme_dropdown_lists_the_themes_and_chooses_one() {
+        let ctx = egui::Context::default();
+        let mut chosen = 0;
+        let (button, _) = dropdown_frame(&ctx, vec![], &mut chosen);
+        let click = |pos: egui::Pos2, pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        dropdown_frame(&ctx, vec![egui::Event::PointerMoved(button.center())], &mut chosen);
+        dropdown_frame(&ctx, vec![click(button.center(), true)], &mut chosen);
+        dropdown_frame(&ctx, vec![click(button.center(), false)], &mut chosen);
+        // the list is open: every bundled theme is in it
+        let (_, texts) = dropdown_frame(&ctx, vec![], &mut chosen);
+        for entry in theme::all().iter().filter(|e| e.builtin) {
+            assert!(texts.iter().any(|(text, _)| *text == entry.theme.name), "{} is not in the list", entry.theme.name);
+        }
+        // choose Midnight
+        let target = theme::all().iter().position(|e| e.id == "midnight").unwrap();
+        let (_, entry_rect) = texts.iter().rfind(|(text, _)| *text == "Midnight").cloned().unwrap();
+        dropdown_frame(&ctx, vec![egui::Event::PointerMoved(entry_rect.center())], &mut chosen);
+        dropdown_frame(&ctx, vec![click(entry_rect.center(), true)], &mut chosen);
+        dropdown_frame(&ctx, vec![click(entry_rect.center(), false)], &mut chosen);
+        assert_eq!(chosen, target, "clicking Midnight should choose it");
     }
 
     #[test]

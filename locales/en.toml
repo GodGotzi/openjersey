@@ -75,6 +75,8 @@ template = "Template"
 title = "File"
 
 [menu.settings]
+your_themes = "Your themes"
+theme_folder = "Your own themes go in {}"
 theme = "Theme"
 language = "Language"
 title = "Settings"

@@ -3,10 +3,14 @@
 //! itself (the 2D canvas, the rulers, the selection) and to the 3D view's
 //! background. The user picks one in Settings; the choice is remembered.
 //!
+//! Besides the bundled presets, the app reads `*.toml` files in the same format
+//! from `~/.config/openjersey/themes/` at start; they appear under "Your themes".
+//!
 //! The theme comes from `OJ_THEME` (a file name without `.toml`), else from
 //! the saved choice (`~/.config/openjersey/theme`), else it is Graphite.
 
 use std::ops::Deref;
+use std::path::Path;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -71,6 +75,8 @@ pub struct Shape {
 #[derive(Debug, Deserialize)]
 pub struct Theme {
     pub name: String,
+    /// The position among the bundled themes; your own themes may leave it out.
+    #[serde(default)]
     pub order: i32,
     pub dark: bool,
     pub colors: Colors,
@@ -81,19 +87,66 @@ pub struct Theme {
 pub struct Entry {
     pub id: &'static str,
     pub theme: Theme,
+    /// Bundled with the app, not read from the user's theme folder.
+    pub builtin: bool,
 }
 
-/// Every theme, in the order of their `order` keys.
-pub fn all() -> &'static [Entry] {
-    static ALL: OnceLock<Vec<Entry>> = OnceLock::new();
-    ALL.get_or_init(|| {
-        let mut entries: Vec<Entry> = THEME_FILES
+/// The themes and what went wrong reading the user's own.
+struct Loaded {
+    themes: Vec<Entry>,
+    problems: Vec<String>,
+}
+
+fn loaded() -> &'static Loaded {
+    static LOADED: OnceLock<Loaded> = OnceLock::new();
+    LOADED.get_or_init(|| {
+        let mut themes: Vec<Entry> = THEME_FILES
             .iter()
-            .map(|&(id, text)| Entry { id, theme: toml::from_str(text).unwrap_or_else(|e| panic!("themes/{id}.toml: {e}")) })
+            .map(|&(id, text)| Entry { id, theme: toml::from_str(text).unwrap_or_else(|e| panic!("themes/{id}.toml: {e}")), builtin: true })
             .collect();
-        entries.sort_by_key(|e| e.theme.order);
-        entries
+        themes.sort_by_key(|e| e.theme.order);
+        let taken: Vec<&str> = themes.iter().map(|e| e.id).collect();
+        let (own, problems) = crate::config::file("themes").map_or_else(Default::default, |dir| load_user_themes(&dir, &taken));
+        themes.extend(own);
+        Loaded { themes, problems }
     })
+}
+
+/// The bundled themes in the order of their `order` keys, then the user's own
+/// in the order of their file names.
+pub fn all() -> &'static [Entry] {
+    &loaded().themes
+}
+
+/// Messages about the user's theme files that could not be used.
+pub fn problems() -> &'static [String] {
+    &loaded().problems
+}
+
+/// Reads the `*.toml` files in `dir` as themes. A file whose name is in
+/// `taken`, or that does not parse, is reported instead of used.
+fn load_user_themes(dir: &Path, taken: &[&str]) -> (Vec<Entry>, Vec<String>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return Default::default() };
+    let mut files: Vec<_> = entries.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "toml")).collect();
+    files.sort();
+    let (mut themes, mut problems) = (Vec::new(), Vec::new());
+    for path in files {
+        let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let id = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        if taken.contains(&id.as_str()) {
+            problems.push(format!("{file}: a bundled theme has this name"));
+            continue;
+        }
+        let parsed = std::fs::read_to_string(&path)
+            .map_err(|e| e.to_string())
+            .and_then(|text| toml::from_str::<Theme>(&text).map_err(|e| e.message().to_string()));
+        match parsed {
+            // there are few of these and they live as long as the app
+            Ok(theme) => themes.push(Entry { id: Box::leak(id.into_boxed_str()), theme, builtin: false }),
+            Err(message) => problems.push(format!("{file}: {message}")),
+        }
+    }
+    (themes, problems)
 }
 
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
@@ -278,22 +331,52 @@ fn contrast(a: Color32, b: Color32) -> f32 {
 mod tests {
     use super::*;
 
+    /// The bundled themes only: what is in the tester's own theme folder must not matter.
+    fn bundled() -> impl Iterator<Item = &'static Entry> {
+        all().iter().filter(|e| e.builtin)
+    }
+
     #[test]
     fn every_theme_file_parses_and_the_default_exists() {
-        assert!(all().len() >= 4, "only {} themes", all().len());
-        assert!(index_of(DEFAULT).is_some(), "the default theme `{DEFAULT}` is missing");
-        let mut ids: Vec<_> = all().iter().map(|e| e.id).collect();
-        ids.sort_unstable();
-        ids.dedup();
-        assert_eq!(ids.len(), all().len(), "two themes share an id");
-        let mut orders: Vec<_> = all().iter().map(|e| e.theme.order).collect();
+        assert!(bundled().count() >= 4, "only {} themes", bundled().count());
+        assert!(THEME_FILES.iter().any(|(id, _)| *id == DEFAULT), "the default theme `{DEFAULT}` is missing");
+        let mut orders: Vec<_> = bundled().map(|e| e.theme.order).collect();
+        orders.sort_unstable();
         orders.dedup();
-        assert_eq!(orders.len(), all().len(), "two themes share an order");
+        assert_eq!(orders.len(), bundled().count(), "two bundled themes share an order");
+    }
+
+    #[test]
+    fn a_users_theme_files_are_loaded_and_the_bad_ones_reported() {
+        let dir = std::env::temp_dir().join(format!("openjersey-themes-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let graphite = THEME_FILES.iter().find(|(id, _)| *id == "graphite").unwrap().1;
+        // a copy with another name and no `order`
+        let mine: String = graphite
+            .lines()
+            .filter(|l| !l.starts_with("order"))
+            .map(|l| if l.starts_with("name") { "name = \"Mine\"".to_string() } else { l.to_string() })
+            .collect::<Vec<_>>()
+            .join("\n");
+        std::fs::write(dir.join("mine.toml"), mine).unwrap();
+        std::fs::write(dir.join("broken.toml"), graphite.replace("#1c1d21", "not a colour")).unwrap();
+        std::fs::write(dir.join("graphite.toml"), graphite).unwrap();
+        std::fs::write(dir.join("notes.txt"), "not a theme").unwrap();
+
+        let (themes, problems) = load_user_themes(&dir, &["graphite"]);
+        assert_eq!(themes.len(), 1);
+        assert_eq!((themes[0].id, themes[0].theme.name.as_str(), themes[0].builtin), ("mine", "Mine", false));
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(problems.iter().any(|p| p.starts_with("broken.toml") && p.contains("#rrggbb")), "{problems:?}");
+        assert!(problems.iter().any(|p| p.starts_with("graphite.toml")), "{problems:?}");
+        // a folder that doesn't exist is fine
+        assert!(load_user_themes(&dir.join("nowhere"), &[]).0.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn every_theme_is_readable() {
-        for entry in all() {
+        for entry in bundled() {
             let (c, name) = (&entry.theme.colors, entry.id);
             for (what, background) in [("panel", *c.panel), ("window", *c.window), ("surface", *c.surface), ("input", *c.input)] {
                 assert!(
@@ -321,7 +404,7 @@ mod tests {
     fn applying_a_theme_gives_egui_its_colours() {
         let ctx = egui::Context::default();
         let _ = ctx.run(egui::RawInput::default(), |_| {});
-        for index in 0..all().len() {
+        for index in (0..all().len()).filter(|&i| all()[i].builtin) {
             ACTIVE.store(index, Ordering::Relaxed);
             apply(&ctx);
             let theme = &all()[index].theme;
@@ -353,7 +436,7 @@ mod tests {
 
     #[test]
     fn the_viewport_shows_the_colour_the_theme_asks_for() {
-        for entry in all() {
+        for entry in bundled() {
             let wanted = *entry.theme.colors.viewport;
             let got = shown(engine_background(wanted));
             for (g, w) in got.iter().zip([wanted.r(), wanted.g(), wanted.b()]) {
