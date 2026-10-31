@@ -17,7 +17,9 @@ from oj.sheet import Sheet
 
 ROWS = [row if row != ["collar", "zipper"] else ["hood", "collar", "zipper"] for row in JACKET_ROWS]
 PIECES = {
-    "collar": ("NECK BAND", "Neck Band", "trim"),
+    # the band the hood is sewn onto: it stays the jacket's own colour, so it does
+    # not show as a stripe around the back of the neck below the hood
+    "collar": ("NECK BAND", "Neck Band", "primary"),
     "zipper": ("ZIP", "Zip", "trim"),
     "hood": ("HOOD", "Hood", "accent"),
 }

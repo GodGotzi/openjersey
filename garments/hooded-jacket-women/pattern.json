@@ -5495,7 +5495,7 @@
    "id": "collar",
    "label": "NECK BAND",
    "name": "Neck Band",
-   "role": "trim",
+   "role": "primary",
    "rect": [
     760.93,
     1910.71,

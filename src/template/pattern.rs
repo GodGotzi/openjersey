@@ -342,6 +342,18 @@ mod tests {
     use crate::garments::GARMENTS;
 
     #[test]
+    fn a_hood_covers_the_neck_band_so_the_band_wears_the_jackets_own_colour() {
+        use super::super::regions::ColorRole;
+        let bottom = garments::default(Kind::Bottom, garments::Body::Man);
+        for top in GARMENTS.iter().filter(|g| g.id.starts_with("hooded-jacket")) {
+            let sheet = Pattern::of(top, bottom);
+            assert!(sheet.get(PieceId::new("hood")).is_some(), "{} has a hood", top.id);
+            // in the trim colour the band would show as a stripe around the back of the neck, under the hood
+            assert_eq!(sheet.piece(PieceId::COLLAR).role, ColorRole::Primary, "{}", top.id);
+        }
+    }
+
+    #[test]
     fn every_top_and_bottom_make_a_sheet() {
         let bottom = garments::default(Kind::Bottom, garments::Body::Man);
         for top in GARMENTS.iter().filter(|g| g.kind == Kind::Top) {
