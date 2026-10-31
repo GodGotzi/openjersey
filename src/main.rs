@@ -190,6 +190,8 @@ impl AppHandler for JerseyApp {
 
         #[allow(deprecated)] // the top-level `show` is what fits UiPass's begin/end frame
         let left = egui::Panel::left("layers").resizable(true).default_size(300.0).size_range(220.0..=520.0).show(&ctx, |ui| {
+            self.browser.sidebar(ui, &mut self.ws);
+            ui.separator();
             self.layers.ui(ui, &mut self.ws);
             ui.separator();
             ui::properties::ui(ui, &mut self.ws);
@@ -415,13 +417,6 @@ impl JerseyApp {
                         ui.close();
                     }
                 });
-                if ui
-                    .button(format!("👕 {} · {}", self.ws.pattern.top().name, self.ws.pattern.bottom().name))
-                    .on_hover_text(tr("Browse garments", "Modelle durchsuchen"))
-                    .clicked()
-                {
-                    self.browser.open = !self.browser.open;
-                }
                 ui.menu_button(tr("Edit", "Bearbeiten"), |ui| {
                     if ui.button(tr("Undo (Ctrl+Z)", "Rückgängig (Strg+Z)")).clicked() {
                         self.ws.undo();
@@ -454,7 +449,6 @@ impl JerseyApp {
                     if let Some(f) = &self.ws.file {
                         ui.weak(f.file_name().and_then(|n| n.to_str()).unwrap_or_default());
                     }
-                    ui.label(format!("{} · {}", self.ws.pattern.top().label(), self.ws.pattern.bottom().name));
                 });
             });
         });

@@ -37,7 +37,7 @@ The launcher runs `target/release/openjersey` in this checkout, so after
 - Ctrl+Z/Y undo/redo, Ctrl+D duplicate, Ctrl+G / Ctrl+Shift+G group/ungroup,
   Ctrl+C/V, Ctrl+A, Del, arrow keys nudge (Shift = 10 mm), snapping to centre
   lines, pieces and other objects (the Snap toggle in the 3D toolbar).
-- **Garment browser** (the button in the menu bar): a searchable grid of
+- **Garment browser** (the Top and Bottom buttons in the sidebar's Model block, which also switches Men / Women): a searchable grid of
   garments with an outline of each print template, filtered by body (Men /
   Women) and tops / bottoms. A design wears one top and one bottom on one
   body; the sheet holds the top's pieces with the bottom's below. Switching

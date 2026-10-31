@@ -79,6 +79,41 @@ impl GarmentBrowser {
         Self { open: false, query: String::new(), kind: Kind::Top, outlines: HashMap::new() }
     }
 
+    /// The sidebar block that names the current garments; each row opens
+    /// the browser on its kind.
+    pub fn sidebar(&mut self, ui: &mut egui::Ui, ws: &mut Workspace) {
+        ui.horizontal(|ui| {
+            ui.strong(tr("Model", "Modell"));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                for body in Body::ALL.into_iter().rev() {
+                    if ui.selectable_label(ws.body() == body, body.label()).clicked() {
+                        ws.set_body(body);
+                    }
+                }
+            });
+        });
+        let rows = [
+            (Kind::Top, tr("Top", "Oberteil"), ws.pattern.top().name),
+            (Kind::Bottom, tr("Bottom", "Unterteil"), ws.pattern.bottom().name),
+        ];
+        for (kind, label, name) in rows {
+            ui.horizontal(|ui| {
+                let (rect, _) = ui.allocate_exact_size(Vec2::new(52.0, 20.0), Sense::hover());
+                let font = egui::TextStyle::Body.resolve(ui.style());
+                ui.painter().text(rect.left_center(), egui::Align2::LEFT_CENTER, label, font, ui.visuals().weak_text_color());
+                let selected = self.open && self.kind == kind;
+                let mut button = egui::Button::new(name).min_size(Vec2::new(ui.available_width(), 0.0));
+                if selected {
+                    button = button.fill(ui.visuals().selection.bg_fill);
+                }
+                if ui.add(button).on_hover_text(tr("Browse garments", "Modelle durchsuchen")).clicked() {
+                    self.kind = kind;
+                    self.open = !selected;
+                }
+            });
+        }
+    }
+
     pub fn show(&mut self, ctx: &egui::Context, ws: &mut Workspace) {
         let mut open = self.open;
         egui::Window::new(tr("Garments", "Modelle"))
