@@ -16,7 +16,7 @@ OpenJersey is one Rust binary. The window is [egui](https://github.com/emilk/egu
 | `src/pick3d.rs` | The garment mesh on the CPU: which sheet point is under the pointer in the 3D view, and the software preview renderer |
 | `src/garments.rs`, `build.rs` | The garment library, embedded at compile time; `build.rs` also compiles the translations |
 | `src/shapes.rs`, `src/presets.rs` | The preset shapes and ready-made designs |
-| `src/i18n.rs`, `src/theme.rs`, `src/config.rs` | Translations (see [Translations](translations.md)), colour themes (see [Themes](themes.md)) and the little the app remembers between runs (`~/.config/openjersey/`) |
+| `src/i18n.rs`, `src/theme.rs`, `src/config.rs` | Translations (see [Translations](translations.md)), colour themes, bundled and the user's own (see [Themes](themes.md)) and the little the app remembers between runs (`~/.config/openjersey/`) |
 | `src/ai/` | The MCP interface: `commands.rs` (the tools), `server.rs` (the local socket the app serves them on), `mcp.rs` (the stdio bridge) |
 
 ## How a change travels

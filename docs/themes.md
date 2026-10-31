@@ -2,7 +2,7 @@
 
 ![The six themes](images/themes.png)
 
-OpenJersey comes with six colour themes. Pick one under **Settings → Theme**; it applies at once and is remembered for the next start.
+OpenJersey comes with six colour themes, and you can add your own. Pick one from the dropdown under **Settings → Theme**; it applies at once and is remembered for the next start.
 
 | Theme | Look |
 | --- | --- |
@@ -16,6 +16,21 @@ OpenJersey comes with six colour themes. Pick one under **Settings → Theme**; 
 A theme changes everything the app draws: the panels, buttons and menus, the selection and the active tool, the 2D editor's canvas and rulers, and the background of the 3D view.
 
 `OJ_THEME=nord openjersey` starts with a theme for one run (the file name without `.toml`). Otherwise the saved choice is used (`~/.config/openjersey/theme`), and Graphite if there is none.
+
+## Your own themes
+
+Put a theme file in your configuration folder and it shows up in the dropdown, under *Your themes*:
+
+```
+~/.config/openjersey/themes/ocean.toml        (or $XDG_CONFIG_HOME/openjersey/themes/)
+```
+
+The format is the one described below; the quickest start is a copy of one of the files in [`themes/`](../themes) with a new `name`. `order` can be left out. Themes are read when the app starts, so restart it after adding or changing a file.
+
+- The file name (without `.toml`) is the theme's id, which `OJ_THEME` takes too.
+- A file that can't be used does not break anything: it is listed in the Settings menu in the warning colour with the reason (a colour that isn't `#rrggbb`, a missing key, or a name that a bundled theme already has).
+- Hovering the dropdown shows the folder.
+- Only the bundled themes are checked for readability. Pick colours with enough contrast between `text` and the backgrounds yourself.
 
 ## How themes are stored
 
@@ -50,7 +65,7 @@ rounding = 6       # corner radius of buttons and fields
 
 `src/theme.rs` turns this into an egui style (colours, corner radius, spacing and type sizes) and provides the colours to the parts the app paints itself.
 
-## Adding a preset
+## Adding a bundled preset
 
 Copy one of the files in `themes/`, give it a new `name` and `order`, change the colours and rebuild. No code changes are needed. `cargo test` checks that every theme
 

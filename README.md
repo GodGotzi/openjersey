@@ -28,7 +28,7 @@ It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code,
 - **A lit 3D view** with front, left, back and right views, in which you can select and drag objects directly on the garment, with snapping to everything else on the design.
 - **Print-ready export**: the sheet as a PNG, logo placeholders left out.
 - **An AI-friendly interface**: 34 tools, `batch` calls that undo as one step, renders the assistant can look at. See [Working with AI assistants](docs/ai-assistants.md).
-- **Six colour themes** (Graphite, Midnight, Nord, Forest, Daylight, Paper) that restyle the whole interface, the 2D editor and the 3D background. See [Themes](docs/themes.md).
+- **Six colour themes** (Graphite, Midnight, Nord, Forest, Daylight, Paper) that restyle the whole interface, the 2D editor and the 3D background, chosen from a dropdown in Settings. Your own are a file in `~/.config/openjersey/themes/`. See [Themes](docs/themes.md).
 - English and German, with a translation system that makes adding a language a single file.
 
 ![The OpenJersey editor](docs/images/editor.png)
