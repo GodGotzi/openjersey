@@ -43,7 +43,7 @@ impl LayersPanel {
                 if ui.add_enabled(any, egui::Button::new("🗑").small()).on_hover_text(tr("layers.delete")).clicked() {
                     ws.delete_selection();
                 }
-                if ui.add_enabled(any, egui::Button::new("⧉").small()).on_hover_text(tr("layers.duplicate")).clicked() {
+                if ui.add_enabled(any, egui::Button::new("🗐").small()).on_hover_text(tr("layers.duplicate")).clicked() {
                     ws.duplicate_selection();
                 }
                 if ui.add_enabled(any, egui::Button::new("⏷").small()).on_hover_text(tr("layers.send_backward")).clicked() {
@@ -291,7 +291,7 @@ pub fn kind_icon(kind: &ObjectKind) -> &'static str {
         ObjectKind::Graphic { .. } => "🖼",
         ObjectKind::Shape { closed: true, .. } => "⬟",
         ObjectKind::Shape { closed: false, .. } => "〰",
-        ObjectKind::Pattern { .. } => "▦",
+        ObjectKind::Pattern { .. } => "▓",
         ObjectKind::Placeholder { .. } => "🔲",
         ObjectKind::Group { .. } => "🗀",
     }
