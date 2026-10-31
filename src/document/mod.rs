@@ -330,6 +330,36 @@ impl Document {
     }
 
     /// The inside colour of shirt and shorts on the model.
+    /// Every colour the design uses (base colours, then objects' colours,
+    /// top of the stack first), without repeats.
+    pub fn used_colors(&self) -> Vec<Rgb> {
+        fn walk(objects: &[Object], out: &mut Vec<Rgb>) {
+            for obj in objects.iter().rev() {
+                match &obj.kind {
+                    ObjectKind::Text { color, .. } => out.extend(*color),
+                    ObjectKind::Graphic { tint, .. } => out.extend(*tint),
+                    ObjectKind::Shape { fill, stroke, .. } => {
+                        out.extend(*fill);
+                        out.extend(stroke.map(|s| s.color));
+                    }
+                    ObjectKind::Pattern { color, .. } => out.push(*color),
+                    ObjectKind::Group { children } => walk(children, out),
+                    ObjectKind::Placeholder { .. } => {}
+                }
+            }
+        }
+        let mut all = vec![self.base.primary, self.base.accent, self.base.trim];
+        all.extend(self.base.overrides.iter().map(|(_, c)| *c));
+        walk(&self.objects, &mut all);
+        let mut unique: Vec<Rgb> = Vec::new();
+        for c in all {
+            if !unique.contains(&c) {
+                unique.push(c);
+            }
+        }
+        unique
+    }
+
     pub fn inside_color(&self) -> Rgb {
         self.garments.inside.unwrap_or(self.base.primary)
     }

@@ -25,8 +25,9 @@ The launcher runs `target/release/openjersey` in this checkout, so after
   pieces, and the settings of the object's kind (text, size, colour, tint,
   placeholder size, "Insert logo…" to turn a placeholder into a logo).
 - **Editor** (right): a toolbox on the left (grouped tools; hover for names
-  and shortcuts), an options bar on top (colour, palette and the options of
-  the current tool), rulers in millimetres with a cursor marker, and a status
+  and shortcuts), an options bar on top (the colour picker, quick swatches and the options
+  of the current tool; the picker has an HSV square, a hex field, the design's
+  own colours, recent colours, a palette and a shortcut to the eyedropper), rulers in millimetres with a cursor marker, and a status
   bar with the cursor position, the selection's size and zoom controls (scroll
   to zoom, middle/right drag or Space to pan). Tools: Select/transform (V; corner handles
   scale, the round handle rotates, Shift = free/15°), Hand (H), Brush (B),

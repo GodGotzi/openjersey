@@ -152,8 +152,8 @@ pub struct Editor {
     marquee_end: Pt,
     /// The cursor over the canvas, in sheet millimetres (for the status bar).
     pub cursor_mm: Option<Pt>,
-    /// set by the eyedropper; read by the app to show it
-    pub picked: Option<Rgb>,
+    /// Colours chosen lately, newest first (see `remember`).
+    pub recent: Vec<Rgb>,
 }
 
 /// What the canvas needs from the app besides the workspace.
@@ -163,6 +163,7 @@ pub struct CanvasView<'a> {
     pub pixels: Option<&'a tiny_skia::Pixmap>,
 }
 
+const MAX_RECENT: usize = 12;
 const MIN_ZOOM: f32 = 0.5;
 const MAX_ZOOM: f32 = 16.0;
 /// Thickness of the rulers along the top and left of the canvas.
@@ -190,7 +191,7 @@ impl Editor {
             drag: None,
             marquee_end: [0.0, 0.0],
             cursor_mm: None,
-            picked: None,
+            recent: Vec::new(),
         }
     }
 
@@ -210,6 +211,13 @@ impl Editor {
     pub fn fit_view(&mut self) {
         self.zoom = 1.0;
         self.pan = Vec2::ZERO;
+    }
+
+    /// Puts a colour at the front of the recent colours.
+    pub fn remember(&mut self, color: Rgb) {
+        self.recent.retain(|&c| c != color);
+        self.recent.insert(0, color);
+        self.recent.truncate(MAX_RECENT);
     }
 
     pub fn set_tool(&mut self, tool: Tool) {
@@ -582,7 +590,7 @@ impl Editor {
                     && let Some(c) = crate::render::Rasterizer::pick_color(pm, p)
                 {
                     self.color = c;
-                    self.picked = Some(c);
+                    self.remember(c);
                 }
             }
             Tool::Hand => {}

@@ -2,28 +2,17 @@
 //! the current tool on top, the canvas with its rulers, and a status bar
 //! with the cursor position, the selection's size and the zoom.
 
-use myth::egui::egui::{self, Color32, CornerRadius, Margin, RichText, Stroke, StrokeKind, Vec2};
+use myth::egui::egui::{self, Color32, CornerRadius, Margin, RichText, Stroke, Vec2};
 
-use crate::document::Rgb;
 use crate::editor::{CanvasView, Editor, Tool};
 use crate::i18n::tr;
 use crate::render::geom;
+use crate::ui::color_picker::{self, Swatches};
 use crate::workspace::Workspace;
 
 const TOOL_BUTTON: f32 = 34.0;
 const STATUS_HEIGHT: f32 = 24.0;
 const ACCENT: Color32 = Color32::from_rgb(70, 140, 255);
-
-const PALETTE: [Rgb; 8] = [
-    [0xff, 0xff, 0xff],
-    [0x1a, 0x1a, 0x1a],
-    [0x41, 0x41, 0x41],
-    [0xb6, 0x2f, 0xc4],
-    [0xd7, 0x26, 0x38],
-    [0x1f, 0x5f, 0xd1],
-    [0x2e, 0xa0, 0x4f],
-    [0xf2, 0xc2, 0x1b],
-];
 
 /// Tools in the toolbox, grouped by what they do.
 const TOOL_GROUPS: [&[Tool]; 5] = [
@@ -35,7 +24,7 @@ const TOOL_GROUPS: [&[Tool]; 5] = [
 ];
 
 pub fn show(ui: &mut egui::Ui, editor: &mut Editor, ws: &mut Workspace, view: CanvasView<'_>) {
-    options_bar(ui, editor);
+    options_bar(ui, editor, &ws.doc.used_colors());
     ui.add_space(4.0);
     let free = ui.available_size();
     let toolbox_width = TOOL_BUTTON + 2.0 * ui.spacing().item_spacing.x;
@@ -82,30 +71,39 @@ fn tool_button(ui: &mut egui::Ui, tool: Tool, selected: bool) -> egui::Response 
     response.on_hover_text(tool.label())
 }
 
-/// The colours and the options of the current tool.
-fn options_bar(ui: &mut egui::Ui, editor: &mut Editor) {
+/// The colour and the options of the current tool.
+fn options_bar(ui: &mut egui::Ui, editor: &mut Editor, design_colors: &[crate::document::Rgb]) {
     let frame = egui::Frame::new()
         .fill(ui.visuals().faint_bg_color)
         .stroke(Stroke::new(1.0_f32, ui.visuals().widgets.noninteractive.bg_stroke.color))
         .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::symmetric(8, 5));
+    let recent = editor.recent.clone();
+    let swatches = Swatches { recent: &recent, design: design_colors };
     frame.show(ui, |ui| {
         ui.set_width(ui.available_width());
         ui.horizontal_wrapped(|ui| {
             ui.label(RichText::new(editor.tool.name()).strong());
             ui.separator();
-            ui.color_edit_button_srgb(&mut editor.color).on_hover_text(tr("Colour", "Farbe"));
-            for colour in PALETTE {
-                if swatch(ui, colour, editor.color == colour).clicked() {
+            let outcome = color_picker::button(ui, "paint-colour", &mut editor.color, &swatches);
+            if outcome.committed {
+                editor.remember(editor.color);
+            }
+            if outcome.eyedropper {
+                editor.set_tool(Tool::Eyedropper);
+            }
+            for colour in color_picker::QUICK {
+                if color_picker::swatch(ui, colour, editor.color == colour).clicked() {
                     editor.color = colour;
+                    editor.remember(colour);
                 }
             }
-            tool_options(ui, editor);
+            tool_options(ui, editor, &swatches);
         });
     });
 }
 
-fn tool_options(ui: &mut egui::Ui, e: &mut Editor) {
+fn tool_options(ui: &mut egui::Ui, e: &mut Editor, swatches: &Swatches) {
     match e.tool {
         Tool::Brush | Tool::Eraser => {
             ui.separator();
@@ -117,7 +115,9 @@ fn tool_options(ui: &mut egui::Ui, e: &mut Editor) {
             ui.checkbox(&mut e.fill_shapes, tr("Fill", "Füllung"));
             ui.checkbox(&mut e.stroke_shapes, tr("Outline", "Kontur"));
             if e.stroke_shapes {
-                ui.color_edit_button_srgb(&mut e.stroke_color);
+                if color_picker::button(ui, "stroke-colour", &mut e.stroke_color, swatches).committed {
+                    e.remember(e.stroke_color);
+                }
                 ui.add(egui::Slider::new(&mut e.brush_mm, 1.0..=40.0).suffix(" mm"));
             }
         }
@@ -172,12 +172,4 @@ fn status_bar(ui: &mut egui::Ui, editor: &mut Editor, ws: &Workspace) {
             });
         });
     });
-}
-
-fn swatch(ui: &mut egui::Ui, [r, g, b]: Rgb, active: bool) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(18.0, 18.0), egui::Sense::click());
-    ui.painter().rect_filled(rect, 4.0, Color32::from_rgb(r, g, b));
-    let stroke = if active { Stroke::new(2.0_f32, ACCENT) } else { Stroke::new(1.0_f32, Color32::from_gray(110)) };
-    ui.painter().rect_stroke(rect, 4.0, stroke, StrokeKind::Inside);
-    response
 }
