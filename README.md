@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.png" alt="Five example kits: Alpine Night, Summit Teal, Lagoon, Rose Quartz and a black and white contrast kit" width="100%">
+  <img src="docs/images/hero.png" alt="Five example kits: Alpine Night, Summit Teal, Coral Wave, Rose Quartz and a black and white contrast kit" width="100%">
 </p>
 
 OpenJersey is a jersey designer written in Rust. You put a design on a 3D garment and edit it in two places at once: on the model itself, and on the flat **print sheet** that a sublimation printer needs, with every piece of the garment laid out. What you change in one shows in the other.
