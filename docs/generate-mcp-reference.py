@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "examples"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
 from mcp_client import Mcp  # noqa: E402
 
 HERE = Path(__file__).resolve().parent

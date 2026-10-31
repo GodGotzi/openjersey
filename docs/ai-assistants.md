@@ -1,6 +1,6 @@
 # Working with AI assistants
 
-OpenJersey has an [MCP](https://modelcontextprotocol.io) interface, so an AI assistant can design with the same tools you use: it adds text, shapes and logos, sets colours, switches garments, saves the design and looks at renders of the result. The designs in the [examples](examples/README.md) were made this way.
+OpenJersey has an [MCP](https://modelcontextprotocol.io) interface, so an AI assistant can design with the same tools you use: it adds text, shapes and logos, sets colours, switches garments, saves the design and looks at renders of the result. The designs in the [examples](../examples/README.md) were made this way.
 
 ## Connect a client
 
@@ -60,10 +60,10 @@ The app listens on `127.0.0.1` only. The bridge authenticates with a random toke
 
 ## How the examples were made
 
-[`docs/examples/build_examples.py`](examples/build_examples.py) is an MCP client written for this purpose (`mcp_client.py` is the whole protocol layer, 33 lines). For each design it picks the garments and colours and sends the objects in `batch` calls, with helpers for the recurring motifs: gradients, contour lines, mountain ridges, stripes, chevrons, honeycombs and scattered stars. It then groups the objects into layers, saves `docs/examples/<name>.json` and writes the renders to `docs/images/`. [`adapt_club_design.py`](examples/adapt_club_design.py) loads a club's own saved design through MCP and prepares it for publishing.
+[`examples/build_examples.py`](../examples/build_examples.py) is an MCP client written for this purpose (`mcp_client.py` is the whole protocol layer, 33 lines). For each design it picks the garments and colours and sends the objects in `batch` calls, with helpers for the recurring motifs: gradients, contour lines, mountain ridges, stripes, chevrons, honeycombs and scattered stars. It then groups the objects into layers, saves `examples/<name>.json` and writes the renders to `docs/images/`. [`adapt_club_design.py`](../examples/adapt_club_design.py) loads a club's own saved design through MCP and prepares it for publishing.
 
 To keep your own open OpenJersey window out of it, give the script its own session directory; the bridge talks to whichever app owns the session file:
 
 ```sh
-XDG_CACHE_HOME=/tmp/oj-cache XDG_CONFIG_HOME=/tmp/oj-config python3 docs/examples/build_examples.py
+XDG_CACHE_HOME=/tmp/oj-cache XDG_CONFIG_HOME=/tmp/oj-config python3 examples/build_examples.py
 ```

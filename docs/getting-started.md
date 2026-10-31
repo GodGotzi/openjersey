@@ -19,7 +19,7 @@ The first build compiles the 3D engine and takes a few minutes. To start on part
 
 ```sh
 cargo run --release -- --top "tank top" --bottom "bikini bottom"
-cargo run --release -- docs/examples/alpine-night.json
+cargo run --release -- examples/alpine-night.json
 ```
 
 `--top` and `--bottom` take a garment's id or any words of its name (`polo` is enough for the polo shirt; the garment for the other body is picked to match).

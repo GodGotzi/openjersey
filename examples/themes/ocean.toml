@@ -1,0 +1,26 @@
+# Example of a theme of your own: deep sea blue-green with a coral accent.
+# Copy this file into the themes/ folder of ~/.config/openjersey/ and restart the app.
+
+name = "Ocean"
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#0e1f26"  # windows, menus and popups
+panel = "#12262e"  # side panels and bars
+surface = "#1b3640"  # buttons, inputs and cards
+surface_hover = "#24444f"  # a button under the pointer
+surface_active = "#2e5461"  # a pressed or open button
+border = "#25444f"  # outlines and separators
+text = "#e4f1f2"  # normal text
+text_weak = "#8fb0b6"  # hints and secondary text
+accent = "#ff7f6b"  # the selection and the active tool
+accent_text = "#1a0d0a"  # text on the accent colour
+input = "#0b181e"  # the inside of text fields
+canvas = "#0c1a20"  # behind the print sheet in the 2D editor
+viewport = "#1b3640"  # the background of the 3D view
+ruler = "#0e1f26"  # the rulers of the 2D editor
+warn = "#f0b45a"  # warnings
+error = "#ff6b6b"  # errors
+
+[shape]
+rounding = 6   # corner radius of buttons and fields, in points

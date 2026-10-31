@@ -2,9 +2,9 @@
 """Turns one of a club's own saved designs into a public example, through MCP
 like the other examples: load it, take out the supplier's logo, swap other
 companies' logos for neutral blocks and the player's surname for PLAYER, save
-it as `docs/examples/<name>.json` and render `docs/images/<name>.png`.
+it as `examples/<name>.json` and render `docs/images/<name>.png`.
 
-    python3 docs/examples/adapt_club_design.py SOURCE.json NAME [--block light|dark] [--patch #rrggbb]
+    python3 examples/adapt_club_design.py SOURCE.json NAME [--block light|dark] [--patch #rrggbb]
 
 `--block` is the colour of the neutral sponsor block (light on a dark shirt,
 dark on a light area); `--patch` the colour of the small sleeve patches. The
@@ -19,8 +19,8 @@ from pathlib import Path
 from mcp_client import Mcp
 
 HERE = Path(__file__).resolve().parent
-IMAGES = HERE.parent / "images"
-EXE = os.environ.get("OPENJERSEY") or str(HERE.parents[1] / "target" / "release" / "openjersey")
+IMAGES = HERE.parent / "docs" / "images"
+EXE = os.environ.get("OPENJERSEY") or str(HERE.parent / "target" / "release" / "openjersey")
 
 SUPPLIER_LOGO = "supplier-logo.svg"
 OWN_ARTWORK = ("vbc-logo.svg", "linien-front.png", "linien-back.png")

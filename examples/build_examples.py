@@ -2,10 +2,10 @@
 """Builds the example designs through OpenJersey's MCP interface, the same
 way an AI assistant would: it starts `openjersey mcp` (which opens the app),
 sets garments and colours, adds everything in `batch` calls, and saves each
-design (`docs/examples/<name>.json`) with a preview render
+design (`examples/<name>.json`) with a preview render
 (`docs/images/<name>.png`) and the print sheet (`docs/images/<name>-sheet.png`).
 
-    python3 docs/examples/build_examples.py [design ...]
+    python3 examples/build_examples.py [design ...]
 
 Set OPENJERSEY to the binary (default: target/release/openjersey). To keep a
 running OpenJersey window of your own untouched, give this script its own
@@ -20,8 +20,8 @@ from pathlib import Path
 from mcp_client import Mcp
 
 HERE = Path(__file__).resolve().parent
-IMAGES = HERE.parent / "images"
-EXE = os.environ.get("OPENJERSEY") or str(HERE.parents[1] / "target" / "release" / "openjersey")
+IMAGES = HERE.parent / "docs" / "images"
+EXE = os.environ.get("OPENJERSEY") or str(HERE.parent / "target" / "release" / "openjersey")
 
 
 class Design:

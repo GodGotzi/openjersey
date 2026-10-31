@@ -40,7 +40,7 @@ Six themes, from dark to light, change the whole interface:
 
 ## Examples
 
-A selection of the designs in [`docs/examples`](docs/examples/README.md), which are files you can open. Six were designed through MCP; the last is one of VBC Stainach's own kits.
+A selection of the designs in [`examples`](examples/README.md), which are files you can open. Six were designed through MCP; the last is one of VBC Stainach's own kits.
 
 <table>
   <tr>
@@ -88,7 +88,7 @@ Then ask for what you want: *"Design a navy and gold jersey for my club, number 
 | [User guide](docs/user-guide.md) | The editor, the tools, shortcuts |
 | [Working with AI assistants](docs/ai-assistants.md) | MCP setup and how the examples were made |
 | [MCP tool reference](docs/mcp-tools.md) | All tools and prompts |
-| [Examples](docs/examples/README.md) | The designs and the scripts that built them |
+| [Examples](examples/README.md) | The designs and the scripts that built them |
 | [Themes](docs/themes.md) | The colour themes and how they are stored |
 | [Garment library](docs/garments.md) | The garments and how they are built with Blender |
 | [Translations](docs/translations.md) | Adding a language |

@@ -1,0 +1,26 @@
+# Example of a theme of your own: light and soft, a rose accent on near-white.
+# Copy this file into the themes/ folder of ~/.config/openjersey/ and restart the app.
+
+name = "Rose"
+dark = false   # starts from egui's dark or light base
+
+[colors]
+window = "#fbf3f4"  # windows, menus and popups
+panel = "#f6eaec"  # side panels and bars
+surface = "#ffffff"  # buttons, inputs and cards
+surface_hover = "#f9e6ea"  # a button under the pointer
+surface_active = "#f2d4db"  # a pressed or open button
+border = "#e6cdd3"  # outlines and separators
+text = "#2d1e22"  # normal text
+text_weak = "#7d6068"  # hints and secondary text
+accent = "#c2335a"  # the selection and the active tool
+accent_text = "#ffffff"  # text on the accent colour
+input = "#ffffff"  # the inside of text fields
+canvas = "#e9dbde"  # behind the print sheet in the 2D editor
+viewport = "#ddc9ce"  # the background of the 3D view
+ruler = "#f0e2e5"  # the rulers of the 2D editor
+warn = "#a86100"  # warnings
+error = "#c1272d"  # errors
+
+[shape]
+rounding = 3   # corner radius of buttons and fields, in points

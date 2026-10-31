@@ -1,0 +1,26 @@
+# Example of a theme of your own: violet evening with a warm amber accent.
+# Copy this file into the themes/ folder of ~/.config/openjersey/ and restart the app.
+
+name = "Dusk"
+dark = true   # starts from egui's dark or light base
+
+[colors]
+window = "#1d1828"  # windows, menus and popups
+panel = "#231d31"  # side panels and bars
+surface = "#30283f"  # buttons, inputs and cards
+surface_hover = "#3b334d"  # a button under the pointer
+surface_active = "#473e5c"  # a pressed or open button
+border = "#3a3150"  # outlines and separators
+text = "#ece8f5"  # normal text
+text_weak = "#9d93b5"  # hints and secondary text
+accent = "#f5a742"  # the selection and the active tool
+accent_text = "#25170a"  # text on the accent colour
+input = "#171320"  # the inside of text fields
+canvas = "#181421"  # behind the print sheet in the 2D editor
+viewport = "#30283f"  # the background of the 3D view
+ruler = "#1d1828"  # the rulers of the 2D editor
+warn = "#f2c14e"  # warnings
+error = "#f0647a"  # errors
+
+[shape]
+rounding = 4   # corner radius of buttons and fields, in points

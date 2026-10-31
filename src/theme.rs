@@ -375,6 +375,22 @@ mod tests {
     }
 
     #[test]
+    fn the_example_themes_load_and_are_readable() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/themes");
+        let taken: Vec<&str> = bundled().map(|e| e.id).collect();
+        let (themes, problems) = load_user_themes(&dir, &taken);
+        assert!(problems.is_empty(), "{problems:?}");
+        assert!(themes.len() >= 3);
+        for entry in &themes {
+            let c = &entry.theme.colors;
+            assert!(contrast(*c.text, *c.panel) >= 7.0, "{}: text on the panel", entry.id);
+            assert!(contrast(*c.text_weak, *c.panel) >= 4.5, "{}: weak text on the panel", entry.id);
+            assert!(contrast(*c.accent_text, *c.accent) >= 4.5, "{}: text on the accent", entry.id);
+            assert_eq!(entry.theme.dark, contrast(*c.text, *c.panel) > contrast(Color32::BLACK, *c.panel), "{}: dark flag", entry.id);
+        }
+    }
+
+    #[test]
     fn every_theme_is_readable() {
         for entry in bundled() {
             let (c, name) = (&entry.theme.colors, entry.id);
