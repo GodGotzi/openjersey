@@ -128,6 +128,15 @@ struct JerseyApp {
     menu_bottom: f32,
     /// Frames drawn with the model; the first ones are slow (GPU setup).
     model_frames: u32,
+    /// A file dialog open on its own thread, and what it is for.
+    dialog: Option<(DialogKind, Receiver<Option<std::path::PathBuf>>)>,
+}
+
+#[derive(Clone, Copy)]
+enum DialogKind {
+    Open,
+    Save,
+    Export,
 }
 
 fn winit_window(window: &dyn Window) -> &winit::window::Window {
@@ -180,6 +189,7 @@ impl AppHandler for JerseyApp {
             dragging_3d: false,
             menu_bottom: 0.0,
             model_frames: 0,
+            dialog: None,
         }
     }
 
@@ -204,6 +214,7 @@ impl AppHandler for JerseyApp {
 
     fn update(&mut self, engine: &mut Engine, window: &dyn Window, frame: &FrameState) {
         self.fps.tick();
+        self.poll_dialog();
         self.studio.try_instantiate(engine, self.textures);
         self.studio.show_garments(engine, &self.ws.doc.garments);
 
@@ -582,12 +593,51 @@ impl JerseyApp {
         }
     }
 
-    fn save(&mut self, choose: bool) {
-        let path = match (&self.ws.file, choose) {
-            (Some(p), false) => Some(p.clone()),
-            _ => rfd::FileDialog::new().add_filter(tr("dialog.filter.design"), &["json"]).set_file_name("jersey.json").save_file(),
+    /// Shows a file dialog on its own thread. A dialog that blocks the event
+    /// loop leaves the window unanswered, and the Wayland compositor then
+    /// sometimes drops the connection ("Broken pipe").
+    fn pick(&mut self, kind: DialogKind) {
+        if self.dialog.is_some() {
+            return;
+        }
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let dialog = rfd::FileDialog::new();
+            let path = match kind {
+                DialogKind::Open => dialog.add_filter(tr("dialog.filter.design"), &["json"]).pick_file(),
+                DialogKind::Save => dialog.add_filter(tr("dialog.filter.design"), &["json"]).set_file_name("jersey.json").save_file(),
+                DialogKind::Export => dialog.add_filter("PNG", &["png"]).set_file_name("print-template.png").save_file(),
+            };
+            let _ = tx.send(path);
+        });
+        self.dialog = Some((kind, rx));
+    }
+
+    fn poll_dialog(&mut self) {
+        let Some((kind, rx)) = &self.dialog else { return };
+        let path = match rx.try_recv() {
+            Ok(path) => path,
+            Err(std::sync::mpsc::TryRecvError::Empty) => return,
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => None,
         };
+        let kind = *kind;
+        self.dialog = None;
         let Some(path) = path else { return };
+        match kind {
+            DialogKind::Open => self.open_file(path),
+            DialogKind::Save => self.save_to(path),
+            DialogKind::Export => self.export_to(path),
+        }
+    }
+
+    fn save(&mut self, choose: bool) {
+        match (&self.ws.file, choose) {
+            (Some(p), false) => self.save_to(p.clone()),
+            _ => self.pick(DialogKind::Save),
+        }
+    }
+
+    fn save_to(&mut self, path: std::path::PathBuf) {
         self.ws.status = match io::to_json(&self.ws.doc).and_then(|b| std::fs::write(&path, b).map_err(|e| e.to_string())) {
             Ok(()) => {
                 self.ws.file = Some(path.clone());
@@ -598,9 +648,10 @@ impl JerseyApp {
     }
 
     fn open(&mut self) {
-        let Some(path) = rfd::FileDialog::new().add_filter(tr("dialog.filter.design"), &["json"]).pick_file() else {
-            return;
-        };
+        self.pick(DialogKind::Open);
+    }
+
+    fn open_file(&mut self, path: std::path::PathBuf) {
         match std::fs::read(&path).map_err(|e| e.to_string()).and_then(|b| io::from_json(&b)) {
             Ok(doc) => {
                 self.ws.replace(doc);
@@ -612,9 +663,10 @@ impl JerseyApp {
     }
 
     fn export(&mut self) {
-        let Some(path) = rfd::FileDialog::new().add_filter("PNG", &["png"]).set_file_name("print-template.png").save_file() else {
-            return;
-        };
+        self.pick(DialogKind::Export);
+    }
+
+    fn export_to(&mut self, path: std::path::PathBuf) {
         let pm = self.ws.raster.render(&self.ws.pattern, &self.ws.regions, &self.ws.doc, Mode::Print);
         self.ws.status = match pm.save_png(&path) {
             Ok(()) => format!("{}: {}", tr("status.exported"), file_label(&path)),
