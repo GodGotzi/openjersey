@@ -71,7 +71,7 @@ def main():
         args = ", ".join(f"`{a['name']}`{' (required)' if a.get('required') else ''}" for a in p["arguments"]) or "none"
         out += [f"- **`{p['name']}`**: {p['description']} Arguments: {args}."]
     out += ["", "## Instructions the server sends to clients", "", "> " + instructions.replace("\n", "\n> "), ""]
-    (HERE / "mcp-tools.md").write_text("\n".join(out))
+    (HERE / "mcp-tools.md").write_text("\n".join(out), encoding="utf-8")
     print(f"mcp-tools.md: {len(tools)} tools")
 
 
