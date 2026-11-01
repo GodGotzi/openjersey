@@ -53,8 +53,8 @@ impl GarmentMesh {
                         Some(i) => i.into_u32().collect(),
                         None => (0..pos.len() as u32).collect(),
                     };
-                    for t in idx.chunks_exact(3) {
-                        let (a, b, c) = (t[0] as usize, t[1] as usize, t[2] as usize);
+                    for &[a, b, c] in idx.as_chunks::<3>().0 {
+                        let (a, b, c) = (a as usize, b as usize, c as usize);
                         tris.push([pos[a], pos[b], pos[c]]);
                         uvs.push([tex[a], tex[b], tex[c]]);
                         garment.push(part.garment.kind);

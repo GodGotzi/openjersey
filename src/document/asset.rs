@@ -76,10 +76,12 @@ impl Asset {
                     // tiny-skia wants premultiplied alpha
                     let data = img
                         .into_raw()
-                        .chunks_exact(4)
-                        .flat_map(|p| {
-                            let a = p[3] as u16;
-                            [(p[0] as u16 * a / 255) as u8, (p[1] as u16 * a / 255) as u8, (p[2] as u16 * a / 255) as u8, p[3]]
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .flat_map(|&[r, g, b, a]| {
+                            let premultiply = |c: u8| (c as u16 * a as u16 / 255) as u8;
+                            [premultiply(r), premultiply(g), premultiply(b), a]
                         })
                         .collect();
                     Pixmap::from_vec(data, size).map(Decoded::Raster)
@@ -120,7 +122,7 @@ impl Asset {
             }
         };
         if let Some([r, g, b]) = tint {
-            for px in pm.data_mut().chunks_exact_mut(4) {
+            for px in pm.data_mut().as_chunks_mut::<4>().0 {
                 let a = px[3] as u16;
                 px[0] = (r as u16 * a / 255) as u8;
                 px[1] = (g as u16 * a / 255) as u8;
