@@ -4,6 +4,10 @@
 //! assistants (Codex, Claude Code, …) edit the open design through MCP
 //! (`openjersey mcp`).
 
+// on Windows a GUI program, so starting it opens no console window; started
+// from a terminal it attaches to that one (see `attach_console`)
+#![cfg_attr(windows, windows_subsystem = "windows")]
+
 mod ai;
 mod config;
 mod document;
@@ -675,7 +679,29 @@ fn initial_document() -> Document {
     doc
 }
 
+/// A Windows GUI program starts without a console. If its output goes nowhere
+/// (not into a pipe or file), it is attached to the terminal it was started
+/// from, if any, so `--config-dir`, `--help` and the logs still print there.
+#[cfg(windows)]
+fn attach_console() {
+    const STD_OUTPUT_HANDLE: u32 = -11i32 as u32;
+    const ATTACH_PARENT_PROCESS: u32 = u32::MAX;
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetStdHandle(which: u32) -> *mut std::ffi::c_void;
+        fn AttachConsole(pid: u32) -> i32;
+    }
+    // SAFETY: plain Win32 calls without pointers passed in
+    unsafe {
+        if GetStdHandle(STD_OUTPUT_HANDLE).is_null() {
+            AttachConsole(ATTACH_PARENT_PROCESS);
+        }
+    }
+}
+
 fn main() -> myth::Result<()> {
+    #[cfg(windows)]
+    attach_console();
     config::init();
     i18n::init();
     theme::init();

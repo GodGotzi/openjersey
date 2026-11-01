@@ -104,6 +104,23 @@ impl ApplicationHandler<Message> for SplashApp {
         let attrs = attrs.with_name("openjersey-splash", "openjersey-splash");
         let attrs =
             attrs.with_inner_size(size).with_min_inner_size(size).with_max_inner_size(size).with_resizable(false).with_decorations(false);
+        // Windows puts new windows at the top left and shows them white until
+        // they are drawn: centre it, keep it off the taskbar, and show it once
+        // the first frame is up (see `draw`)
+        #[cfg(windows)]
+        let attrs = {
+            use winit::platform::windows::WindowAttributesExtWindows;
+            let mut attrs = attrs.with_visible(false).with_skip_taskbar(true).with_undecorated_shadow(true);
+            if let Some(monitor) = event_loop.primary_monitor() {
+                let (screen, at, scale) = (monitor.size(), monitor.position(), monitor.scale_factor());
+                let (w, h) = ((SIZE.0 as f64 * scale) as i32, (SIZE.1 as f64 * scale) as i32);
+                attrs = attrs.with_position(winit::dpi::PhysicalPosition::new(
+                    at.x + (screen.width as i32 - w) / 2,
+                    at.y + (screen.height as i32 - h) / 2,
+                ));
+            }
+            attrs
+        };
         let Ok(window) = event_loop.create_window(attrs) else {
             event_loop.exit();
             return;
@@ -112,6 +129,9 @@ impl ApplicationHandler<Message> for SplashApp {
         let Ok(context) = softbuffer::Context::new(window.clone()) else { return };
         self.surface = softbuffer::Surface::new(&context, window.clone()).ok();
         self.window = Some(window);
+        // a hidden window gets no redraw events: draw (and show) it now
+        #[cfg(windows)]
+        self.draw();
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, msg: Message) {
@@ -159,7 +179,9 @@ impl SplashApp {
         for (dst, px) in buffer.iter_mut().zip(frame.pixels()) {
             *dst = (px.red() as u32) << 16 | (px.green() as u32) << 8 | px.blue() as u32;
         }
-        let _ = buffer.present();
+        if buffer.present().is_ok() && window.is_visible() == Some(false) {
+            window.set_visible(true);
+        }
     }
 }
 

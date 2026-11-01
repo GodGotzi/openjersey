@@ -43,8 +43,16 @@ try {
 }
 
 Write-Host 'Setting up the configuration ...'
-# the program makes the folder, settings.toml and themes\ and tells us where they are
-$Config = (& $Bin --config-dir).Trim()
+# the program makes the folder, settings.toml and themes\ and tells us where they
+# are; it is a GUI program, whose output PowerShell doesn't capture with & $Bin
+$out = New-TemporaryFile
+try {
+    Start-Process -FilePath $Bin -ArgumentList '--config-dir' -NoNewWindow -Wait -RedirectStandardOutput $out
+    $Config = (Get-Content -Raw $out).Trim()
+} finally {
+    Remove-Item -Force $out
+}
+if (-not $Config) { throw 'openjersey --config-dir printed nothing.' }
 if (-not $NoThemes) {
     foreach ($theme in Get-ChildItem (Join-Path $Repo 'examples\themes\*.toml')) {
         $target = Join-Path $Config "themes\$($theme.Name)"
@@ -85,7 +93,6 @@ $link.TargetPath = $Bin
 $link.WorkingDirectory = $Repo
 $link.IconLocation = $Icon
 $link.Description = 'OpenJersey - design sports kits'
-$link.WindowStyle = 7   # the console the program starts with stays minimised
 $link.Save()
 
 Write-Host "Done. OpenJersey is in your Start menu; it runs $Bin."

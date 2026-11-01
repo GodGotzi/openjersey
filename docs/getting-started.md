@@ -41,7 +41,7 @@ What every script does:
 - copies the three [example themes](../examples/themes) (Ocean, Dusk, Rose) into its `themes/` folder, so they show up under *Settings → Theme*. A file that is already there is kept, and `--no-themes` (`-NoThemes` on Windows) skips this;
 - can be run again to update, and `--remove` (`-Remove`) takes the launcher entry away again. Your settings and themes are never touched.
 
-If PowerShell refuses to run the Windows script, start it with `powershell -ExecutionPolicy Bypass -File .\install\install-windows.ps1`. The macOS and Windows scripts are newer and have had less testing than the Linux one. On Windows the program starts with a console window, which the shortcut keeps minimised.
+If PowerShell refuses to run the Windows script, start it with `powershell -ExecutionPolicy Bypass -File .\install\install-windows.ps1`. The macOS and Windows scripts are newer and have had less testing than the Linux one. On Windows the program opens no console window; started from a terminal it prints to that terminal, though PowerShell doesn't wait for it to finish.
 
 ## Without a window
 
