@@ -29,7 +29,7 @@ It also has an [MCP](https://modelcontextprotocol.io) interface, so Claude Code,
 - **Print-ready export**: the sheet as a PNG, logo placeholders left out.
 - **An AI-friendly interface**: 34 tools, `batch` calls that undo as one step, renders the assistant can look at. See [Working with AI assistants](docs/ai-assistants.md).
 - **Agent mode**: a live log in the sidebar of everything an AI assistant does to your design.
-- **Six colour themes** (Graphite, Midnight, Nord, Forest, Daylight, Paper) that restyle the whole interface, the 2D editor and the 3D background, chosen in the Settings menu. Your own are a file in `~/.config/openjersey/themes/`. See [Themes](docs/themes.md).
+- **Six colour themes** (Graphite, Midnight, Nord, Forest, Daylight, Paper) that restyle the whole interface, the 2D editor and the 3D background, chosen in the Settings menu. Your own are a file in `~/.config/openjersey/themes/` (`%APPDATA%\openjersey\themes\` on Windows). See [Themes](docs/themes.md).
 - English and German, with a translation system that makes adding a language a single file.
 
 ![The OpenJersey editor](docs/images/editor.png)
@@ -62,7 +62,7 @@ A selection of the designs in [`examples`](examples/README.md), which are files 
 
 ## Quick start
 
-You need a recent stable [Rust](https://rustup.rs) toolchain and a GPU with a Vulkan, Metal or DX12 driver. Only Linux has been tried so far.
+You need a recent stable [Rust](https://rustup.rs) toolchain and a GPU with a Vulkan, Metal or DX12 driver. It runs on Linux and Windows; macOS hasn't been tried yet.
 
 ```sh
 git clone https://github.com/GodGotzi/openjersey
